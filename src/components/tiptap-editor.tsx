@@ -12,6 +12,11 @@ import css from 'highlight.js/lib/languages/css'
 import javascript from 'highlight.js/lib/languages/javascript'
 import typescript from 'highlight.js/lib/languages/typescript'
 import xml from 'highlight.js/lib/languages/xml' // for html
+import Table from '@tiptap/extension-table'
+import TableCell from '@tiptap/extension-table-cell'
+import TableHeader from '@tiptap/extension-table-header'
+import TableRow from '@tiptap/extension-table-row'
+
 
 // Import a syntax highlighting theme
 import 'highlight.js/styles/atom-one-dark.css'
@@ -43,6 +48,12 @@ const TiptapEditor = () => {
       CodeBlockLowlight.configure({
         lowlight,
       }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: `
       <h1>Welcome to Your Tiptap Editor!</h1>
