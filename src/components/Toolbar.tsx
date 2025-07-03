@@ -18,6 +18,7 @@ import {
   AlignRight,
   AlignJustify,
   Code,
+  Minus,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -177,6 +178,15 @@ const Toolbar = ({ editor }: Props) => {
         aria-label="Toggle code block"
       >
         <Code className="h-4 w-4" />
+      </Toggle>
+      <Separator orientation="vertical" className="h-8 mx-1" />
+      <Toggle
+        size="sm"
+        onPressedChange={() => editor.chain().focus().setHorizontalRule().run()}
+        disabled={!editor.can().chain().focus().setHorizontalRule().run()}
+        aria-label="Insert horizontal rule"
+      >
+        <Minus className="h-4 w-4" />
       </Toggle>
     </div>
   );
