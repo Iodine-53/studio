@@ -23,6 +23,7 @@ import { CustomImage } from '@/lib/tiptap/extensions/Image';
 import { AdvancedTask } from '@/lib/tiptap/extensions/AdvancedTask';
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import { Accordion, AccordionSummary, AccordionContent } from '@/lib/tiptap/extensions/Accordion';
 
 
 // Import a syntax highlighting theme
@@ -74,6 +75,9 @@ const TiptapEditor = ({ content, onUpdate }: Props) => {
       TaskItem.configure({
         nested: true,
       }),
+      Accordion,
+      AccordionSummary,
+      AccordionContent,
     ],
     editorProps: {
       attributes: {
