@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { ArrowLeft, FileDown } from 'lucide-react';
-import TiptapEditor from '@/components/tiptap-editor';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 
 export default function DocumentMakerPage() {
   return (
@@ -19,20 +17,10 @@ export default function DocumentMakerPage() {
             Document Maker
           </h1>
         </nav>
-        <div className="flex items-center w-full gap-4 ml-auto md:ml-auto md:gap-2 lg:gap-4">
-          <Button className="ml-auto bg-accent text-accent-foreground hover:bg-accent/90">
-            <FileDown className="w-4 h-4 mr-2" />
-            Export Document
-          </Button>
-        </div>
       </header>
       <main className="flex-1 p-4 md:p-8 lg:p-10">
         <div className="max-w-5xl mx-auto">
-          <Card>
-            <CardContent className="p-0">
-              <TiptapEditor />
-            </CardContent>
-          </Card>
+          {/* The editor will be built here based on your instructions. */}
         </div>
       </main>
     </div>
