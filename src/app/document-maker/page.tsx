@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import TiptapEditor from '@/components/tiptap-editor';
 
 export default function DocumentMakerPage() {
   return (
@@ -18,9 +19,15 @@ export default function DocumentMakerPage() {
           </h1>
         </nav>
       </header>
-      <main className="flex-1 p-4 md:p-8 lg:p-10">
-        <div className="max-w-5xl mx-auto">
-          {/* The editor will be built here based on your instructions. */}
+      {/* Main container to center the editor */}
+      <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
+        
+        {/* Wrapper to control the width and visual appearance of the editor's container */}
+        <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border">
+          
+          {/* Our Tiptap editor component is rendered here */}
+          <TiptapEditor />
+
         </div>
       </main>
     </div>
