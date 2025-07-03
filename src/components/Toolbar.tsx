@@ -19,6 +19,11 @@ import {
   AlignJustify,
   Code,
   Minus,
+  Table,
+  Trash2,
+  Plus,
+  Merge,
+  Split,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -179,7 +184,6 @@ const Toolbar = ({ editor }: Props) => {
       >
         <Code className="h-4 w-4" />
       </Toggle>
-      <Separator orientation="vertical" className="h-8 mx-1" />
       <Toggle
         size="sm"
         onPressedChange={() => editor.chain().focus().setHorizontalRule().run()}
@@ -188,6 +192,75 @@ const Toolbar = ({ editor }: Props) => {
       >
         <Minus className="h-4 w-4" />
       </Toggle>
+      <Separator orientation="vertical" className="h-8 mx-1" />
+      <Toggle
+        size="sm"
+        onPressedChange={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+        disabled={!editor.can().chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+        aria-label="Insert table"
+      >
+        <Table className="h-4 w-4" />
+      </Toggle>
+      {editor.isActive('table') && (
+        <>
+          <Toggle
+            size="sm"
+            onPressedChange={() => editor.chain().focus().addColumnAfter().run()}
+            disabled={!editor.can().chain().focus().addColumnAfter().run()}
+            aria-label="Add column after"
+          >
+            <Plus className="h-4 w-4" />
+          </Toggle>
+          <Toggle
+            size="sm"
+            onPressedChange={() => editor.chain().focus().deleteColumn().run()}
+            disabled={!editor.can().chain().focus().deleteColumn().run()}
+            aria-label="Delete column"
+          >
+            <Minus className="h-4 w-4" />
+          </Toggle>
+          <Toggle
+            size="sm"
+            onPressedChange={() => editor.chain().focus().addRowAfter().run()}
+            disabled={!editor.can().chain().focus().addRowAfter().run()}
+            aria-label="Add row after"
+          >
+            <Plus className="h-4 w-4" />
+          </Toggle>
+          <Toggle
+            size="sm"
+            onPressedChange={() => editor.chain().focus().deleteRow().run()}
+            disabled={!editor.can().chain().focus().deleteRow().run()}
+            aria-label="Delete row"
+          >
+            <Minus className="h-4 w-4" />
+          </Toggle>
+          <Toggle
+            size="sm"
+            onPressedChange={() => editor.chain().focus().mergeOrSplit().run()}
+            disabled={!editor.can().chain().focus().mergeOrSplit().run()}
+            aria-label="Merge cells"
+          >
+            <Merge className="h-4 w-4" />
+          </Toggle>
+           <Toggle
+            size="sm"
+            onPressedChange={() => editor.chain().focus().mergeOrSplit().run()}
+            disabled={!editor.can().chain().focus().mergeOrSplit().run()}
+            aria-label="Split cell"
+          >
+            <Split className="h-4 w-4" />
+          </Toggle>
+          <Toggle
+            size="sm"
+            onPressedChange={() => editor.chain().focus().deleteTable().run()}
+            disabled={!editor.can().chain().focus().deleteTable().run()}
+            aria-label="Delete table"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Toggle>
+        </>
+      )}
     </div>
   );
 };
