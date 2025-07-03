@@ -26,6 +26,7 @@ import {
   Split,
   AlertTriangle,
   Image,
+  CheckSquare,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -159,6 +160,14 @@ const Toolbar = ({ editor }: Props) => {
         aria-label="Toggle ordered list"
       >
         <ListOrdered className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive('taskList')}
+        onPressedChange={() => editor.chain().focus().toggleTaskList().run()}
+        aria-label="Toggle task list"
+      >
+        <CheckSquare className="h-4 w-4" />
       </Toggle>
       <Separator orientation="vertical" className="h-8 mx-1" />
        <Toggle

@@ -28,6 +28,7 @@ const commandItems: CommandItem[] = [
   { title: "Heading 3", icon: Heading3, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run(); } },
   { title: "Bulleted List", icon: List, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleBulletList().run(); } },
   { title: "Numbered List", icon: ListOrdered, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleOrderedList().run(); } },
+  { title: "Checklist", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleTaskList().run(); } },
   { title: "Advanced Task", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setAdvancedTask().run() } },
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCallout().run(); } },
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
