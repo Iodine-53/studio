@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BrainstormForm } from "@/components/brainstorm-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ const tools = [
     title: "Document Maker",
     description: "Create and export rich text documents right in your browser.",
     icon: <FileText className="w-10 h-10" />,
-    link: "#",
+    link: "/document-maker",
   },
   {
     title: "Spreadsheet Generator",
@@ -90,7 +91,9 @@ export default function Home() {
                         <p className="text-muted-foreground">{tool.description}</p>
                     </CardContent>
                     <CardFooter className="justify-center p-6 pt-0">
-                        <Button variant="outline" className="group-hover:bg-accent group-hover:text-accent-foreground group-hover:border-accent transition-colors duration-300">Use Tool</Button>
+                        <Button asChild variant="outline" className="group-hover:bg-accent group-hover:text-accent-foreground group-hover:border-accent transition-colors duration-300">
+                          <Link href={tool.link}>Use Tool</Link>
+                        </Button>
                     </CardFooter>
                 </Card>
               ))}
