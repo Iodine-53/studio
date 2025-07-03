@@ -6,6 +6,21 @@ import StarterKit from '@tiptap/starter-kit'
 import Toolbar from './Toolbar'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
+import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
+import { lowlight } from 'lowlight'
+import css from 'highlight.js/lib/languages/css'
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import xml from 'highlight.js/lib/languages/xml' // for html
+
+// Import a syntax highlighting theme
+import 'highlight.js/styles/atom-one-dark.css'
+
+// Register the languages we want to support
+lowlight.registerLanguage('html', xml)
+lowlight.registerLanguage('css', css)
+lowlight.registerLanguage('js', javascript)
+lowlight.registerLanguage('ts', typescript)
 
 const TiptapEditor = () => {
   const editor = useEditor({
@@ -15,11 +30,18 @@ const TiptapEditor = () => {
           HTMLAttributes: {
             class: 'leading-normal'
           }
-        }
+        },
+        // The CodeBlock extension is part of StarterKit, so we need to disable it
+        // to avoid conflicts with our custom CodeBlockLowlight extension.
+        codeBlock: false,
       }),
       Underline,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
+      }),
+       // Add the configured CodeBlockLowlight extension
+      CodeBlockLowlight.configure({
+        lowlight,
       }),
     ],
     content: `

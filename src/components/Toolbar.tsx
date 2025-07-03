@@ -17,6 +17,7 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
+  Code,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -166,6 +167,16 @@ const Toolbar = ({ editor }: Props) => {
         aria-label="Set text align justify"
       >
         <AlignJustify className="h-4 w-4" />
+      </Toggle>
+      <Separator orientation="vertical" className="h-8 mx-1" />
+      <Toggle
+        size="sm"
+        pressed={editor.isActive("codeBlock")}
+        onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
+        disabled={!editor.can().chain().focus().toggleCodeBlock().run()}
+        aria-label="Toggle code block"
+      >
+        <Code className="h-4 w-4" />
       </Toggle>
     </div>
   );
