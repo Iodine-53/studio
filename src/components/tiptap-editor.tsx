@@ -1,7 +1,9 @@
+
 'use client'
 
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import Toolbar from './Toolbar'
 
 const TiptapEditor = () => {
   const editor = useEditor({
@@ -14,13 +16,16 @@ const TiptapEditor = () => {
     `,
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none min-h-[400px] w-full',
+        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none min-h-[350px] w-full',
       },
     },
   })
 
   return (
-    <EditorContent editor={editor} />
+    <div className="flex flex-col justify-stretch">
+      <Toolbar editor={editor} />
+      <EditorContent editor={editor} />
+    </div>
   )
 }
 
