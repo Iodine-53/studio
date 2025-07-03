@@ -20,6 +20,7 @@ import TableRow from '@tiptap/extension-table-row'
 import { Callout } from './editor/Callout'
 import { SlashCommand } from './editor/slash-command'
 import { CustomImage } from '@/lib/tiptap/extensions/Image';
+import { AdvancedTask } from '@/lib/tiptap/extensions/AdvancedTask';
 
 
 // Import a syntax highlighting theme
@@ -66,6 +67,7 @@ const TiptapEditor = ({ content, onUpdate }: Props) => {
       Callout,
       SlashCommand,
       CustomImage, // Add our custom image extension
+      AdvancedTask, // Add our new Advanced Task extension
     ],
     editorProps: {
       attributes: {
