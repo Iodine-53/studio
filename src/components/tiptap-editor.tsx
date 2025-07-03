@@ -17,8 +17,7 @@ import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
 import { Callout } from './editor/Callout'
-import Suggestion from '@tiptap/suggestion'
-import { suggestion } from './editor/slash-command'
+import { SlashCommand } from './editor/slash-command'
 
 
 // Import a syntax highlighting theme
@@ -58,7 +57,7 @@ const TiptapEditor = () => {
       TableHeader,
       TableCell,
       Callout,
-      Suggestion.configure(suggestion),
+      SlashCommand,
     ],
     content: `
       <h1>Welcome to Your Tiptap Editor!</h1>

@@ -1,4 +1,5 @@
 import type { Editor, Range } from "@tiptap/core";
+import { Extension } from "@tiptap/core";
 import {
   Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, Code, Minus, Table, AlertTriangle
 } from "lucide-react";
@@ -6,6 +7,7 @@ import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
 import { CommandList } from "./CommandList";
 import type { ComponentProps } from 'react';
+import Suggestion from '@tiptap/suggestion';
 
 // Define a type for our command items
 export interface CommandItem {
@@ -17,7 +19,7 @@ export interface CommandItem {
 // Type for the props of the CommandList component
 type CommandListProps = ComponentProps<typeof CommandList>;
 
-export const commandItems: CommandItem[] = [
+const commandItems: CommandItem[] = [
   { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
   { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
   { title: "Heading 2", icon: Heading2, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run(); } },
@@ -30,11 +32,7 @@ export const commandItems: CommandItem[] = [
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },
 ];
 
-export const suggestion = {
-  items: ({ query }: { query: string }) => {
-    return commandItems.filter(item => item.title.toLowerCase().startsWith(query.toLowerCase())).slice(0, 10);
-  },
-  render: () => {
+const renderItems = () => {
     let component: ReactRenderer<unknown, CommandListProps>;
     let popup: any;
 
@@ -82,5 +80,31 @@ export const suggestion = {
         component.destroy();
       },
     };
-  },
-};
+  }
+
+export const SlashCommand = Extension.create({
+    name: 'slash-command',
+    
+    addOptions() {
+        return {
+            suggestion: {
+                char: '/',
+                command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
+                    props.command({ editor, range });
+                },
+                items: ({ query }: { query: string }) => {
+                    return commandItems
+                      .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
+                      .slice(0, 10);
+                },
+                render: renderItems,
+            },
+        }
+    },
+
+    addProseMirrorPlugins() {
+        return [
+            Suggestion(this.options.suggestion)
+        ]
+    }
+});
