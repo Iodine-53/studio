@@ -9,9 +9,9 @@ export const AccordionNodeView = () => {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <NodeViewWrapper className="my-2 rounded-lg border bg-card group">
+    <NodeViewWrapper className="my-2 group">
       <div
-        className="flex cursor-pointer items-center justify-between p-4"
+        className="flex cursor-pointer items-center justify-between py-2 border-b border-border"
         onClick={() => setIsOpen(!isOpen)}
       >
         {/* The first NodeViewContent is for the title. It's always visible. */}
@@ -21,7 +21,7 @@ export const AccordionNodeView = () => {
       </div>
 
       {isOpen && (
-        <div className="border-t border-border p-4">
+        <div className="py-4">
           {/* The second NodeViewContent is for the content. It's collapsible. */}
           <NodeViewContent as="div" />
         </div>
