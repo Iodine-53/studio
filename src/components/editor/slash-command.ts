@@ -8,6 +8,7 @@ import tippy from "tippy.js";
 import { CommandList } from "./CommandList";
 import type { ComponentProps } from 'react';
 import Suggestion from '@tiptap/suggestion';
+import { processImage } from "@/lib/utils";
 
 // Define a type for our command items
 export interface CommandItem {
@@ -34,10 +35,23 @@ const commandItems: CommandItem[] = [
     title: "Image", 
     icon: Image, 
     command: ({ editor, range }: { editor: Editor, range: Range }) => {
-      const url = window.prompt('Image URL');
-      if (url) {
-        editor.chain().focus().deleteRange(range).setImage({ src: url }).run();
-      }
+      editor.chain().focus().deleteRange(range).run();
+
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        try {
+          const compressedBase64 = await processImage(file);
+          editor.chain().focus().setImage({ src: compressedBase64 }).run();
+        } catch (error) {
+          console.error("Image processing failed in slash command:", error);
+        }
+      };
+      input.click();
     } 
   },
 ];
@@ -107,7 +121,7 @@ export const SlashCommand = Extension.create({
                       .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
                       .slice(0, 10);
                 },
-                render: renderItems,
+                render: renderItems(),
             },
         }
     },

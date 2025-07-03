@@ -29,18 +29,45 @@ import {
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
+import { useRef, type ChangeEvent } from "react";
+import { processImage } from "@/lib/utils";
 
 type Props = {
   editor: Editor | null;
 };
 
 const Toolbar = ({ editor }: Props) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   if (!editor) {
     return null;
   }
 
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const compressedBase64 = await processImage(file);
+      editor.chain().focus().setImage({ src: compressedBase64 }).run();
+    } catch (error) {
+      console.error("Image processing failed:", error);
+    }
+    
+    if(event.target) {
+      event.target.value = '';
+    }
+  };
+
   return (
     <div className="flex w-full flex-wrap items-center gap-1 rounded-t-xl border-b bg-muted/50 p-2">
+       <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImageUpload}
+        className="hidden"
+        accept="image/*"
+      />
       <Toggle
         size="sm"
         pressed={editor.isActive("bold")}
@@ -82,7 +109,6 @@ const Toolbar = ({ editor }: Props) => {
         size="sm"
         pressed={editor.isActive("paragraph")}
         onPressedChange={() => editor.chain().focus().setParagraph().run()}
-        disabled={!editor.can().setParagraph()}
         aria-label="Set paragraph"
       >
         <Pilcrow className="h-4 w-4" />
@@ -93,7 +119,6 @@ const Toolbar = ({ editor }: Props) => {
         onPressedChange={() =>
           editor.chain().focus().toggleHeading({ level: 1 }).run()
         }
-        disabled={!editor.can().toggleHeading({ level: 1 })}
         aria-label="Toggle heading 1"
       >
         <Heading1 className="h-4 w-4" />
@@ -104,7 +129,6 @@ const Toolbar = ({ editor }: Props) => {
         onPressedChange={() =>
           editor.chain().focus().toggleHeading({ level: 2 }).run()
         }
-        disabled={!editor.can().toggleHeading({ level: 2 })}
         aria-label="Toggle heading 2"
       >
         <Heading2 className="h-4 w-4" />
@@ -115,7 +139,6 @@ const Toolbar = ({ editor }: Props) => {
         onPressedChange={() =>
           editor.chain().focus().toggleHeading({ level: 3 }).run()
         }
-        disabled={!editor.can().toggleHeading({ level: 3 })}
         aria-label="Toggle heading 3"
       >
         <Heading3 className="h-4 w-4" />
@@ -125,7 +148,6 @@ const Toolbar = ({ editor }: Props) => {
         size="sm"
         pressed={editor.isActive("bulletList")}
         onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
-        disabled={!editor.can().toggleBulletList()}
         aria-label="Toggle bullet list"
       >
         <List className="h-4 w-4" />
@@ -134,7 +156,6 @@ const Toolbar = ({ editor }: Props) => {
         size="sm"
         pressed={editor.isActive("orderedList")}
         onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
-        disabled={!editor.can().toggleOrderedList()}
         aria-label="Toggle ordered list"
       >
         <ListOrdered className="h-4 w-4" />
@@ -144,7 +165,6 @@ const Toolbar = ({ editor }: Props) => {
         size="sm"
         pressed={editor.isActive({ textAlign: 'left' })}
         onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
-        disabled={!editor.can().setTextAlign('left')}
         aria-label="Set text align left"
       >
         <AlignLeft className="h-4 w-4" />
@@ -153,7 +173,6 @@ const Toolbar = ({ editor }: Props) => {
         size="sm"
         pressed={editor.isActive({ textAlign: 'center' })}
         onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
-        disabled={!editor.can().setTextAlign('center')}
         aria-label="Set text align center"
       >
         <AlignCenter className="h-4 w-4" />
@@ -162,7 +181,6 @@ const Toolbar = ({ editor }: Props) => {
         size="sm"
         pressed={editor.isActive({ textAlign: 'right' })}
         onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
-        disabled={!editor.can().setTextAlign('right')}
         aria-label="Set text align right"
       >
         <AlignRight className="h-4 w-4" />
@@ -171,7 +189,6 @@ const Toolbar = ({ editor }: Props) => {
         size="sm"
         pressed={editor.isActive({ textAlign: 'justify' })}
         onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()}
-        disabled={!editor.can().setTextAlign('justify')}
         aria-label="Set text align justify"
       >
         <AlignJustify className="h-4 w-4" />
@@ -181,7 +198,6 @@ const Toolbar = ({ editor }: Props) => {
         size="sm"
         pressed={editor.isActive("codeBlock")}
         onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
-        disabled={!editor.can().toggleCodeBlock()}
         aria-label="Toggle code block"
       >
         <Code className="h-4 w-4" />
@@ -189,7 +205,6 @@ const Toolbar = ({ editor }: Props) => {
       <Toggle
         size="sm"
         onPressedChange={() => editor.chain().focus().setHorizontalRule().run()}
-        disabled={!editor.can().setHorizontalRule()}
         aria-label="Insert horizontal rule"
       >
         <Minus className="h-4 w-4" />
@@ -205,12 +220,7 @@ const Toolbar = ({ editor }: Props) => {
       <Toggle
         size="sm"
         aria-label="Insert Image"
-        onPressedChange={() => {
-          const url = window.prompt('Image URL');
-          if (url) {
-            editor.chain().focus().setImage({ src: url }).run();
-          }
-        }}
+        onPressedChange={() => fileInputRef.current?.click()}
       >
         <Image className="h-4 w-4" />
       </Toggle>
