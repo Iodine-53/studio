@@ -122,7 +122,7 @@ export const SlashCommand = Extension.create({
                       .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
                       .slice(0, 10);
                 },
-                render: renderItems(),
+                render: renderItems,
             },
         }
     },
