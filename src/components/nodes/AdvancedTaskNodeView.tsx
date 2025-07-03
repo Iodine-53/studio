@@ -43,19 +43,21 @@ export function AdvancedTaskNodeView({ node, updateAttributes, editor }: NodeVie
   };
 
   return (
-    <NodeViewWrapper className="flex items-start gap-2 p-2 my-2 rounded-lg bg-card border border-input group">
-      <div className="flex-shrink-0 pt-1">
-        <Checkbox
+    <NodeViewWrapper className="flex flex-col md:flex-row md:items-center gap-2 p-2 my-2 rounded-lg bg-card border border-input group">
+      
+      {/* --- MAIN CONTENT AREA (Left on Desktop, Top on Mobile) --- */}
+      <div className="flex w-full flex-grow items-center gap-2">
+         <Checkbox
             checked={isCompleted}
             onCheckedChange={(checked) => updateAttributes({ isCompleted: !!checked })}
             className="shrink-0"
             aria-label="Toggle task completion"
         />
+        <NodeViewContent className={cn('flex-grow', isCompleted && 'line-through text-muted-foreground')} />
       </div>
 
-      <NodeViewContent className={cn('flex-grow py-1', isCompleted && 'line-through text-muted-foreground')} />
-
-      <div className="flex items-center gap-2 shrink-0">
+      {/* --- METADATA AREA (Right on Desktop, Bottom on Mobile) --- */}
+      <div className="flex flex-shrink-0 items-center gap-2 self-end md:self-center mt-2 md:mt-0">
         <Badge
           variant="outline"
           className={cn('cursor-pointer capitalize select-none font-medium', PRIORITY_STYLES[priority])}
@@ -80,7 +82,7 @@ export function AdvancedTaskNodeView({ node, updateAttributes, editor }: NodeVie
               variant={'outline'}
               size="sm"
               className={cn(
-                'w-[150px] justify-start text-left font-normal',
+                'w-[150px] justify-start text-left font-normal h-7 px-2',
                 !dueDate && 'text-muted-foreground'
               )}
             >
