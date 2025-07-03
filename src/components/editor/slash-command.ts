@@ -1,3 +1,4 @@
+
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
@@ -31,9 +32,9 @@ const commandItems: CommandItem[] = [
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   { title: "Code Block", icon: Code, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCodeBlock().run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },
-  { 
-    title: "Image", 
-    icon: Image, 
+  {
+    title: "Image",
+    icon: Image,
     command: ({ editor, range }: { editor: Editor, range: Range }) => {
       editor.chain().focus().deleteRange(range).run();
 
@@ -52,7 +53,7 @@ const commandItems: CommandItem[] = [
         }
       };
       input.click();
-    } 
+    }
   },
 ];
 
@@ -108,7 +109,7 @@ const renderItems = () => {
 
 export const SlashCommand = Extension.create({
     name: 'slash-command',
-    
+
     addOptions() {
         return {
             suggestion: {
