@@ -4,14 +4,12 @@ import type { NodeViewProps } from '@tiptap/react';
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
 import { format } from 'date-fns';
 import { AlertCircle, Briefcase, Calendar as CalendarIcon, CheckCircle, FolderKanban, HelpCircle, User } from 'lucide-react';
-import { useState } from 'react';
+// Popover and Calendar specific imports are removed for this test
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-// Helper data and icon mappings
+// Helper data and icon mappings remain the same
 const priorities = ['low', 'medium', 'high'];
 const categories = ['personal', 'work', 'project'];
 
@@ -30,10 +28,6 @@ const categoryConfig = {
 
 export const AdvancedTaskNodeView = ({ node, updateAttributes }: NodeViewProps) => {
   const { dueDate, category, priority, isCompleted } = node.attrs;
-
-  // --- THIS IS THE KEY FIX ---
-  // State to control the visibility of the calendar popover
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const cycleAttribute = (values: string[], current: string, attributeName: string) => {
     const currentIndex = values.indexOf(current);
@@ -62,7 +56,7 @@ export const AdvancedTaskNodeView = ({ node, updateAttributes }: NodeViewProps) 
       {/* --- Title Area (Row 1, Col 2) --- */}
       <NodeViewContent
         className={cn(
-          'min-w-0', // Prevents content from overflowing its grid cell
+          'min-w-0', 
           isCompleted ? 'text-muted-foreground line-through' : ''
         )}
       />
@@ -78,30 +72,17 @@ export const AdvancedTaskNodeView = ({ node, updateAttributes }: NodeViewProps) 
             <span className="hidden sm:inline">{categoryConfig[category].label}</span>
         </Button>
         
-        {/* --- MODIFIED POPOVER --- */}
-        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="flex items-center gap-1 rounded-full px-2 py-1 h-auto text-xs">
-              <CalendarIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">{dueDate ? format(new Date(dueDate), 'MMM d') : 'No date'}</span>
-            </Button>
-          </PopoverTrigger>
-
-          {/* --- RENDER CONTENT CONDITIONALLY --- */}
-          {isCalendarOpen && (
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={dueDate ? new Date(dueDate) : undefined}
-                onSelect={(date) => {
-                  updateAttributes({ dueDate: date?.toISOString() });
-                  setIsCalendarOpen(false); // Close calendar on select
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          )}
-        </Popover>
+        {/* --- THIS IS THE TEST --- */}
+        {/* The Popover has been replaced with a simple, non-interactive button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled
+          className="flex items-center gap-1 rounded-full px-2 py-1 h-auto text-xs cursor-not-allowed"
+        >
+           <CalendarIcon className="h-4 w-4" />
+           <span className="hidden sm:inline">{dueDate ? format(new Date(dueDate), 'MMM d') : 'No date'}</span>
+        </Button>
       </div>
     </NodeViewWrapper>
   );
