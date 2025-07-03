@@ -1,6 +1,7 @@
 
 'use client'
 
+import { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Toolbar from './Toolbar'
@@ -29,7 +30,14 @@ lowlight.registerLanguage('css', css)
 lowlight.registerLanguage('js', javascript)
 lowlight.registerLanguage('ts', typescript)
 
-const TiptapEditor = () => {
+// Define the component's props
+type Props = {
+  content: any;
+  onUpdate: (content: any) => void;
+};
+
+
+const TiptapEditor = ({ content, onUpdate }: Props) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -38,15 +46,12 @@ const TiptapEditor = () => {
             class: 'leading-normal'
           }
         },
-        // The CodeBlock extension is part of StarterKit, so we need to disable it
-        // to avoid conflicts with our custom CodeBlockLowlight extension.
         codeBlock: false,
       }),
       Underline,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-       // Add the configured CodeBlockLowlight extension
       CodeBlockLowlight.configure({
         lowlight,
       }),
@@ -59,19 +64,30 @@ const TiptapEditor = () => {
       Callout,
       SlashCommand,
     ],
-    content: `
-      <h1>Welcome to Your Tiptap Editor!</h1>
-      <p>This is where the magic happens. Type '/' on a new line for commands.</p>
-    `,
     editorProps: {
       attributes: {
         class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none min-h-[350px] w-full',
       },
     },
+    // Listen for updates
+    onUpdate: ({ editor }) => {
+      onUpdate(editor.getJSON());
+    },
   })
 
+  // Use an effect to update the editor content when the initial prop changes
+  useEffect(() => {
+    if (editor && content) {
+      // Use `setContent` to update the editor's content.
+      // The `emitUpdate: false` is important to prevent an infinite loop
+      // where onUpdate triggers a re-render which triggers setContent again.
+      editor.commands.setContent(content, false);
+    }
+  }, [editor, content]);
+
+
   return (
-    <div className="flex flex-col justify-stretch">
+    <div className="flex flex-col justify-stretch min-h-[500px]">
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
