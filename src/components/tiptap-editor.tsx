@@ -19,6 +19,7 @@ import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
 import { Callout } from './editor/Callout'
 import { SlashCommand } from './editor/slash-command'
+import { CustomImage } from '@/lib/tiptap/extensions/Image';
 
 
 // Import a syntax highlighting theme
@@ -47,6 +48,7 @@ const TiptapEditor = ({ content, onUpdate }: Props) => {
           }
         },
         codeBlock: false,
+        image: false, // Disable default image to use our custom one
       }),
       Underline,
       TextAlign.configure({
@@ -63,6 +65,7 @@ const TiptapEditor = ({ content, onUpdate }: Props) => {
       TableCell,
       Callout,
       SlashCommand,
+      CustomImage, // Add our custom image extension
     ],
     editorProps: {
       attributes: {

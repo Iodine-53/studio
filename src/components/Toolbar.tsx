@@ -25,6 +25,7 @@ import {
   Merge,
   Split,
   AlertTriangle,
+  Image,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -200,6 +201,18 @@ const Toolbar = ({ editor }: Props) => {
         aria-label="Insert table"
       >
         <Table className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        aria-label="Insert Image"
+        onPressedChange={() => {
+          const url = window.prompt('Image URL');
+          if (url) {
+            editor.chain().focus().setImage({ src: url }).run();
+          }
+        }}
+      >
+        <Image className="h-4 w-4" />
       </Toggle>
       {editor.isActive('table') && (
         <>

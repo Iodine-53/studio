@@ -1,7 +1,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, Code, Minus, Table, AlertTriangle
+  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, Code, Minus, Table, AlertTriangle, Image
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -30,6 +30,16 @@ const commandItems: CommandItem[] = [
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   { title: "Code Block", icon: Code, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCodeBlock().run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },
+  { 
+    title: "Image", 
+    icon: Image, 
+    command: ({ editor, range }: { editor: Editor, range: Range }) => {
+      const url = window.prompt('Image URL');
+      if (url) {
+        editor.chain().focus().deleteRange(range).setImage({ src: url }).run();
+      }
+    } 
+  },
 ];
 
 const renderItems = () => {
