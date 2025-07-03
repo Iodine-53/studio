@@ -17,7 +17,7 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
-  Code,
+  CodeSquare,
   Minus,
   Table,
   Trash2,
@@ -209,7 +209,7 @@ const Toolbar = ({ editor }: Props) => {
         onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
         aria-label="Toggle code block"
       >
-        <Code className="h-4 w-4" />
+        <CodeSquare className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
