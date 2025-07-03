@@ -31,7 +31,7 @@ const commandItems: CommandItem[] = [
   { title: "Checklist", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleTaskList().run(); } },
   { title: "Advanced Task", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setAdvancedTask().run() } },
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCallout({ type: 'info' }).run(); } },
-  { title: "Accordion", icon: ChevronsUpDown, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent('<accordion-block><div data-type="accordion-summary"><p>Summary</p></div><div data-type="accordion-content"><p></p></div></accordion-block>').run() } },
+  { title: "Accordion", icon: ChevronsUpDown, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent('<accordion-block><div data-type="accordion-summary"><p>Your Title Here</p></div><div data-type="accordion-content"><p>Your content here...</p></div></accordion-block>').run() } },
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCodeBlock().run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },

@@ -2,35 +2,27 @@
 "use client"
 
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react'
-import { ChevronRight } from 'lucide-react'
+import { Plus, Minus } from 'lucide-react'
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
 
 export const AccordionNodeView = () => {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <NodeViewWrapper className="my-4 rounded-lg border bg-card group">
+    <NodeViewWrapper className="my-2 rounded-lg border bg-card group">
       <div
         className="flex cursor-pointer items-center justify-between p-4"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="flex items-center gap-2 flex-1">
-          <ChevronRight
-            className={cn(
-              'h-4 w-4 text-muted-foreground transition-transform duration-200',
-              isOpen && 'rotate-90'
-            )}
-          />
-          <div className="flex-1">
-            {/* This first NodeViewContent renders the 'accordionSummary' */}
-            <NodeViewContent as="div" />
-          </div>
-        </div>
+        {/* The first NodeViewContent is for the title. It's always visible. */}
+        <NodeViewContent as="div" className="flex-1 font-medium" />
+
+        {isOpen ? <Minus className="h-5 w-5 text-muted-foreground" /> : <Plus className="h-5 w-5 text-muted-foreground" />}
       </div>
+
       {isOpen && (
-        <div className="border-t border-border px-4 pt-2 pb-4">
-          {/* This second NodeViewContent renders the 'accordionContent' */}
+        <div className="border-t border-border p-4">
+          {/* The second NodeViewContent is for the content. It's collapsible. */}
           <NodeViewContent as="div" />
         </div>
       )}
