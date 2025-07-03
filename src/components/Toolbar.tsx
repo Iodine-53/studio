@@ -196,7 +196,6 @@ const Toolbar = ({ editor }: Props) => {
       <Toggle
         size="sm"
         onPressedChange={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-        disabled={!editor.can().insertTable({ rows: 3, cols: 3, withHeaderRow: true })}
         aria-label="Insert table"
       >
         <Table className="h-4 w-4" />
@@ -206,7 +205,6 @@ const Toolbar = ({ editor }: Props) => {
           <Toggle
             size="sm"
             onPressedChange={() => editor.chain().focus().addColumnAfter().run()}
-            disabled={!editor.can().addColumnAfter()}
             aria-label="Add column after"
           >
             <Plus className="h-4 w-4" />
@@ -214,7 +212,6 @@ const Toolbar = ({ editor }: Props) => {
           <Toggle
             size="sm"
             onPressedChange={() => editor.chain().focus().deleteColumn().run()}
-            disabled={!editor.can().deleteColumn()}
             aria-label="Delete column"
           >
             <Minus className="h-4 w-4" />
@@ -222,7 +219,6 @@ const Toolbar = ({ editor }: Props) => {
           <Toggle
             size="sm"
             onPressedChange={() => editor.chain().focus().addRowAfter().run()}
-            disabled={!editor.can().addRowAfter()}
             aria-label="Add row after"
           >
             <Plus className="h-4 w-4" />
@@ -230,7 +226,6 @@ const Toolbar = ({ editor }: Props) => {
           <Toggle
             size="sm"
             onPressedChange={() => editor.chain().focus().deleteRow().run()}
-            disabled={!editor.can().deleteRow()}
             aria-label="Delete row"
           >
             <Minus className="h-4 w-4" />
@@ -238,7 +233,6 @@ const Toolbar = ({ editor }: Props) => {
           <Toggle
             size="sm"
             onPressedChange={() => editor.chain().focus().mergeOrSplit().run()}
-            disabled={!editor.can().mergeOrSplit()}
             aria-label="Merge cells"
           >
             <Merge className="h-4 w-4" />
@@ -246,7 +240,6 @@ const Toolbar = ({ editor }: Props) => {
            <Toggle
             size="sm"
             onPressedChange={() => editor.chain().focus().mergeOrSplit().run()}
-            disabled={!editor.can().mergeOrSplit()}
             aria-label="Split cell"
           >
             <Split className="h-4 w-4" />
@@ -254,7 +247,6 @@ const Toolbar = ({ editor }: Props) => {
           <Toggle
             size="sm"
             onPressedChange={() => editor.chain().focus().deleteTable().run()}
-            disabled={!editor.can().deleteTable()}
             aria-label="Delete table"
           >
             <Trash2 className="h-4 w-4" />
