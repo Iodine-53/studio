@@ -23,6 +23,7 @@ import { CustomImage } from '@/lib/tiptap/extensions/Image';
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { AdvancedTask } from '@/lib/tiptap/extensions/AdvancedTask';
+import { Placeholder } from '@/lib/tiptap/extensions/Placeholder';
 
 
 // Import a syntax highlighting theme
@@ -74,6 +75,7 @@ const TiptapEditor = ({ content, onUpdate }: Props) => {
         nested: true,
       }),
       AdvancedTask,
+      Placeholder,
     ],
     editorProps: {
       attributes: {

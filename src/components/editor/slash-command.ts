@@ -21,7 +21,7 @@ export interface CommandItem {
 // Type for the props of the CommandList component
 type CommandListProps = ComponentProps<typeof CommandList>;
 
-const commandItems: CommandItem[] = [
+const getCommandItems = (): CommandItem[] => [
   { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
   { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
   { title: "Heading 2", icon: Heading2, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run(); } },
@@ -33,7 +33,15 @@ const commandItems: CommandItem[] = [
     title: "Advanced Task", 
     icon: CheckSquare,
     command: ({ editor, range }) => { 
-      editor.chain().focus().deleteRange(range).insertContent({ type: 'advancedTask', content: [{ type: 'text', text: 'New Task ' }] }).run();
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertContent({
+          type: 'placeholder', // Insert the placeholder
+          attrs: { type: 'advancedTask' }, // Tell it what to become
+        })
+        .run();
     } 
   },
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCallout({ type: 'info' }).run(); } },
@@ -126,7 +134,7 @@ export const SlashCommand = Extension.create({
                     props.command({ editor, range });
                 },
                 items: ({ query }: { query: string }) => {
-                    return commandItems
+                    return getCommandItems()
                       .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
                       .slice(0, 10);
                 },
