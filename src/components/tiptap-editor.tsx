@@ -4,11 +4,23 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Toolbar from './Toolbar'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
 
 const TiptapEditor = () => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        listItem: {
+          HTMLAttributes: {
+            class: 'leading-normal'
+          }
+        }
+      }),
+      Underline,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
     ],
     content: `
       <h1>Welcome to Your Tiptap Editor!</h1>

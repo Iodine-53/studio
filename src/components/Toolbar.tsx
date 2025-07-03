@@ -10,6 +10,13 @@ import {
   Heading2,
   Heading3,
   Pilcrow,
+  Underline,
+  List,
+  ListOrdered,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -51,6 +58,15 @@ const Toolbar = ({ editor }: Props) => {
         aria-label="Toggle strikethrough"
       >
         <Strikethrough className="h-4 w-4" />
+      </Toggle>
+       <Toggle
+        size="sm"
+        pressed={editor.isActive("underline")}
+        onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
+        disabled={!editor.can().chain().focus().toggleUnderline().run()}
+        aria-label="Toggle underline"
+      >
+        <Underline className="h-4 w-4" />
       </Toggle>
       <Separator orientation="vertical" className="h-8 mx-1" />
       <Toggle
@@ -94,6 +110,62 @@ const Toolbar = ({ editor }: Props) => {
         aria-label="Toggle heading 3"
       >
         <Heading3 className="h-4 w-4" />
+      </Toggle>
+      <Separator orientation="vertical" className="h-8 mx-1" />
+      <Toggle
+        size="sm"
+        pressed={editor.isActive("bulletList")}
+        onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
+        disabled={!editor.can().chain().focus().toggleBulletList().run()}
+        aria-label="Toggle bullet list"
+      >
+        <List className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive("orderedList")}
+        onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
+        disabled={!editor.can().chain().focus().toggleOrderedList().run()}
+        aria-label="Toggle ordered list"
+      >
+        <ListOrdered className="h-4 w-4" />
+      </Toggle>
+      <Separator orientation="vertical" className="h-8 mx-1" />
+       <Toggle
+        size="sm"
+        pressed={editor.isActive({ textAlign: 'left' })}
+        onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
+        disabled={!editor.can().chain().focus().setTextAlign('left').run()}
+        aria-label="Set text align left"
+      >
+        <AlignLeft className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive({ textAlign: 'center' })}
+        onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
+        disabled={!editor.can().chain().focus().setTextAlign('center').run()}
+        aria-label="Set text align center"
+      >
+        <AlignCenter className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive({ textAlign: 'right' })}
+        onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
+        disabled={!editor.can().chain().focus().setTextAlign('right').run()}
+        aria-label="Set text align right"
+      >
+        <AlignRight className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive({ textAlign: 'justify' })}
+        onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()}
+        disabled={!editor.can().chain().focus().setTextAlign('justify').run()}
+        aria-label="Set text align justify"
+      >
+        <AlignJustify className="h-4 w-4" />
       </Toggle>
     </div>
   );
