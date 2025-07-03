@@ -1,47 +1,16 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format } from 'date-fns';
 import { BrainstormForm } from "@/components/brainstorm-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileAudio, FileSpreadsheet, FileText, FileVideo, Image as ImageIcon, Layers, BrainCircuit, Github, Twitter } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BrainCircuit, Github, Twitter, PlusCircle } from "lucide-react";
+import { type Document, getAllDocuments, saveDocument } from "@/lib/db";
 
-const tools = [
-  {
-    title: "Document Maker",
-    description: "Create and export rich text documents right in your browser.",
-    icon: <FileText className="w-10 h-10" />,
-    link: "/document-maker",
-  },
-  {
-    title: "Spreadsheet Generator",
-    description: "Generate and download spreadsheets for your data needs.",
-    icon: <FileSpreadsheet className="w-10 h-10" />,
-    link: "#",
-  },
-  {
-    title: "Image Converter",
-    description: "Convert images between JPEG, PNG, WebP and more.",
-    icon: <ImageIcon className="w-10 h-10" />,
-    link: "#",
-  },
-  {
-    title: "Audio Converter",
-    description: "Switch audio formats like MP3, WAV, and AAC effortlessly.",
-    icon: <FileAudio className="w-10 h-10" />,
-    link: "#",
-  },
-  {
-    title: "Video Converter",
-    description: "Convert videos between MP4, MOV, AVI, and other formats.",
-    icon: <FileVideo className="w-10 h-10" />,
-    link: "#",
-  },
-  {
-    title: "PDF Manipulator",
-    description: "Merge, watermark, or compress your PDF files with ease.",
-    icon: <Layers className="w-10 h-10" />,
-    link: "#",
-  },
-];
 
 const Logo = () => (
     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
@@ -52,6 +21,37 @@ const Logo = () => (
 
 
 export default function Home() {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const docs = await getAllDocuments();
+        setDocuments(docs);
+      } catch (error) {
+        console.error("Failed to fetch documents:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDocuments();
+  }, []);
+
+  const handleCreateNew = async () => {
+    try {
+      const newDocId = await saveDocument({
+        title: "Untitled Document",
+        content: { type: 'doc', content: [{ type: 'paragraph' }] },
+      });
+      // This will navigate to a route that we will create in a future step.
+      router.push(`/editor/${newDocId}`);
+    } catch (error) {
+      console.error("Failed to create new document:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <main className="flex-1">
@@ -64,40 +64,69 @@ export default function Home() {
                 </h1>
             </div>
             <h2 className="text-3xl md:text-5xl font-bold font-headline tracking-tighter mb-4">
-              All Your Frontend Tools, One Click Away.
+              Your Document Dashboard & Creative Suite
             </h2>
             <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground mb-8">
-              ToolboxAI brings you a powerful suite of free, browser-based utilities. From document creation to file conversions, we've got you covered. No installations, no hidden fees.
+              Welcome back! Manage your documents or explore our suite of tools. Everything you need, right here in your browser.
             </p>
           </div>
         </section>
 
-        <section id="tools" className="pb-20 md:pb-32">
+        <section id="documents" className="pb-20 md:pb-32">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center mb-12">
-              <h3 className="text-3xl md:text-4xl font-bold font-headline">A Tool for Every Task</h3>
-              <p className="text-lg text-muted-foreground mt-2">Discover our collection of powerful and easy-to-use utilities.</p>
+            <div className="mb-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h3 className="text-3xl md:text-4xl font-bold font-headline">My Documents</h3>
+                    <p className="text-lg text-muted-foreground mt-2">Create, edit, and manage your work.</p>
+                </div>
+                <Button onClick={handleCreateNew} size="lg" className="shrink-0">
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Create New Document
+                </Button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {tools.map((tool) => (
-                <Card key={tool.title} className="flex flex-col group overflow-hidden rounded-2xl border-2 border-transparent hover:border-primary transition-all duration-300 shadow-md hover:shadow-xl bg-card">
-                    <CardHeader className="items-center text-center p-6">
-                        <div className="p-4 bg-primary/10 rounded-full text-primary mb-4 transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-                        {tool.icon}
-                        </div>
-                        <CardTitle className="font-headline text-2xl">{tool.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center flex-grow p-6 pt-0">
-                        <p className="text-muted-foreground">{tool.description}</p>
-                    </CardContent>
-                    <CardFooter className="justify-center p-6 pt-0">
-                        <Button asChild variant="outline" className="group-hover:bg-accent group-hover:text-accent-foreground group-hover:border-accent transition-colors duration-300">
-                          <Link href={tool.link}>Use Tool</Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-              ))}
-            </div>
+            
+            {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <Card key={i}>
+                            <CardHeader>
+                                <Skeleton className="h-7 w-3/4" />
+                            </CardHeader>
+                            <CardContent>
+                                <Skeleton className="h-5 w-1/2" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : documents.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {documents.map((doc) => (
+                  doc.id && (
+                    <Link href={`/editor/${doc.id}`} key={doc.id} className="block h-full">
+                        <Card className="h-full flex flex-col transition-all duration-300 hover:border-primary hover:shadow-xl hover:-translate-y-1 bg-card">
+                          <CardHeader className="flex-grow">
+                              <CardTitle className="truncate text-2xl font-headline">{doc.title}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                              <CardDescription>
+                                Updated: {format(new Date(doc.updatedAt), 'PP')}
+                              </CardDescription>
+                          </CardContent>
+                        </Card>
+                    </Link>
+                  )
+                ))}
+              </div>
+            ) : (
+                <div className="text-center py-16 px-6 rounded-2xl border-2 border-dashed bg-primary/5">
+                    <h4 className="text-2xl font-bold font-headline">Your workspace is empty</h4>
+                    <p className="text-muted-foreground mt-2 mb-6">Click the button to create your first document.</p>
+                    <Button onClick={handleCreateNew}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create a Document
+                    </Button>
+                </div>
+            )}
           </div>
         </section>
 
