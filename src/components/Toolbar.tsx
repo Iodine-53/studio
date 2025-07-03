@@ -24,6 +24,7 @@ import {
   Plus,
   Merge,
   Split,
+  AlertTriangle,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -253,6 +254,15 @@ const Toolbar = ({ editor }: Props) => {
           </Toggle>
         </>
       )}
+      <Separator orientation="vertical" className="h-8 mx-1" />
+      <Toggle
+        size="sm"
+        pressed={editor.isActive('callout')}
+        onPressedChange={() => editor.chain().focus().toggleCallout().run()}
+        aria-label="Toggle callout"
+      >
+        <AlertTriangle className="h-4 w-4" />
+      </Toggle>
     </div>
   );
 };

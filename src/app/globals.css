@@ -66,4 +66,34 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Custom styles for Tiptap elements */
+  .prose {
+    table {
+      @apply w-full my-4 border-collapse;
+    }
+
+    th,
+    td {
+      @apply border-2 border-gray-300 dark:border-gray-700 px-4 py-2 text-left;
+    }
+
+    th {
+      @apply font-bold bg-gray-100 dark:bg-gray-800;
+    }
+
+    /* Callout Styles */
+    div[data-callout] {
+      @apply my-4 rounded-lg border p-4;
+    }
+    div[data-type="info"] {
+      @apply border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-200;
+    }
+    div[data-type="warning"] {
+      @apply border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-900/50 dark:bg-orange-900/20 dark:text-orange-200;
+    }
+    div[data-type="success"] {
+      @apply border-green-200 bg-green-50 text-green-800 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-200;
+    }
+  }
 }

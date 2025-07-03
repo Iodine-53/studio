@@ -16,6 +16,7 @@ import Table from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
+import { Callout } from './editor/Callout'
 
 
 // Import a syntax highlighting theme
@@ -54,6 +55,7 @@ const TiptapEditor = () => {
       TableRow,
       TableHeader,
       TableCell,
+      Callout,
     ],
     content: `
       <h1>Welcome to Your Tiptap Editor!</h1>
