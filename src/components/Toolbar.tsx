@@ -290,7 +290,7 @@ const Toolbar = ({ editor }: Props) => {
       <Toggle
         size="sm"
         pressed={editor.isActive('callout')}
-        onPressedChange={() => editor.chain().focus().toggleCallout().run()}
+        onPressedChange={() => editor.chain().focus().toggleCallout({ type: 'info' }).run()}
         aria-label="Toggle callout"
       >
         <AlertTriangle className="h-4 w-4" />

@@ -17,7 +17,7 @@ import Table from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
-import { Callout } from './editor/Callout'
+import { Callout } from '@/lib/tiptap/extensions/Callout'
 import { SlashCommand } from './editor/slash-command'
 import { CustomImage } from '@/lib/tiptap/extensions/Image';
 import { AdvancedTask } from '@/lib/tiptap/extensions/AdvancedTask';
