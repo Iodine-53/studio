@@ -22,6 +22,7 @@ import { SlashCommand } from './editor/slash-command'
 import { CustomImage } from '@/lib/tiptap/extensions/Image';
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import { AdvancedTask } from '@/lib/tiptap/extensions/AdvancedTask';
 
 
 // Import a syntax highlighting theme
@@ -72,6 +73,7 @@ const TiptapEditor = ({ content, onUpdate }: Props) => {
       TaskItem.configure({
         nested: true,
       }),
+      AdvancedTask,
     ],
     editorProps: {
       attributes: {
