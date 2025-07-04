@@ -44,75 +44,67 @@ export const processImage = (file: File): Promise<string> => {
 };
 
 export const exportToPdf = async (documentJson: TiptapNode, filename: string) => {
-  if (!documentJson?.content) {
-    console.error("No content to export");
-    return;
-  }
-  
-  // Dynamically import html2pdf.js only on the client-side
-  const html2pdf = (await import('html2pdf.js')).default;
-
-  // 1. Create a container
-  const exportContainer = document.createElement('div');
-  document.body.appendChild(exportContainer);
-
-  // THE FINAL, ROBUST HIDING STYLES
-  Object.assign(exportContainer.style, {
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    width: '210mm',      // Must have a defined width for layout
-    zIndex: '-1',         // Move it behind all other content
-    opacity: '0',         // Make it fully transparent
-    pointerEvents: 'none',// Prevent any interaction
-  });
-
-  // 2. Render the document content into the hidden container using React 18's createRoot
-  const root = createRoot(exportContainer);
-  const printableElement = React.createElement(
-    'div',
-    { className: 'bg-white p-[1in]' }, // Added background and padding here
-    React.createElement(
-      'div',
-      { className: 'prose prose-sm sm:prose-base max-w-none' },
-      React.createElement(DocumentRenderer, { content: documentJson.content })
-    )
-  );
-  
-  root.render(printableElement);
-
-  // 3. THE CRITICAL FIX: Wait for React to render AND for all images to load
-  await new Promise<void>((resolve) => setTimeout(resolve, 500)); // Wait for React's next tick
-
-  const images = Array.from(exportContainer.getElementsByTagName('img'));
-  const imageLoadPromises = images.map(img => {
-    if (img.complete) {
-      return Promise.resolve();
+    if (!documentJson?.content) {
+        console.error("No content to export");
+        return;
     }
-    return new Promise<void>((resolve) => {
-      img.onload = () => resolve();
-      img.onerror = () => {
-        console.warn(`Could not load image: ${img.src}. It will be missing from the PDF.`);
-        resolve(); // Resolve anyway so one broken image doesn't stop the whole export
-      };
+
+    // Dynamically import to ensure they only run on the client
+    const { default: jsPDF } = await import('jspdf');
+    const { default: html2canvas } = await import('html2canvas');
+
+    const exportContainer = document.createElement('div');
+    document.body.appendChild(exportContainer);
+
+    Object.assign(exportContainer.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '210mm', // Set a fixed width for consistent layout
+        zIndex: '-1',
+        opacity: '0',
+        pointerEvents: 'none',
     });
-  });
 
-  await Promise.allSettled(imageLoadPromises);
+    const PrintableDocument: React.FC = () => (
+        <div className="bg-white">
+            <div className="prose prose-sm sm:prose-base max-w-none">
+                <DocumentRenderer content={documentJson.content!} />
+            </div>
+        </div>
+    );
 
-  // 4. Configure and run html2pdf
-  const options = {
-    margin: 0, // Margins are handled by our 'p-[1in]' class
-    filename: `${filename}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-  };
+    const root = createRoot(exportContainer);
+    await new Promise<void>((resolve) => {
+        root.render(React.createElement(PrintableDocument));
+        // A generous timeout to allow for rendering and image loading
+        setTimeout(resolve, 500);
+    });
 
-  await html2pdf().from(exportContainer).set(options).save();
+    // STEP 1: CAPTURE WITH HTML2CANVAS
+    const canvas = await html2canvas(exportContainer, {
+        scale: 2, // Higher resolution for better quality
+        useCORS: true,
+    });
+    
+    // Clean up the DOM as early as possible
+    root.unmount();
+    exportContainer.remove();
 
-  // 5. Clean up
-  root.unmount();
-  exportContainer.remove();
+    // STEP 2: COMPOSE WITH JSPDF
+    const imgData = canvas.toDataURL('image/png');
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    // Create a PDF with the same dimensions as the captured canvas
+    const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: [canvasWidth, canvasHeight],
+    });
+
+    pdf.addImage(imgData, 'PNG', 0, 0, canvasWidth, canvasHeight);
+
+    // STEP 3: SAVE
+    pdf.save(`${filename}.pdf`);
 };
