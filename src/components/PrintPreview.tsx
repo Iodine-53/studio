@@ -1,7 +1,7 @@
 
 "use client";
 
-import { X, CheckSquare, Square, AlertTriangle } from "lucide-react";
+import { X, CheckSquare, Square, AlertTriangle, ExternalLink } from "lucide-react";
 import type { FC } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -197,17 +197,41 @@ export const PrintPreview: FC<PrintPreviewProps> = ({ isOpen, onClose, content }
   if (!isOpen || !content?.content) {
     return null;
   }
+  
+  const handleOpenInNewTab = () => {
+    if (!content) {
+      alert("Cannot open an empty document.");
+      return;
+    }
+    localStorage.setItem('documentToPrint', JSON.stringify(content));
+    const printWindow = window.open('/print', '_blank');
+    if (!printWindow) {
+      alert("Please allow popups to open the document in a new tab.");
+    }
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 text-white bg-black/50 rounded-full hover:bg-black/80"
-        >
-          <X size={24} />
-          <span className="sr-only">Close preview</span>
-        </button>
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+            <button
+              onClick={handleOpenInNewTab}
+              className="p-2 text-white bg-black/50 rounded-full hover:bg-black/80"
+              title="Open in new tab"
+            >
+              <ExternalLink size={24} />
+              <span className="sr-only">Open in new tab</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-white bg-black/50 rounded-full hover:bg-black/80"
+              title="Close preview"
+            >
+              <X size={24} />
+              <span className="sr-only">Close preview</span>
+            </button>
+        </div>
 
         <div className="h-full w-full overflow-y-auto py-12 px-4">
           {/* A4 Page Simulation */}
