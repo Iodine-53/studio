@@ -78,7 +78,16 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
           isEditing && "ring-2 ring-primary shadow-lg"
         )}>
         <CardHeader>
-          <CardTitle className="font-headline">My Tasks</CardTitle>
+           {isEditing ? (
+            <Input
+              value={node.attrs.title}
+              onChange={(e) => updateAttributes({ title: e.target.value })}
+              className="text-2xl font-semibold leading-none tracking-tight font-headline border-0 shadow-none focus-visible:ring-0 p-0"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <CardTitle className="font-headline">{node.attrs.title}</CardTitle>
+          )}
         </CardHeader>
         <CardContent>
           {isEditing && (

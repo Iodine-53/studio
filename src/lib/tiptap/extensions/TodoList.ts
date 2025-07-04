@@ -19,6 +19,15 @@ export const TodoListExtension = Node.create({
 
   addAttributes() {
     return {
+      title: {
+        default: 'My Tasks',
+        parseHTML: (element) => element.getAttribute('data-title'),
+        renderHTML: (attributes) => {
+          return {
+            'data-title': attributes.title,
+          };
+        },
+      },
       tasks: {
         default: [],
         parseHTML: element => {
