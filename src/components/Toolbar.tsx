@@ -27,6 +27,7 @@ import {
   AlertTriangle,
   Image,
   CheckSquare,
+  Rows,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -224,6 +225,13 @@ const Toolbar = ({ editor }: Props) => {
         aria-label="Insert horizontal rule"
       >
         <Minus className="h-4 w-4" />
+      </Toggle>
+       <Toggle
+        size="sm"
+        onPressedChange={() => editor.chain().focus().insertAccordion().run()}
+        aria-label="Insert accordion"
+      >
+        <Rows className="h-4 w-4" />
       </Toggle>
       <Separator orientation="vertical" className="h-8 mx-1" />
       <Toggle

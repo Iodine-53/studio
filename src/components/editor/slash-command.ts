@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, CodeSquare, Minus, Table, AlertTriangle, Image, CheckSquare, Brush, BarChart
+  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, CodeSquare, Minus, Table, AlertTriangle, Image, CheckSquare, Brush, BarChart, Rows
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -34,6 +34,7 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCodeBlock().run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },
+  { title: "Accordion", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertAccordion().run(); } },
   {
     title: 'Sketch Canvas',
     icon: Brush,

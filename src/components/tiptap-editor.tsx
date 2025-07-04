@@ -25,6 +25,7 @@ import TaskItem from '@tiptap/extension-task-item'
 import { Drawing } from '@/lib/tiptap/extensions/Drawing';
 import { Chart } from '@/lib/tiptap/extensions/Chart';
 import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
+import { Accordion } from '@/lib/tiptap/extensions/Accordion';
 
 
 // Import a syntax highlighting theme
@@ -78,6 +79,7 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
       Drawing,
       Chart,
       TodoListExtension,
+      Accordion,
     ],
     editorProps: {
       attributes: {
