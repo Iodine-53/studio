@@ -1,6 +1,6 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
-import { AccordionNodeView } from '@/components/nodes/AccordionNodeView'
+import AccordionNodeView from '@/components/nodes/AccordionNodeView'
 
 // Types
 export interface AccordionItem {
