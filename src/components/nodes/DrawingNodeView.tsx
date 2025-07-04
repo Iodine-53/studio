@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRef, useEffect } from 'react';
@@ -35,7 +36,7 @@ export const DrawingNodeView = ({ node, updateAttributes }: NodeViewProps) => {
     const handleUndo = () => canvasRef.current?.undo();
     const handleRedo = () => canvasRef.current?.redo();
     const handleClear = () => {
-        canvasRef.current?.clearAll();
+        canvasRef.current?.clearCanvas();
         // After clearing, we need to save the empty state
         updateAttributes({ paths: '[]' });
     };
