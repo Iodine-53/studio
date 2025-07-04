@@ -33,15 +33,7 @@ const getCommandItems = (): CommandItem[] => [
     title: 'Advanced Task',
     icon: CheckSquare,
     command: ({ editor, range }) => {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .insertContent({
-          type: 'placeholder',
-          attrs: { type: 'advancedTask' },
-        })
-        .run();
+      editor.chain().focus().deleteRange(range).insertAdvancedTask().run();
     },
   },
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCallout({ type: 'info' }).run(); } },
