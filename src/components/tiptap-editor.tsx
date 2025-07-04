@@ -24,6 +24,7 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { Drawing } from '@/lib/tiptap/extensions/Drawing';
 import { Chart } from '@/lib/tiptap/extensions/Chart';
+import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
 
 
 // Import a syntax highlighting theme
@@ -76,6 +77,7 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
       }),
       Drawing,
       Chart,
+      TodoListExtension,
     ],
     editorProps: {
       attributes: {

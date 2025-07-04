@@ -169,6 +169,13 @@ const Toolbar = ({ editor }: Props) => {
       >
         <CheckSquare className="h-4 w-4" />
       </Toggle>
+      <Toggle
+        size="sm"
+        onPressedChange={() => editor.chain().focus().insertTodoList().run()}
+        aria-label="Insert todo list block"
+      >
+        <CheckSquare className="h-4 w-4" />
+      </Toggle>
       <Separator orientation="vertical" className="h-8 mx-1" />
        <Toggle
         size="sm"
