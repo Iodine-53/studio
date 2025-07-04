@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import type { TiptapNode } from '@/components/PrintPreview';
 import { DocumentRenderer } from '@/components/PrintPreview';
 
@@ -64,21 +64,20 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
     padding: '4rem', // Simulate padding from preview
   });
 
-  // 2. Render the document content into the hidden container
-  const renderPromise = new Promise<void>((resolve) => {
+  // 2. Render the document content into the hidden container using React 18's createRoot
+  const root = createRoot(printContainer);
+  await new Promise<void>((resolve) => {
     const printableElement = React.createElement(
       'div',
       { className: 'prose prose-sm sm:prose-base max-w-none' },
       React.createElement(DocumentRenderer, { content: documentJson.content })
     );
-    
-    ReactDOM.render(printableElement, printContainer, () => {
-      // Use a short timeout to ensure all images and styles have been applied
-      setTimeout(resolve, 200);
-    });
+
+    // In React 18, render is async. We use a timeout to wait for the DOM to update.
+    root.render(printableElement);
+    setTimeout(resolve, 500); // Give it a bit more time for images/styles to load
   });
 
-  await renderPromise;
 
   // 3. Configure and run html2pdf
   const options = {
@@ -93,6 +92,6 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
   await html2pdf().from(printContainer).set(options).save();
 
   // 4. Clean up
-  ReactDOM.unmountComponentAtNode(printContainer);
+  root.unmount();
   printContainer.remove();
 };
