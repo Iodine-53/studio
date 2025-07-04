@@ -35,25 +35,7 @@ const CHART_TYPES: { name: ChartType, icon: React.FC<any> }[] = [
   { name: 'pie', icon: PieChartIcon },
 ];
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-
-// Custom responsive legend component
-const renderLegend = (props: any) => {
-    const { payload } = props;
-    if (!payload || payload.length === 0) return null;
-
-    return (
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-4 text-sm text-muted-foreground">
-            {payload.map((entry: any, index: number) => (
-                <div key={`item-${index}`} className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: entry.color }} />
-                    <span>{entry.value}</span>
-                </div>
-            ))}
-        </div>
-    );
-};
-
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF5733', '#C70039', '#900C3F', '#581845'];
 
 export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
   const { chartType, title } = node.attrs;
@@ -148,7 +130,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
 
   const handleAddRow = () => {
     if (availableKeys.length === 0) {
-        // If there are no columns, create a default structure first.
         const newData = [{ 'label': 'New Item', 'value': 10 }];
         setChartData(newData);
         updateAttributes({ chartData: JSON.stringify(newData) });
@@ -173,7 +154,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
       [newColumnName]: ''
     }));
     
-    // If there was no data, create the first row with the new column
     if (newData.length === 0) {
       newData.push({ [newColumnName]: '' });
     }
@@ -249,10 +229,10 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
         return (
           <ChartComponent data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={xAxisKey} />
-            <YAxis />
+            <XAxis dataKey={xAxisKey} tick={{fontSize: 12}} />
+            <YAxis tick={{fontSize: 12}} />
             <Tooltip />
-            <Legend content={renderLegend} />
+            <Legend iconSize={12} wrapperStyle={{fontSize: '12px', paddingTop: '10px'}}/>
             {dataKeys.map((key, index) => (
               <SeriesComponent 
                 key={key} 
@@ -267,14 +247,47 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
         );
       case 'pie':
         if (!nameKey || !valueKey) return <p className="text-center p-4">Please select a Name Key and a Value Key.</p>;
-        const pieData = chartData.map(d => ({ ...d, [valueKey]: Number(d[valueKey]) })).filter(d => !isNaN(d[valueKey]));
+        const pieData = chartData.map(d => ({ ...d, [valueKey]: Number(d[valueKey]) })).filter(d => !isNaN(d[valueKey]) && d[valueKey] > 0);
         return (
           <PieChart>
-            <Pie data={pieData} dataKey={valueKey} nameKey={nameKey} cx="50%" cy="50%" outerRadius={100}>
+            <Pie 
+              data={pieData} 
+              dataKey={valueKey} 
+              nameKey={nameKey} 
+              cx="40%"
+              cy="50%" 
+              outerRadius="80%"
+              labelLine={false}
+              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                if (percent < 0.05) return null;
+                const RADIAN = Math.PI / 180;
+                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                return (
+                  <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">
+                    {`${(percent * 100).toFixed(0)}%`}
+                  </text>
+                );
+              }}
+            >
               {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
             </Pie>
-            <Tooltip />
-            <Legend content={renderLegend} />
+            <Tooltip formatter={(value, name) => [`${value}`, name]} />
+            <Legend 
+                layout="vertical" 
+                verticalAlign="middle" 
+                align="right" 
+                iconSize={12}
+                iconType="circle"
+                wrapperStyle={{ 
+                    maxHeight: '90%',
+                    overflowY: 'auto',
+                    paddingLeft: '20px',
+                    fontSize: '12px',
+                    lineHeight: '20px'
+                }}
+            />
           </PieChart>
         );
       default:
