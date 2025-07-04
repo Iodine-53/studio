@@ -78,28 +78,38 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
   
   root.render(printableElement);
 
-  // Use a short timeout to let React update the DOM
+  // --- Start of the fix ---
+  // We must now patiently wait for two things:
+  // 1. For React to finish rendering the content to the DOM.
+  // 2. For all images within that content to finish loading.
+
+  // Step 1: Wait for React to render. A short timeout allows the browser's event loop
+  // to process React's asynchronous render update.
   await new Promise<void>((resolve) => setTimeout(resolve, 500));
 
-  // 3. THE CRITICAL FIX: Wait for all images to load
+  // Step 2: Now that the DOM is updated, find all images and wait for them.
   const images = Array.from(printContainer.getElementsByTagName('img'));
   const imageLoadPromises = images.map(img => {
+    // If the image is already loaded (e.g., from cache or it's a data URL), we can resolve immediately.
     if (img.complete) {
       return Promise.resolve();
     }
+    // Otherwise, we create a promise that resolves on the 'load' event.
     return new Promise<void>((resolve) => {
       img.onload = () => resolve();
+      // We also resolve on error so that one broken image doesn't stop the entire export.
       img.onerror = () => {
         console.warn(`Could not load image: ${img.src}. It may be missing from the PDF.`);
-        resolve(); // Resolve anyway so one broken image doesn't stop the whole export
+        resolve(); 
       };
     });
   });
 
-  // Wait for all image promises to settle
+  // Wait for all the image loading promises to settle.
   await Promise.allSettled(imageLoadPromises);
+  // --- End of the fix ---
 
-  // 4. Configure and run html2pdf
+  // 4. Configure and run html2pdf now that everything is ready
   const options = {
     margin: 10,
     filename: `${filename}.pdf`,
