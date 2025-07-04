@@ -1,8 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import React, { type FC } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
-import html2pdf from 'html2pdf.js';
 import type { TiptapNode } from '@/components/PrintPreview';
 import { DocumentRenderer } from '@/components/PrintPreview';
 
@@ -45,6 +44,9 @@ export const processImage = (file: File): Promise<string> => {
 
 export const exportToPdf = async (documentJson: TiptapNode, filename: string) => {
   if (!documentJson?.content) return;
+  
+  // Dynamically import html2pdf.js only on the client-side
+  const html2pdf = (await import('html2pdf.js')).default;
 
   // 1. Create a hidden container
   const printContainer = document.createElement('div');
@@ -64,13 +66,13 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
 
   // 2. Render the document content into the hidden container
   const renderPromise = new Promise<void>((resolve) => {
-    const PrintableDocument: FC = () => (
-      <div className="prose prose-sm sm:prose-base max-w-none">
-        <DocumentRenderer content={documentJson.content} />
-      </div>
+    const printableElement = React.createElement(
+      'div',
+      { className: 'prose prose-sm sm:prose-base max-w-none' },
+      React.createElement(DocumentRenderer, { content: documentJson.content })
     );
-
-    ReactDOM.render(<PrintableDocument />, printContainer, () => {
+    
+    ReactDOM.render(printableElement, printContainer, () => {
       // Use a short timeout to ensure all images and styles have been applied
       setTimeout(resolve, 200);
     });
