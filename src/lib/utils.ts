@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import React from 'react';
@@ -75,12 +76,10 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
     React.createElement(DocumentRenderer, { content: documentJson.content })
   );
   
-  // In React 18, render is async. We wait for the render to complete.
-  await new Promise<void>((resolve) => {
-    root.render(printableElement);
-    // Use a short timeout to let React update the DOM
-    setTimeout(resolve, 500); 
-  });
+  root.render(printableElement);
+
+  // Use a short timeout to let React update the DOM
+  await new Promise<void>((resolve) => setTimeout(resolve, 500));
 
   // 3. THE CRITICAL FIX: Wait for all images to load
   const images = Array.from(printContainer.getElementsByTagName('img'));
