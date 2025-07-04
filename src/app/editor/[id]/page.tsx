@@ -9,7 +9,6 @@ import { getDocument, saveDocument, type Document } from "@/lib/db";
 import { ArrowLeft, Loader2, Eye, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
-import { generatePrintableHtml } from "@/lib/utils";
 
 export default function EditorPage() {
   const params = useParams();
@@ -78,28 +77,20 @@ export default function EditorPage() {
 
   const handlePrint = () => {
     if (!currentContent) {
-      alert("Cannot print an empty document.");
-      return;
-    }
-
-    const htmlContent = generatePrintableHtml(currentContent);
-    if (!htmlContent) {
         alert("Cannot print an empty document.");
         return;
     }
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        // Optional: you can uncomment the lines below to automatically trigger the print dialog
-        // printWindow.onload = () => {
-        //   printWindow.focus(); // Required for some browsers
-        //   printWindow.print();
-        //   // printWindow.close(); // You might want to close it after printing
-        // };
-    } else {
-        alert("Please allow popups for this site to print the document.");
+    // 1. Get the document's JSON (which is our currentContent)
+    const documentJson = currentContent;
+
+    // 2. Save it to localStorage under a specific key
+    localStorage.setItem('documentToPrint', JSON.stringify(documentJson));
+
+    // 3. Open the dedicated print page in a new tab
+    const printWindow = window.open('/print', '_blank');
+    if (!printWindow) {
+        alert("Please allow popups to print the document.");
     }
   };
 
