@@ -5,7 +5,7 @@ import { PlaceholderNodeView } from '@/components/nodes/PlaceholderNodeView';
 export const Placeholder = Node.create({
   name: 'placeholder',
   group: 'block',
-  atom: true, // Treat as a single, indivisible unit
+  atom: true,
 
   addAttributes() {
     return {

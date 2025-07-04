@@ -33,7 +33,7 @@ export const PlaceholderNodeView = ({ editor, getPos, node }: NodeViewProps) => 
     }, 50); // 50ms delay is usually enough
 
     return () => clearTimeout(timeoutId);
-  }, [editor, getPos, node.attrs.type, node.nodeSize]);
+  }, [editor, getPos, node]);
 
   return (
     <NodeViewWrapper>
