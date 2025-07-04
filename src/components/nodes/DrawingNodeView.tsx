@@ -22,7 +22,7 @@ const InteractiveTldrawCanvas = ({ tldrawState, onStateChange }: { tldrawState: 
   return (
     // The main wrapper controls entering edit mode.
     <div
-      className={`relative h-[400px] w-full border rounded-lg overflow-hidden ${isEditing ? 'z-50' : 'z-0'} ${isEditing ? '' : 'cursor-pointer'}`}
+      className={`relative h-[400px] w-full border rounded-lg ${isEditing ? 'z-50' : 'z-0'} ${isEditing ? '' : 'cursor-pointer'}`}
       onClick={handleWrapperClick}
     >
       <Tldraw
@@ -102,3 +102,4 @@ export const DrawingNodeView = ({ node, updateAttributes }: NodeViewProps) => {
     </NodeViewWrapper>
   );
 };
+    
