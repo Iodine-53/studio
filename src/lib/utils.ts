@@ -52,52 +52,47 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
   // Dynamically import html2pdf.js only on the client-side
   const html2pdf = (await import('html2pdf.js')).default;
 
-  // 1. Create a hidden container
+  // 1. Create a container
   const printContainer = document.createElement('div');
   printContainer.id = 'pdf-export-container';
   document.body.appendChild(printContainer);
 
-  // Style the container to be a printable A4 page, but off-screen
+  // TEMPORARY DEBUGGING STYLES
   Object.assign(printContainer.style, {
-    position: 'absolute',
-    left: '-9999px',
+    position: 'fixed', // Use fixed to overlay on top
     top: '0',
-    width: '210mm',
-    minHeight: '297mm',
-    backgroundColor: 'white',
-    padding: '4rem', // Simulate padding from preview
+    left: '0',
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(0, 255, 0, 0.5)', // Bright green overlay
+    zIndex: '10000',
+    overflow: 'auto', // Make it scrollable
   });
+
 
   // 2. Render the document content into the hidden container using React 18's createRoot
   const root = createRoot(printContainer);
   const printableElement = React.createElement(
     'div',
-    { className: 'prose prose-sm sm:prose-base max-w-none' },
+    { 
+      // Add a white background and A4-like padding inside the green overlay for clarity
+      className: 'prose prose-sm sm:prose-base max-w-none bg-white mx-auto my-8 p-12 w-[210mm]'
+    },
     React.createElement(DocumentRenderer, { content: documentJson.content })
   );
   
   root.render(printableElement);
 
-  // --- Start of the fix ---
-  // We must now patiently wait for two things:
-  // 1. For React to finish rendering the content to the DOM.
-  // 2. For all images within that content to finish loading.
-
-  // Step 1: Wait for React to render. A short timeout allows the browser's event loop
-  // to process React's asynchronous render update.
+  // Wait for React to render and images to load
   await new Promise<void>((resolve) => setTimeout(resolve, 500));
 
-  // Step 2: Now that the DOM is updated, find all images and wait for them.
   const images = Array.from(printContainer.getElementsByTagName('img'));
   const imageLoadPromises = images.map(img => {
-    // If the image is already loaded (e.g., from cache or it's a data URL), we can resolve immediately.
     if (img.complete) {
       return Promise.resolve();
     }
-    // Otherwise, we create a promise that resolves on the 'load' event.
     return new Promise<void>((resolve) => {
       img.onload = () => resolve();
-      // We also resolve on error so that one broken image doesn't stop the entire export.
       img.onerror = () => {
         console.warn(`Could not load image: ${img.src}. It may be missing from the PDF.`);
         resolve(); 
@@ -105,9 +100,7 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
     });
   });
 
-  // Wait for all the image loading promises to settle.
   await Promise.allSettled(imageLoadPromises);
-  // --- End of the fix ---
 
   // 4. Configure and run html2pdf now that everything is ready
   const options = {
@@ -119,9 +112,11 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   };
 
-  await html2pdf().from(printContainer).set(options).save();
+  // Temporarily comment out the PDF generation and cleanup for debugging
+  // await html2pdf().from(printContainer).set(options).save();
 
   // 5. Clean up
-  root.unmount();
-  printContainer.remove();
+  // root.unmount();
+  // printContainer.remove();
 };
+
