@@ -37,6 +37,24 @@ const CHART_TYPES: { name: ChartType, icon: React.FC<any> }[] = [
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
+// Custom responsive legend component
+const renderLegend = (props: any) => {
+    const { payload } = props;
+    if (!payload || payload.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-4 text-sm text-muted-foreground">
+            {payload.map((entry: any, index: number) => (
+                <div key={`item-${index}`} className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: entry.color }} />
+                    <span>{entry.value}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+
 export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
   const { chartType, title } = node.attrs;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,7 +81,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   
   useMemo(() => {
     if (chartData.length > 0) {
-      // Get all unique keys from all rows
       const allKeys = chartData.reduce((keys, row) => {
         Object.keys(row).forEach(key => {
           if (!keys.includes(key)) {
@@ -130,27 +147,39 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   };
 
   const handleAddRow = () => {
-    const newRow = availableKeys.reduce((acc, key) => ({ ...acc, [key]: '' }), {});
-    const newData = [...chartData, newRow];
-    setChartData(newData);
-    updateAttributes({ chartData: JSON.stringify(newData) });
+    if (availableKeys.length === 0) {
+        // If there are no columns, create a default structure first.
+        const newData = [{ 'label': 'New Item', 'value': 10 }];
+        setChartData(newData);
+        updateAttributes({ chartData: JSON.stringify(newData) });
+    } else {
+        const newRow = availableKeys.reduce((acc, key) => ({ ...acc, [key]: '' }), {});
+        const newData = [...chartData, newRow];
+        setChartData(newData);
+        updateAttributes({ chartData: JSON.stringify(newData) });
+    }
   };
   
   const handleAddColumn = () => {
-    const newColumnName = window.prompt("Enter new column name:");
-    if (newColumnName && newColumnName.trim() !== "" && !availableKeys.includes(newColumnName)) {
-      const newKey = newColumnName.trim();
-      
-      const newData = chartData.map(row => ({
-        ...row,
-        [newKey]: '' // Default value for new column
-      }));
+    let i = 1;
+    let newColumnName;
+    do {
+      newColumnName = `NewColumn${i}`;
+      i++;
+    } while (availableKeys.includes(newColumnName));
 
-      setChartData(newData);
-      updateAttributes({ chartData: JSON.stringify(newData) });
-    } else if (newColumnName && availableKeys.includes(newColumnName)) {
-      alert("Column name already exists.");
+    const newData = chartData.map(row => ({
+      ...row,
+      [newColumnName]: ''
+    }));
+    
+    // If there was no data, create the first row with the new column
+    if (newData.length === 0) {
+      newData.push({ [newColumnName]: '' });
     }
+
+    setChartData(newData);
+    updateAttributes({ chartData: JSON.stringify(newData) });
   };
 
   const handleRemoveRow = (rowIndex: number) => {
@@ -223,14 +252,14 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
             <XAxis dataKey={xAxisKey} />
             <YAxis />
             <Tooltip />
-            <Legend />
+            <Legend content={renderLegend} />
             {dataKeys.map((key, index) => (
               <SeriesComponent 
                 key={key} 
-                type="monotone" // for line/area
+                type="monotone"
                 dataKey={key} 
-                fill={COLORS[index % COLORS.length]} // for bar/area
-                stroke={COLORS[index % COLORS.length]} // for line
+                fill={COLORS[index % COLORS.length]}
+                stroke={COLORS[index % COLORS.length]}
                 fillOpacity={chartType === 'area' ? 0.3 : 1}
               />
             ))}
@@ -239,7 +268,15 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
       case 'pie':
         if (!nameKey || !valueKey) return <p className="text-center p-4">Please select a Name Key and a Value Key.</p>;
         const pieData = chartData.map(d => ({ ...d, [valueKey]: Number(d[valueKey]) })).filter(d => !isNaN(d[valueKey]));
-        return <PieChart><Pie data={pieData} dataKey={valueKey} nameKey={nameKey} cx="50%" cy="50%" outerRadius={100} fill={COLORS[2]}>{pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}</Pie><Tooltip /><Legend /></PieChart>;
+        return (
+          <PieChart>
+            <Pie data={pieData} dataKey={valueKey} nameKey={nameKey} cx="50%" cy="50%" outerRadius={100}>
+              {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+            </Pie>
+            <Tooltip />
+            <Legend content={renderLegend} />
+          </PieChart>
+        );
       default:
         return null;
     }
