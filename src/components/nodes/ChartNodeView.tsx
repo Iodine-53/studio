@@ -64,6 +64,8 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
+  
+  const { align, width } = node.attrs.layout || {};
 
   const startEditing = () => {
     setTitle(node.attrs.title);
@@ -253,8 +255,8 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
 
   if (isEditing) {
       return (
-          <NodeViewWrapper>
-            <Card className="my-4 overflow-hidden relative">
+          <NodeViewWrapper data-align={align} data-width={width} className="layout-wrapper">
+            <Card className="my-4 overflow-hidden relative w-full">
               <CardHeader className="flex-row items-center justify-between bg-muted/50 p-3">
                   <Input className="text-lg font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Chart Title"/>
                   <div className="flex gap-2">
@@ -295,8 +297,8 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   const savedViewConfig = JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}');
 
   return (
-    <NodeViewWrapper>
-      <div className="relative my-4 group/chart-view">
+    <NodeViewWrapper data-align={align} data-width={width} className="layout-wrapper">
+      <div className="relative my-4 group/chart-view w-full">
          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover/chart-view:opacity-100 transition-opacity flex gap-2">
             <Button size="icon" variant="secondary" onClick={startEditing}>
                 <Settings className="h-4 w-4" />

@@ -2,6 +2,7 @@
 "use client";
 
 import { BubbleMenu, Editor } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
 import {
   AlignCenter,
   AlignLeft,
@@ -17,36 +18,49 @@ type Props = {
   editor: Editor;
 };
 
+// List of node types that support these layout controls
+const LAYOUT_NODE_TYPES = ['image', 'chartBlock', 'drawing'];
+
 export const LayoutBubbleMenu = ({ editor }: Props) => {
-  // This is a simplified and more direct way to update the attribute
-  // on the currently selected image node.
+  
+  // A helper to get the type and attributes of the currently selected layout node
+  const getSelectedLayoutNode = () => {
+    const { selection } = editor.state;
+    if (selection instanceof NodeSelection && LAYOUT_NODE_TYPES.includes(selection.node.type.name)) {
+      return {
+        type: selection.node.type,
+        layout: selection.node.attrs.layout || {},
+      };
+    }
+    return null;
+  };
+
   const updateLayoutAttribute = (key: string, value: string) => {
-    const currentLayout = editor.getAttributes('image').layout || {};
+    const selectedNodeInfo = getSelectedLayoutNode();
+    if (!selectedNodeInfo) return;
+    
+    const { type, layout } = selectedNodeInfo;
+    
     editor
       .chain()
       .focus()
-      .updateAttributes('image', {
-        layout: { ...currentLayout, [key]: value },
+      .updateAttributes(type.name, {
+        layout: { ...layout, [key]: value },
       })
       .run();
   };
   
-  // This gets the attribute from the selected node to correctly show
-  // which toggle is currently active.
   const getLayoutAttribute = (key: string) => {
-    return editor.getAttributes('image').layout?.[key] || '';
+    const selectedNodeInfo = getSelectedLayoutNode();
+    return selectedNodeInfo?.layout[key] || '';
   }
 
   return (
     <BubbleMenu
       editor={editor}
       tippyOptions={{ duration: 100, placement: "top" }}
-      // This logic now checks if the selected node is an 'image'.
-      // This is more specific and reliable.
-      // To see the menu, you must click on an image in the editor.
-      shouldShow={({ editor }) => {
-        return editor.isActive('image');
-      }}
+      // The menu should only show up if a node from our list is selected.
+      shouldShow={() => !!getSelectedLayoutNode()}
       className="flex items-center gap-1 p-1 bg-card border rounded-lg shadow-xl"
     >
       {/* Alignment Controls */}

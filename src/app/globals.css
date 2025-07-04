@@ -102,35 +102,37 @@
     @apply border-green-400 bg-green-50 dark:bg-green-900/20;
   }
 
-  /* Image Wrapper Layout Styles */
-  .image-wrapper {
+  /* Generic Layout Wrapper Styles for Custom Nodes */
+  .layout-wrapper {
     @apply flex my-4;
   }
-  .image-wrapper[data-align="left"] {
+  .layout-wrapper[data-align="left"] {
     @apply justify-start;
   }
-  .image-wrapper[data-align="center"] {
+  .layout-wrapper[data-align="center"] {
     @apply justify-center;
   }
-  .image-wrapper[data-align="right"] {
+  .layout-wrapper[data-align="right"] {
     @apply justify-end;
   }
 
-  .image-wrapper > img {
-    @apply max-w-full h-auto;
+  /* The direct child of the wrapper is the content that gets sized */
+  .layout-wrapper > * {
+    @apply max-w-full;
   }
 
-  .image-wrapper[data-width="small"] > img {
-    @apply max-w-sm;
+  .layout-wrapper[data-width="small"] > * {
+    @apply max-w-sm w-full;
   }
-  .image-wrapper[data-width="default"] > img {
-    @apply max-w-lg;
+  .layout-wrapper[data-width="default"] > * {
+    @apply max-w-lg w-full;
   }
-  .image-wrapper[data-width="full"] > img {
+  .layout-wrapper[data-width="full"] > * {
     @apply w-full;
   }
 
-  .ProseMirror .ProseMirror-selectednode .image-wrapper {
+  /* Visual indicator for any selected custom node */
+  .ProseMirror .ProseMirror-selectednode {
       outline: 3px solid hsl(var(--ring));
       outline-offset: 2px;
       @apply rounded-lg;

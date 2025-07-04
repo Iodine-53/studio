@@ -13,6 +13,12 @@ export const Drawing = Node.create({
       paths: {
         default: '[]',
       },
+      layout: {
+        default: {
+          align: 'center',
+          width: 'default',
+        },
+      },
     }
   },
 
@@ -20,15 +26,12 @@ export const Drawing = Node.create({
     return [
       {
         tag: 'div[data-type="sketch-canvas"]',
-        getAttrs: (dom: HTMLElement) => ({
-            paths: dom.getAttribute('data-paths'),
-        }),
       },
     ]
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'sketch-canvas', 'data-paths': HTMLAttributes.paths })]
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'sketch-canvas' })]
   },
 
   addNodeView() {

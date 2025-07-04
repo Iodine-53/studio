@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProps) => {
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const { paths } = node.attrs;
+    const { align, width } = node.attrs.layout || {};
 
     const [isEditing, setIsEditing] = useState(false);
     const [strokeColor, setStrokeColor] = useState('#000000');
@@ -83,75 +84,81 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
 
     return (
         <NodeViewWrapper
-            className={cn(
-                "my-4 p-2 border rounded-lg bg-card transition-shadow relative",
-                isEditing && "ring-2 ring-primary shadow-lg",
-                !isEditing && "cursor-pointer"
-            )}
-            onClick={handleWrapperClick}
+            data-align={align}
+            data-width={width}
+            className="layout-wrapper"
         >
-            {isEditing && (
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-2 p-2 rounded-md bg-muted/50">
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={handleUndo} title="Undo"><Undo className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={handleRedo} title="Redo"><Redo className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={setPenMode} title="Pen" className={cn(!isErasing && "bg-accent text-accent-foreground")}><Pen className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={setEraserMode} title="Eraser" className={cn(isErasing && "bg-accent text-accent-foreground")}><Eraser className="h-4 w-4" /></Button>
-                        <Button variant="destructive" size="sm" onClick={handleClear}>Clear</Button>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
+            <div
+                className={cn(
+                    "p-2 border rounded-lg bg-card transition-shadow relative w-full",
+                    isEditing && "ring-2 ring-primary shadow-lg",
+                    !isEditing && "cursor-pointer"
+                )}
+                onClick={handleWrapperClick}
+            >
+                {isEditing && (
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-2 p-2 rounded-md bg-muted/50">
                         <div className="flex items-center gap-2">
-                            <Label htmlFor="color-picker" className="text-sm">Color</Label>
-                             <Input 
-                                id="color-picker"
-                                type="color" 
-                                value={strokeColor}
-                                onChange={handleColorChange}
-                                className="w-10 h-8 p-1"
-                            />
+                            <Button variant="ghost" size="icon" onClick={handleUndo} title="Undo"><Undo className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={handleRedo} title="Redo"><Redo className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={setPenMode} title="Pen" className={cn(!isErasing && "bg-accent text-accent-foreground")}><Pen className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={setEraserMode} title="Eraser" className={cn(isErasing && "bg-accent text-accent-foreground")}><Eraser className="h-4 w-4" /></Button>
+                            <Button variant="destructive" size="sm" onClick={handleClear}>Clear</Button>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="color-picker" className="text-sm">Color</Label>
+                                 <Input 
+                                    id="color-picker"
+                                    type="color" 
+                                    value={strokeColor}
+                                    onChange={handleColorChange}
+                                    className="w-10 h-8 p-1"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2 w-32">
+                               <Label htmlFor="size-slider" className="text-sm">{isErasing ? 'Eraser' : 'Brush'}</Label>
+                               <Slider
+                                    id="size-slider"
+                                    min={1}
+                                    max={50}
+                                    step={1}
+                                    value={[isErasing ? eraserWidth : strokeWidth]}
+                                    onValueChange={(value) => isErasing ? setEraserWidth(value[0]) : setStrokeWidth(value[0])}
+                               />
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-2 w-32">
-                           <Label htmlFor="size-slider" className="text-sm">{isErasing ? 'Eraser' : 'Brush'}</Label>
-                           <Slider
-                                id="size-slider"
-                                min={1}
-                                max={50}
-                                step={1}
-                                value={[isErasing ? eraserWidth : strokeWidth]}
-                                onValueChange={(value) => isErasing ? setEraserWidth(value[0]) : setStrokeWidth(value[0])}
-                           />
+                        <Button onClick={handleDoneClick} size="sm">
+                            <Check className="mr-2 h-4 w-4"/>
+                            Done
+                        </Button>
+                    </div>
+                )}
+                
+                <div className={cn(!isEditing && "pointer-events-none")}>
+                     <ReactSketchCanvas
+                        ref={canvasRef}
+                        className="w-full h-96 bg-background rounded-md"
+                        strokeWidth={strokeWidth}
+                        eraserWidth={eraserWidth}
+                        strokeColor={strokeColor}
+                        canvasColor="hsl(var(--background))"
+                        onStroke={handleStroke}
+                    />
+                </div>
+
+                {!isEditing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-card/50 opacity-0 hover:opacity-100 transition-opacity rounded-lg">
+                        <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border">
+                             <Pen className="h-5 w-5 text-muted-foreground" />
+                            <span className="text-sm font-semibold text-muted-foreground">Click to draw</span>
                         </div>
                     </div>
-
-                    <Button onClick={handleDoneClick} size="sm">
-                        <Check className="mr-2 h-4 w-4"/>
-                        Done
-                    </Button>
-                </div>
-            )}
-            
-            <div className={cn(!isEditing && "pointer-events-none")}>
-                 <ReactSketchCanvas
-                    ref={canvasRef}
-                    className="w-full h-96 bg-background rounded-md"
-                    strokeWidth={strokeWidth}
-                    eraserWidth={eraserWidth}
-                    strokeColor={strokeColor}
-                    canvasColor="hsl(var(--background))"
-                    onStroke={handleStroke}
-                />
+                )}
             </div>
-
-            {!isEditing && (
-                <div className="absolute inset-0 flex items-center justify-center bg-card/50 opacity-0 hover:opacity-100 transition-opacity rounded-lg">
-                    <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border">
-                         <Pen className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-semibold text-muted-foreground">Click to draw</span>
-                    </div>
-                </div>
-            )}
         </NodeViewWrapper>
     );
 };

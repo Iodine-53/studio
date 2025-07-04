@@ -34,7 +34,6 @@ export const CustomImage = Node.create<ImageOptions>({
       title: {
         default: null,
       },
-      // ADD THIS NEW ATTRIBUTE
       layout: {
         default: {
           align: 'center',
@@ -47,16 +46,18 @@ export const CustomImage = Node.create<ImageOptions>({
   parseHTML() {
     return [
       {
-        tag: 'div.image-wrapper', // Parse the wrapper div
+        tag: 'div.layout-wrapper', // Parse the wrapper div
         getAttrs: (dom: HTMLElement) => {
             const img = dom.querySelector('img');
+            if (!img) return false;
+            
             return {
                 src: img?.getAttribute('src'),
                 alt: img?.getAttribute('alt'),
                 title: img?.getAttribute('title'),
                 layout: {
-                    align: dom.getAttribute('data-align'),
-                    width: dom.getAttribute('data-width'),
+                    align: dom.getAttribute('data-align') || 'center',
+                    width: dom.getAttribute('data-width') || 'default',
                 }
             }
         }
@@ -72,7 +73,7 @@ export const CustomImage = Node.create<ImageOptions>({
       {
         'data-align': layout.align,
         'data-width': layout.width,
-        class: 'image-wrapper', // Add a class for easy CSS targeting
+        class: 'layout-wrapper', // Use the generic layout class
       },
       // The actual image goes inside
       ['img', mergeAttributes(restAttrs, { class: 'rounded-lg' })]

@@ -24,35 +24,24 @@ export const Chart = Node.create({
       },
       viewConfig: {
         default: '{"legend":true,"tooltip":true,"grid":true}',
-      }
+      },
+      layout: {
+        default: {
+          align: 'center',
+          width: 'default',
+        },
+      },
     };
   },
 
   parseHTML() {
     return [{ 
       tag: 'div[data-type="chart-block"]',
-      getAttrs: dom => {
-        const element = dom as HTMLElement;
-        return {
-          chartType: element.getAttribute('data-chart-type'),
-          chartData: element.getAttribute('data-chart-data'),
-          chartConfig: element.getAttribute('data-chart-config'),
-          title: element.getAttribute('data-title'),
-          viewConfig: element.getAttribute('data-view-config'),
-        }
-      }
     }];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 
-        'data-type': 'chart-block',
-        'data-chart-type': HTMLAttributes.chartType,
-        'data-chart-data': HTMLAttributes.chartData,
-        'data-chart-config': HTMLAttributes.chartConfig,
-        'data-title': HTMLAttributes.title,
-        'data-view-config': HTMLAttributes.viewConfig
-    })];
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'chart-block' })];
   },
 
   addNodeView() {
