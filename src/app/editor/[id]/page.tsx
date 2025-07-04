@@ -6,15 +6,18 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PrintPreview } from "@/components/PrintPreview";
 
 export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
   const [doc, setDoc] = useState<Document | null>(null);
   const [initialContent, setInitialContent] = useState<any>(null);
+  const [currentContent, setCurrentContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Ref to hold the timeout ID for debouncing
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -34,6 +37,7 @@ export default function EditorPage() {
       if (loadedDoc) {
         setDoc(loadedDoc);
         setInitialContent(loadedDoc.content);
+        setCurrentContent(loadedDoc.content);
       } else {
         console.error("Document not found");
         router.push("/");
@@ -54,6 +58,7 @@ export default function EditorPage() {
   }, [docId, router]);
 
   const handleUpdate = (content: any) => {
+    setCurrentContent(content);
     if (doc) {
       if (debounceTimeout.current) {
         clearTimeout(debounceTimeout.current);
@@ -66,6 +71,10 @@ export default function EditorPage() {
     }
   };
 
+  const handleOpenPreview = () => {
+    setIsPreviewOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -76,26 +85,40 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-primary/5">
-       <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
-        <nav className="flex items-center w-full justify-between gap-4 text-lg font-medium md:gap-2 md:text-sm">
-          <Button variant="outline" size="icon" className="shrink-0" asChild>
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Back to Dashboard</span>
-            </Link>
-          </Button>
-          <div className="flex-1">
-             {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
+    <>
+      <div className="flex flex-col min-h-screen bg-primary/5">
+        <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
+          <nav className="flex items-center w-full justify-between gap-4 text-lg font-medium md:gap-2 md:text-sm">
+            <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" className="shrink-0" asChild>
+                    <Link href="/">
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">Back to Dashboard</span>
+                    </Link>
+                </Button>
+                <div className="flex-1">
+                    {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
+                </div>
+            </div>
+            <div>
+              <Button variant="outline" onClick={handleOpenPreview}>
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+            </div>
+          </nav>
+        </header>
+        <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
+          <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border">
+            <TiptapEditor content={initialContent} onUpdate={handleUpdate} />
           </div>
-          {/* We can add a save status indicator here later */}
-        </nav>
-      </header>
-       <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border">
-           <TiptapEditor content={initialContent} onUpdate={handleUpdate} />
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+      <PrintPreview
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        content={currentContent}
+      />
+    </>
   );
 }
