@@ -23,8 +23,6 @@ import { CustomImage } from '@/lib/tiptap/extensions/Image';
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { Drawing } from '@/lib/tiptap/extensions/Drawing';
-import { Placeholder } from '@/lib/tiptap/extensions/Placeholder';
-import { AdvancedTask } from '@/lib/tiptap/extensions/AdvancedTask';
 import { Chart } from '@/lib/tiptap/extensions/Chart';
 
 
@@ -77,8 +75,6 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
         nested: true,
       }),
       Drawing,
-      Placeholder,
-      AdvancedTask,
       Chart,
     ],
     editorProps: {

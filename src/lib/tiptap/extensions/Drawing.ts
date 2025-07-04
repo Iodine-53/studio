@@ -10,18 +10,25 @@ export const Drawing = Node.create({
 
   addAttributes() {
     return {
-      tldrawState: {
-        default: null,
+      paths: {
+        default: '[]',
       },
     }
   },
 
   parseHTML() {
-    return [{ tag: 'drawing-block' }]
+    return [
+      {
+        tag: 'div[data-type="sketch-canvas"]',
+        getAttrs: (dom: HTMLElement) => ({
+            paths: dom.getAttribute('data-paths'),
+        }),
+      },
+    ]
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['drawing-block', mergeAttributes(HTMLAttributes)]
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'sketch-canvas', 'data-paths': HTMLAttributes.paths })]
   },
 
   addNodeView() {
