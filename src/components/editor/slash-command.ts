@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, CodeSquare, Minus, Table, AlertTriangle, Image, CheckSquare
+  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, CodeSquare, Minus, Table, AlertTriangle, Image, CheckSquare, Brush
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -29,25 +29,17 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Bulleted List", icon: List, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleBulletList().run(); } },
   { title: "Numbered List", icon: ListOrdered, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleOrderedList().run(); } },
   { title: "Checklist", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleTaskList().run(); } },
-  { 
-    title: "Advanced Task", 
-    icon: CheckSquare,
-    command: ({ editor, range }) => { 
-      editor
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .insertContent({
-          type: 'placeholder', // Insert the placeholder
-          attrs: { type: 'advancedTask' }, // Tell it what to become
-        })
-        .run();
-    } 
-  },
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCallout({ type: 'info' }).run(); } },
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCodeBlock().run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },
+  {
+    title: 'Drawing',
+    icon: Brush,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertContent({ type: 'tldraw' }).run();
+    },
+  },
   {
     title: "Image",
     icon: Image,
