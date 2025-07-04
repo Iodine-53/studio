@@ -4,7 +4,7 @@
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import {
   Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart,
-  CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis
+  CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis, Brush
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -254,6 +254,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
                 fillOpacity={chartType === 'area' ? 0.3 : 1}
               />
             ))}
+            <Brush dataKey={xAxisKey} height={30} stroke={COLORS[0]} />
           </ChartComponent>
         );
       case 'pie':
