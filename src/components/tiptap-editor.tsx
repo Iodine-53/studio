@@ -37,12 +37,12 @@ lowlight.registerLanguage('ts', typescript)
 
 // Define the component's props
 type Props = {
-  content: any;
-  onUpdate: (content: any) => void;
+  content?: any;
+  onUpdate?: (content: any) => void;
 };
 
 
-const TiptapEditor = ({ content, onUpdate }: Props) => {
+const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -86,11 +86,15 @@ const TiptapEditor = ({ content, onUpdate }: Props) => {
     onUpdate: ({ editor }) => {
       onUpdate(editor.getJSON());
     },
+    content: content || `
+      <h1>Welcome to Your Tiptap Editor!</h1>
+      <p>This is where the magic happens. Start typing to see it in action.</p>
+    `,
   })
 
   // Use an effect to update the editor content when the initial prop changes
   useEffect(() => {
-    if (editor && content) {
+    if (editor && content && editor.getHTML() !== content) {
       // Use `setContent` to update the editor's content.
       // The `emitUpdate: false` is important to prevent an infinite loop
       // where onUpdate triggers a re-render which triggers setContent again.

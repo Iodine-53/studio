@@ -14,6 +14,7 @@ export default function EditorPage() {
   const router = useRouter();
   const [doc, setDoc] = useState<Document | null>(null);
   const [initialContent, setInitialContent] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Ref to hold the timeout ID for debouncing
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -28,6 +29,7 @@ export default function EditorPage() {
     }
 
     const fetchDocument = async () => {
+      setIsLoading(true);
       const loadedDoc = await getDocument(docId);
       if (loadedDoc) {
         setDoc(loadedDoc);
@@ -36,6 +38,7 @@ export default function EditorPage() {
         console.error("Document not found");
         router.push("/");
       }
+      setIsLoading(false);
     };
     
     if (docId) {
@@ -63,7 +66,7 @@ export default function EditorPage() {
     }
   };
 
-  if (!initialContent) {
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

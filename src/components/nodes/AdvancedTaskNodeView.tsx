@@ -1,22 +1,26 @@
 "use client";
 
+import { useState } from 'react';
 import type { NodeViewProps } from '@tiptap/react';
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
 import { format } from 'date-fns';
-import { AlertCircle, Briefcase, Calendar as CalendarIcon, CheckCircle, FolderKanban, HelpCircle, User } from 'lucide-react';
-// Popover and Calendar specific imports are removed for this test
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
+import { AlertCircle, Briefcase, Calendar as CalendarIcon, CheckCircle, FolderKanban, HelpCircle, User, Settings2 } from 'lucide-react';
 
-// Helper data and icon mappings remain the same
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+
+// Helper data and icon mappings
 const priorities = ['low', 'medium', 'high'];
 const categories = ['personal', 'work', 'project'];
 
 const priorityConfig = {
-  low: { label: 'Low', icon: <HelpCircle className="h-4 w-4" />, color: 'text-muted-foreground' },
-  medium: { label: 'Medium', icon: <AlertCircle className="h-4 w-4" />, color: 'text-yellow-500' },
-  high: { label: 'High', icon: <CheckCircle className="h-4 w-4" />, color: 'text-red-500' },
+  low: { label: 'Low', icon: <HelpCircle className="h-4 w-4" /> },
+  medium: { label: 'Medium', icon: <AlertCircle className="h-4 w-4" /> },
+  high: { label: 'High', icon: <CheckCircle className="h-4 w-4" /> },
 };
 
 const categoryConfig = {
@@ -25,65 +29,91 @@ const categoryConfig = {
   project: { label: 'Project', icon: <FolderKanban className="h-4 w-4" /> },
 };
 
-
 export const AdvancedTaskNodeView = ({ node, updateAttributes }: NodeViewProps) => {
   const { dueDate, category, priority, isCompleted } = node.attrs;
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const cycleAttribute = (values: string[], current: string, attributeName: string) => {
-    const currentIndex = values.indexOf(current);
-    const nextIndex = (currentIndex + 1) % values.length;
-    updateAttributes({ [attributeName]: values[nextIndex] });
+  // Function to handle metadata updates and close the dialog
+  const handleUpdate = (attrs: { [key: string]: any }) => {
+    updateAttributes(attrs);
+    setIsDialogOpen(false);
   };
 
   return (
-    <NodeViewWrapper
-      className={cn(
-        'grid my-2 rounded-lg border p-2 gap-x-2 gap-y-1',
-        // The robust grid layout is maintained
-        'grid-cols-[auto,1fr] grid-rows-auto',
-        'md:grid-cols-[auto,1fr,auto] md:grid-rows-1 md:items-center',
-        isCompleted ? 'bg-muted/50' : 'bg-card'
-      )}
-    >
-      {/* --- Checkbox Area (Row 1, Col 1) --- */}
-      <div className="flex items-center">
-        <Checkbox
-          checked={isCompleted}
-          onCheckedChange={(checked) => updateAttributes({ isCompleted: !!checked })}
-        />
-      </div>
-
-      {/* --- Title Area (Row 1, Col 2) --- */}
-      <NodeViewContent
-        className={cn(
-          'min-w-0', 
-          isCompleted ? 'text-muted-foreground line-through' : ''
-        )}
-      />
-
-      {/* --- Metadata Area (Row 2, Col 2 on mobile; Row 1, Col 3 on desktop) --- */}
-      <div className="flex items-center gap-1 justify-self-end col-start-2 md:col-start-3">
-        <Button variant="ghost" size="sm" onClick={() => cycleAttribute(priorities, priority, 'priority')} className={cn("flex items-center gap-1 rounded-full px-2 py-1 h-auto text-xs", priorityConfig[priority].color)}>
-            {priorityConfig[priority].icon}
-            <span className="hidden sm:inline">{priorityConfig[priority].label}</span>
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => cycleAttribute(categories, category, 'category')} className="flex items-center gap-1 rounded-full px-2 py-1 h-auto text-xs">
-            {categoryConfig[category].icon}
-            <span className="hidden sm:inline">{categoryConfig[category].label}</span>
-        </Button>
-        
-        {/* --- THIS IS THE TEST --- */}
-        {/* The Popover has been replaced with a simple, non-interactive button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled
-          className="flex items-center gap-1 rounded-full px-2 py-1 h-auto text-xs cursor-not-allowed"
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <NodeViewWrapper
+            className={cn(
+            'flex items-center gap-2 my-2 rounded-lg border p-2',
+            isCompleted ? 'bg-muted/50' : 'bg-card'
+            )}
         >
-           <CalendarIcon className="h-4 w-4" />
-           <span className="hidden sm:inline">{dueDate ? format(new Date(dueDate), 'MMM d') : 'No date'}</span>
-        </Button>
-      </div>
-    </NodeViewWrapper>
+            <div className="flex items-center">
+                <Checkbox
+                    checked={isCompleted}
+                    onCheckedChange={(checked) => updateAttributes({ isCompleted: !!checked })}
+                />
+            </div>
+
+            <div className="flex-grow">
+                 <NodeViewContent
+                    className={cn(
+                        'min-w-0', 
+                        isCompleted ? 'text-muted-foreground line-through' : ''
+                    )}
+                />
+            </div>
+            
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="flex-shrink-0 h-8 w-8">
+                    <Settings2 className="h-4 w-4" />
+                    <span className="sr-only">Edit Task Details</span>
+                </Button>
+            </DialogTrigger>
+        </NodeViewWrapper>
+
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Task Details</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-6 pt-4">
+            {/* Priority Selector */}
+            <div className="space-y-2">
+                <Label>Priority</Label>
+                <div className="flex gap-2">
+                    {priorities.map(p => (
+                        <Button key={p} variant={priority === p ? 'default' : 'outline'} size="sm" onClick={() => updateAttributes({ priority: p })}>
+                            {priorityConfig[p as keyof typeof priorityConfig].icon}
+                            <span className="capitalize ml-1">{priorityConfig[p as keyof typeof priorityConfig].label}</span>
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Category Selector */}
+             <div className="space-y-2">
+                <Label>Category</Label>
+                <div className="flex gap-2">
+                     {categories.map(c => (
+                         <Button key={c} variant={category === c ? 'default' : 'outline'} size="sm" onClick={() => updateAttributes({ category: c })}>
+                            {categoryConfig[c as keyof typeof categoryConfig].icon}
+                            <span className="capitalize ml-1">{categoryConfig[c as keyof typeof categoryConfig].label}</span>
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Calendar */}
+            <div className="space-y-2">
+                 <Label>Due Date</Label>
+                 <Calendar
+                    mode="single"
+                    selected={dueDate ? new Date(dueDate) : undefined}
+                    onSelect={(date) => handleUpdate({ dueDate: date?.toISOString() })}
+                    className="rounded-md border self-center"
+                 />
+            </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

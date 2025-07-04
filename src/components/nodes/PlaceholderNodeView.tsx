@@ -17,7 +17,7 @@ export const PlaceholderNodeView = ({ editor, getPos, node }: NodeViewProps) => 
       // The content for the advanced task
       const taskContent = {
         type: node.attrs.type, // 'advancedTask'
-        content: [{ type: 'text', text: ' ' }], // Start with a space for cursor
+        content: [{ type: 'text', text: 'New Task' }], // Start with some default text
       };
       
       const { from, to } = { from: pos, to: pos + node.nodeSize };
