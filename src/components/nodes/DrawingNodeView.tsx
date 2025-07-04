@@ -24,16 +24,17 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
 
     useEffect(() => {
         if (canvasRef.current && paths) {
+            // Load initial paths only once
             try {
                 const parsedPaths = JSON.parse(paths);
-                if(Array.isArray(parsedPaths)) {
+                if (Array.isArray(parsedPaths) && parsedPaths.length > 0) {
                     canvasRef.current.loadPaths(parsedPaths);
                 }
             } catch (e) {
                 console.error("Failed to parse sketch paths", e);
             }
         }
-    }, []);
+    }, []); // Empty dependency array to run only on mount
 
     const handleStroke = async () => {
         if (canvasRef.current) {
@@ -49,13 +50,23 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
         updateAttributes({ paths: '[]' });
     };
     
-    const toggleEraser = () => {
-        setIsErasing(prev => {
-            const newIsErasing = !prev;
-            canvasRef.current?.eraseMode(newIsErasing);
-            return newIsErasing;
-        });
-    };
+    const setPenMode = () => {
+        setIsErasing(false);
+        canvasRef.current?.eraseMode(false);
+    }
+    
+    const setEraserMode = () => {
+        setIsErasing(true);
+        canvasRef.current?.eraseMode(true);
+    }
+
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setStrokeColor(e.target.value);
+        // If user is erasing and picks a color, switch them back to pen mode.
+        if (isErasing) {
+            setPenMode();
+        }
+    }
 
     const handleWrapperClick = () => {
         if (!isEditing) {
@@ -84,7 +95,8 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="icon" onClick={handleUndo} title="Undo"><Undo className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={handleRedo} title="Redo"><Redo className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={toggleEraser} title="Eraser" className={cn(isErasing && "bg-accent text-accent-foreground")}><Eraser className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={setPenMode} title="Pen" className={cn(!isErasing && "bg-accent text-accent-foreground")}><Pen className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={setEraserMode} title="Eraser" className={cn(isErasing && "bg-accent text-accent-foreground")}><Eraser className="h-4 w-4" /></Button>
                         <Button variant="destructive" size="sm" onClick={handleClear}>Clear</Button>
                     </div>
                     
@@ -95,10 +107,7 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
                                 id="color-picker"
                                 type="color" 
                                 value={strokeColor}
-                                onChange={(e) => {
-                                    setStrokeColor(e.target.value);
-                                    if (isErasing) toggleEraser();
-                                }}
+                                onChange={handleColorChange}
                                 className="w-10 h-8 p-1"
                             />
                         </div>
