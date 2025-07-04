@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
-import { Plus, X, Check } from 'lucide-react'
+import { Plus, X, Check, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,9 +15,10 @@ type Task = {
   completed: boolean;
 };
 
-const TodoListComponent = ({ node, updateAttributes }: NodeViewProps) => {
+const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) => {
   const [tasks, setTasks] = useState<Task[]>(node.attrs.tasks || [])
   const [inputValue, setInputValue] = useState('')
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     updateAttributes({ tasks })
@@ -51,26 +52,49 @@ const TodoListComponent = ({ node, updateAttributes }: NodeViewProps) => {
     }
   };
 
+  const handleWrapperClick = () => {
+    if (!isEditing) {
+      setIsEditing(true);
+      editor.setEditable(false);
+    }
+  };
+
+  const handleDoneClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent re-triggering the wrapper click
+    setIsEditing(false);
+    editor.setEditable(true);
+  };
+
   const completedCount = tasks.filter(task => task.completed).length;
   const totalCount = tasks.length;
 
   return (
-    <NodeViewWrapper className="p-4">
-      <Card className="max-w-lg mx-auto">
+    <NodeViewWrapper 
+        className="p-4 cursor-pointer"
+        onClick={handleWrapperClick}
+    >
+      <Card className={cn(
+          "max-w-lg mx-auto relative group transition-shadow",
+          isEditing && "ring-2 ring-primary shadow-lg"
+        )}>
         <CardHeader>
           <CardTitle className="font-headline">My Tasks</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2 mb-4">
-            <Input 
-              type="text" 
-              value={inputValue} 
-              onChange={(e) => setInputValue(e.target.value)} 
-              onKeyPress={handleKeyPress} 
-              placeholder="Add a new task..." 
-            />
-            <Button onClick={addTask}><Plus size={16} /> Add</Button>
-          </div>
+          {isEditing && (
+            <div className="flex gap-2 mb-4">
+              <Input 
+                type="text" 
+                value={inputValue} 
+                onChange={(e) => setInputValue(e.target.value)} 
+                onKeyPress={handleKeyPress} 
+                placeholder="Add a new task..."
+                onClick={(e) => e.stopPropagation()} // Prevent wrapper click from propagating
+              />
+              <Button onClick={(e) => { e.stopPropagation(); addTask(); }}><Plus size={16} /> Add</Button>
+              <Button variant="secondary" onClick={handleDoneClick}><Check size={16}/> Done</Button>
+            </div>
+          )}
           
           {totalCount > 0 && (
             <div className="text-xs text-muted-foreground mb-3">
@@ -78,10 +102,10 @@ const TodoListComponent = ({ node, updateAttributes }: NodeViewProps) => {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className={cn("space-y-2", !isEditing && "pointer-events-none")}>
               {tasks.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4 text-sm">
-                  No tasks yet. Add one above!
+                  {isEditing ? "No tasks yet. Add one above!" : "Click to add tasks"}
                 </p>
               ) : (
                 tasks.map(task => (
@@ -93,7 +117,7 @@ const TodoListComponent = ({ node, updateAttributes }: NodeViewProps) => {
                     )}
                   >
                     <button 
-                      onClick={() => toggleTask(task.id)} 
+                      onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
                       className={cn(
                         'flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors',
                         task.completed 
@@ -113,7 +137,7 @@ const TodoListComponent = ({ node, updateAttributes }: NodeViewProps) => {
                     <Button 
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteTask(task.id)} 
+                      onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
                       className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                       aria-label="Delete task"
                     >
@@ -124,6 +148,14 @@ const TodoListComponent = ({ node, updateAttributes }: NodeViewProps) => {
               )
             }
           </div>
+          {!isEditing && (
+            <div className="absolute inset-0 flex items-center justify-center bg-card/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                <div className="flex items-center gap-2 bg-background/80 px-4 py-2 rounded-full border">
+                     <Edit className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-muted-foreground">Click to edit tasks</span>
+                </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </NodeViewWrapper>
