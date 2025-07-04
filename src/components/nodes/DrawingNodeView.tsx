@@ -1,42 +1,56 @@
+
 "use client";
 
 import { Tldraw, TldrawSnapshot, TLSvgOptions } from '@tldraw/tldraw';
 import '@tldraw/tldraw/tldraw.css';
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import { useEffect, useState } from 'react';
-
-// --- 1. The Media Query Hook ---
-const useMediaQuery = (query: string) => {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    // Set initial state
-    const media = window.matchMedia(query);
-    if (media.matches !== matches) {
-      setMatches(media.matches);
-    }
-    // Listen for changes
-    const listener = () => setMatches(media.matches);
-    window.addEventListener('resize', listener);
-    return () => window.removeEventListener('resize', listener);
-  }, [matches, query]);
-  return matches;
-};
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // --- 2. The Interactive Desktop Component ---
 const InteractiveTldrawCanvas = ({ tldrawState, onStateChange }: { tldrawState: string | null; onStateChange: (state: string) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const store = tldrawState ? (JSON.parse(tldrawState) as TldrawSnapshot) : undefined;
   
+  const handleWrapperClick = () => {
+    // If we are not in edit mode, a click on the canvas should enter edit mode.
+    if (!isEditing) {
+      setIsEditing(true);
+    }
+  };
+
   return (
-    <div className="relative h-[400px] w-full border rounded-lg overflow-hidden">
+    // The main wrapper controls entering edit mode.
+    <div
+      className={`relative h-[400px] w-full border rounded-lg overflow-hidden ${isEditing ? 'z-50' : 'z-0'} ${isEditing ? '' : 'cursor-pointer'}`}
+      onClick={handleWrapperClick}
+    >
       <Tldraw
         store={store}
         onPersistenceChange={async (editor) => {
+          // We always save the state, tldraw is smart about not over-saving.
           onStateChange(await editor.store.toJson());
         }}
+        // The UI is hidden based on our editing state.
+        hideUi={!isEditing}
       />
+
+      {/* The "Done" button only appears when editing. */}
+      {isEditing && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent the wrapper's onClick from firing.
+            setIsEditing(false);
+          }}
+          className="absolute top-2 right-2 z-20 bg-white dark:bg-black text-black dark:text-white px-3 py-1 rounded-md shadow-md border border-gray-300 dark:border-gray-700 text-sm"
+        >
+          Done
+        </button>
+      )}
     </div>
   );
 };
+
 
 // --- 3. The Static Mobile Preview Component ---
 const StaticTldrawPreview = ({ tldrawState }: { tldrawState: string | null }) => {
@@ -72,7 +86,7 @@ const StaticTldrawPreview = ({ tldrawState }: { tldrawState: string | null }) =>
 
 // --- 4. The Main Node View Component ---
 export const DrawingNodeView = ({ node, updateAttributes }: NodeViewProps) => {
-  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isDesktop = !useIsMobile();
 
   const handleStateChange = (state: string) => {
     updateAttributes({ tldrawState: state });
