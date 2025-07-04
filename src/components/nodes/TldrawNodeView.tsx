@@ -2,9 +2,23 @@
 
 import type { NodeViewProps } from "@tiptap/react";
 import { NodeViewWrapper } from "@tiptap/react";
-import { Tldraw } from "@tldraw/tldraw";
+import dynamic from 'next/dynamic';
 import "@tldraw/tldraw/style.css";
 import { useMemo, useCallback } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Use next/dynamic to lazy-load the Tldraw component on the client-side only
+const TldrawCanvas = dynamic(
+  async () => {
+    const { Tldraw } = await import('@tldraw/tldraw');
+    return Tldraw;
+  },
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-full w-full" />,
+  }
+);
+
 
 // Simple debounce function to avoid excessive updates
 function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
@@ -27,20 +41,27 @@ export const TldrawNodeView = ({ node, updateAttributes }: NodeViewProps) => {
 
   // Use useCallback to prevent the function from being re-created on every render
   const handleChange = useCallback(
-    (app: any) => {
-      saveContent(app.document);
+    (editor: any) => {
+      // In tldraw v2, the editor object is passed, and we get the document from it.
+      const document = editor.store.getSnapshot();
+      saveContent(document);
     },
     [saveContent]
   );
 
   return (
     <NodeViewWrapper className="relative h-[550px] w-full my-4 border rounded-lg overflow-hidden">
-      <Tldraw
-        id={node.attrs.id || "tldraw-canvas"}
-        document={node.attrs.data}
-        onChange={handleChange}
+      <TldrawCanvas
+        store={node.attrs.data}
+        onMount={(editor) => {
+            // Persist changes
+            editor.on('change', () => {
+                const snapshot = editor.store.getSnapshot();
+                saveContent(snapshot);
+            });
+        }}
         autofocus
-        showUi={true} // Show the full tldraw UI
+        showUi={true}
       />
     </NodeViewWrapper>
   );
