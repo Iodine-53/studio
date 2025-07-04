@@ -34,10 +34,10 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleCodeBlock().run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },
   {
-    title: 'Drawing',
+    title: 'Drawing / Canvas',
     icon: Brush,
     command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).insertContent({ type: 'tldraw' }).run();
+      editor.chain().focus().deleteRange(range).insertContent({ type: 'drawing' }).run();
     },
   },
   {
