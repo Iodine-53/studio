@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, CodeSquare, Minus, Table, AlertTriangle, Image, CheckSquare, Brush
+  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, CodeSquare, Minus, Table, AlertTriangle, Image, CheckSquare, Brush, BarChart
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -53,6 +53,13 @@ const getCommandItems = (): CommandItem[] => [
     icon: Brush,
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).insertContent({ type: 'drawing' }).run();
+    },
+  },
+  {
+    title: 'Chart',
+    icon: BarChart,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertContent({ type: 'chartBlock' }).run();
     },
   },
   {
