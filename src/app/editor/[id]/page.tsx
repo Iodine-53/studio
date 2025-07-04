@@ -6,9 +6,10 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
+import { exportToPdf } from "@/lib/utils";
 
 export default function EditorPage() {
   const params = useParams();
@@ -17,6 +18,7 @@ export default function EditorPage() {
   const [initialContent, setInitialContent] = useState<any>(null);
   const [currentContent, setCurrentContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Ref to hold the timeout ID for debouncing
@@ -75,6 +77,18 @@ export default function EditorPage() {
     setIsPreviewOpen(true);
   };
 
+  const handleExport = async () => {
+    if (!currentContent || !doc) return;
+    setIsExporting(true);
+    try {
+        await exportToPdf(currentContent, doc.title || 'document');
+    } catch (error) {
+        console.error("Failed to export PDF:", error);
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -100,10 +114,14 @@ export default function EditorPage() {
                     {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
                 </div>
             </div>
-            <div>
+            <div className="flex items-center gap-2">
               <Button variant="outline" onClick={handleOpenPreview}>
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
+              </Button>
+               <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+                {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
+                Download PDF
               </Button>
             </div>
           </nav>

@@ -1,5 +1,11 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import React, { type FC } from 'react';
+import ReactDOM from 'react-dom';
+import html2pdf from 'html2pdf.js';
+import type { TiptapNode } from '@/components/PrintPreview';
+import { DocumentRenderer } from '@/components/PrintPreview';
+
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -35,4 +41,56 @@ export const processImage = (file: File): Promise<string> => {
     };
     reader.onerror = reject;
   });
+};
+
+export const exportToPdf = async (documentJson: TiptapNode, filename: string) => {
+  if (!documentJson?.content) return;
+
+  // 1. Create a hidden container
+  const printContainer = document.createElement('div');
+  printContainer.id = 'pdf-export-container';
+  document.body.appendChild(printContainer);
+
+  // Style the container to be a printable A4 page, but off-screen
+  Object.assign(printContainer.style, {
+    position: 'absolute',
+    left: '-9999px',
+    top: '0',
+    width: '210mm',
+    minHeight: '297mm',
+    backgroundColor: 'white',
+    padding: '4rem', // Simulate padding from preview
+  });
+
+  // 2. Render the document content into the hidden container
+  const renderPromise = new Promise<void>((resolve) => {
+    const PrintableDocument: FC = () => (
+      <div className="prose prose-sm sm:prose-base max-w-none">
+        <DocumentRenderer content={documentJson.content} />
+      </div>
+    );
+
+    ReactDOM.render(<PrintableDocument />, printContainer, () => {
+      // Use a short timeout to ensure all images and styles have been applied
+      setTimeout(resolve, 200);
+    });
+  });
+
+  await renderPromise;
+
+  // 3. Configure and run html2pdf
+  const options = {
+    margin: 10,
+    filename: `${filename}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  await html2pdf().from(printContainer).set(options).save();
+
+  // 4. Clean up
+  ReactDOM.unmountComponentAtNode(printContainer);
+  printContainer.remove();
 };

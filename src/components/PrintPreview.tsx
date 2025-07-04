@@ -11,7 +11,7 @@ type TiptapMark = {
     attrs?: Record<string, any>;
 };
 
-type TiptapNode = {
+export type TiptapNode = {
   type: string;
   attrs?: Record<string, any>;
   content?: TiptapNode[];
@@ -181,6 +181,10 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       console.warn(`Unsupported node type in PrintPreview: ${node.type}`);
       return <div className="hidden">{children}</div>;
   }
+};
+
+export const DocumentRenderer: FC<{ content: TiptapNode[] | undefined }> = ({ content }) => {
+  return <>{renderNodes(content)}</>;
 };
 
 type PrintPreviewProps = {
