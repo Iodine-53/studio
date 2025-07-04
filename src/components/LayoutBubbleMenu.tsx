@@ -18,40 +18,34 @@ type Props = {
 };
 
 export const LayoutBubbleMenu = ({ editor }: Props) => {
+  // This is a simplified and more direct way to update the attribute
+  // on the currently selected image node.
   const updateLayoutAttribute = (key: string, value: string) => {
-    const { from, to } = editor.state.selection;
-    editor.state.doc.nodesBetween(from, to, (node, pos) => {
-      if (!node.isBlock || !node.type.spec.attrs?.layout) return;
-
-      const currentLayout = node.attrs.layout || {};
-      editor
-        .chain()
-        .focus()
-        // We need to select the node to apply attributes to it
-        .setNodeSelection(pos)
-        .updateAttributes(node.type.name, {
-          layout: { ...currentLayout, [key]: value },
-        })
-        .run();
-    });
+    const currentLayout = editor.getAttributes('image').layout || {};
+    editor
+      .chain()
+      .focus()
+      .updateAttributes('image', {
+        layout: { ...currentLayout, [key]: value },
+      })
+      .run();
   };
-
+  
+  // This gets the attribute from the selected node to correctly show
+  // which toggle is currently active.
   const getLayoutAttribute = (key: string) => {
-      const { from } = editor.state.selection;
-      const node = editor.state.doc.nodeAt(from);
-      return node?.attrs.layout?.[key] || '';
+    return editor.getAttributes('image').layout?.[key] || '';
   }
 
   return (
     <BubbleMenu
       editor={editor}
       tippyOptions={{ duration: 100, placement: "top" }}
-      // Show this menu only when a node with layout attributes is selected
-      shouldShow={({ editor, state }) => {
-        const { from } = state.selection;
-        const node = editor.state.doc.nodeAt(from);
-        // Only show for nodes that have a 'layout' attribute defined
-        return !!node?.type.spec.attrs?.layout;
+      // This logic now checks if the selected node is an 'image'.
+      // This is more specific and reliable.
+      // To see the menu, you must click on an image in the editor.
+      shouldShow={({ editor }) => {
+        return editor.isActive('image');
       }}
       className="flex items-center gap-1 p-1 bg-card border rounded-lg shadow-xl"
     >
