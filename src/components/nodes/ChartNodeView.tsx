@@ -37,6 +37,21 @@ const CHART_TYPES: { name: ChartType, icon: React.FC<any> }[] = [
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF5733', '#C70039', '#900C3F', '#581845'];
 
+const CustomLegend = (props: any) => {
+    const { payload } = props;
+    return (
+        <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 p-2 text-xs">
+            {payload.map((entry: any, index: number) => (
+                <div key={`item-${index}`} className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                    <span>{entry.value}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+
 export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
   const { chartType, title } = node.attrs;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -243,7 +258,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
             <XAxis dataKey={xAxisKey} tick={{fontSize: 12}} />
             <YAxis tick={{fontSize: 12}} />
             <Tooltip />
-            <Legend iconSize={12} wrapperStyle={{fontSize: '12px', paddingTop: '10px'}}/>
+            <Legend content={<CustomLegend />} />
             {dataKeys.map((key, index) => (
               <SeriesComponent 
                 key={key} 
@@ -317,128 +332,130 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
           <Input className="text-lg font-bold border-0 shadow-none focus-visible:ring-0 p-0" value={title} onChange={(e) => updateAttributes({ title: e.target.value })} placeholder="Chart Title"/>
           <CardDescription>Use the controls below to configure your chart.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="data" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="data">Data</TabsTrigger>
-              <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            </TabsList>
-            <TabsContent value="data" className="mt-4 space-y-4">
-              <div className="flex gap-2">
-                <input type="file" accept=".csv, .json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-                <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="mr-2 h-4 w-4"/>Upload Data
-                </Button>
-              </div>
-              {chartData.length > 0 && (
-                <div className="max-h-60 overflow-auto border rounded-lg">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-muted">
-                      <TableRow>
-                        {availableKeys.map(key => (
-                            <TableHead key={key}>
-                                <div className="flex items-center gap-1">
-                                    <span>{key}</span>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveColumn(key)}>
-                                        <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                </div>
-                            </TableHead>
-                        ))}
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {chartData.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                          {availableKeys.map(key => (
-                            <TableCell key={key}>
-                              <Input
-                                type="text"
-                                value={row[key] || ''}
-                                onChange={(e) => handleTableChange(rowIndex, key, e.target.value)}
-                                className="h-8"
-                              />
-                            </TableCell>
-                          ))}
-                          <TableCell>
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveRow(rowIndex)}><Trash2 className="h-4 w-4" /></Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-               <div className="flex gap-2">
-                <Button onClick={handleAddRow} size="sm">
-                  <Plus className="mr-2 h-4 w-4"/>Add Row
-                </Button>
-                <Button onClick={handleAddColumn} size="sm" variant="outline">
-                  <Plus className="mr-2 h-4 w-4"/>Add Column
-                </Button>
-              </div>
-            </TabsContent>
-            <TabsContent value="appearance" className="mt-4 space-y-4">
-              <div className="flex items-center gap-4">
-                  <Label className="mr-2">Type:</Label>
-                  {CHART_TYPES.map(type => (
-                  <Button key={type.name} variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => updateAttributes({ chartType: type.name })}>
-                      <type.icon className="h-4 w-4"/><span className="sr-only">{type.name} chart</span>
+        <CardContent className="px-0 pt-0">
+          <div className="px-6 pt-6">
+            <Tabs defaultValue="data" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="data">Data</TabsTrigger>
+                <TabsTrigger value="appearance">Appearance</TabsTrigger>
+              </TabsList>
+              <TabsContent value="data" className="mt-4 space-y-4">
+                <div className="flex gap-2">
+                  <input type="file" accept=".csv, .json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                  <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="mr-2 h-4 w-4"/>Upload Data
                   </Button>
-                  ))}
-              </div>
-             
-              {chartType === 'pie' ? (
-                 <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Name Key</Label>
-                      <Select value={chartConfig.nameKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, nameKey: key }) })}>
-                          <SelectTrigger><SelectValue placeholder="Select a key..." /></SelectTrigger>
-                          <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Value Key</Label>
-                      <Select value={chartConfig.valueKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, valueKey: key }) })}>
-                          <SelectTrigger><SelectValue placeholder="Select a value..." /></SelectTrigger>
-                          <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
                 </div>
-              ) : (
-                <>
-                  <div>
-                      <Label>X-Axis</Label>
-                      <Select value={chartConfig.xAxisKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, xAxisKey: key }) })}>
-                          <SelectTrigger><SelectValue placeholder="Select a key..." /></SelectTrigger>
-                          <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
-                      </Select>
-                  </div>
-                   <div>
-                      <Label>Series (Y-Axis)</Label>
-                      <div className="space-y-2 rounded-md border p-4">
-                        {availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (
-                          <div key={key} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`key-${key}`} 
-                              checked={chartConfig.dataKeys?.includes(key)}
-                              onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)}
-                            />
-                            <label htmlFor={`key-${key}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                              {key}
-                            </label>
-                          </div>
+                {chartData.length > 0 && (
+                  <div className="max-h-60 overflow-auto border rounded-lg">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-muted">
+                        <TableRow>
+                          {availableKeys.map(key => (
+                              <TableHead key={key}>
+                                  <div className="flex items-center gap-1">
+                                      <span>{key}</span>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveColumn(key)}>
+                                          <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                  </div>
+                              </TableHead>
+                          ))}
+                          <TableHead className="w-[50px]"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {chartData.map((row, rowIndex) => (
+                          <TableRow key={rowIndex}>
+                            {availableKeys.map(key => (
+                              <TableCell key={key}>
+                                <Input
+                                  type="text"
+                                  value={row[key] || ''}
+                                  onChange={(e) => handleTableChange(rowIndex, key, e.target.value)}
+                                  className="h-8"
+                                />
+                              </TableCell>
+                            ))}
+                            <TableCell>
+                              <Button variant="ghost" size="icon" onClick={() => handleRemoveRow(rowIndex)}><Trash2 className="h-4 w-4" /></Button>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                        {availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (
-                            <p className="text-sm text-muted-foreground">Select an X-Axis key first or add more columns.</p>
-                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button onClick={handleAddRow} size="sm">
+                    <Plus className="mr-2 h-4 w-4"/>Add Row
+                  </Button>
+                  <Button onClick={handleAddColumn} size="sm" variant="outline">
+                    <Plus className="mr-2 h-4 w-4"/>Add Column
+                  </Button>
+                </div>
+              </TabsContent>
+              <TabsContent value="appearance" className="mt-4 space-y-4">
+                <div className="flex items-center gap-4">
+                    <Label className="mr-2">Type:</Label>
+                    {CHART_TYPES.map(type => (
+                    <Button key={type.name} variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => updateAttributes({ chartType: type.name })}>
+                        <type.icon className="h-4 w-4"/><span className="sr-only">{type.name} chart</span>
+                    </Button>
+                    ))}
+                </div>
+              
+                {chartType === 'pie' ? (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Name Key</Label>
+                        <Select value={chartConfig.nameKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, nameKey: key }) })}>
+                            <SelectTrigger><SelectValue placeholder="Select a key..." /></SelectTrigger>
+                            <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Value Key</Label>
+                        <Select value={chartConfig.valueKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, valueKey: key }) })}>
+                            <SelectTrigger><SelectValue placeholder="Select a value..." /></SelectTrigger>
+                            <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
+                        </Select>
                       </div>
                   </div>
-                </>
-              )}
-            </TabsContent>
-          </Tabs>
+                ) : (
+                  <>
+                    <div>
+                        <Label>X-Axis</Label>
+                        <Select value={chartConfig.xAxisKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, xAxisKey: key }) })}>
+                            <SelectTrigger><SelectValue placeholder="Select a key..." /></SelectTrigger>
+                            <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label>Series (Y-Axis)</Label>
+                        <div className="space-y-2 rounded-md border p-4">
+                          {availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (
+                            <div key={key} className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`key-${key}`} 
+                                checked={chartConfig.dataKeys?.includes(key)}
+                                onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)}
+                              />
+                              <label htmlFor={`key-${key}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                {key}
+                              </label>
+                            </div>
+                          ))}
+                          {availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (
+                              <p className="text-sm text-muted-foreground">Select an X-Axis key first or add more columns.</p>
+                          )}
+                        </div>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
            
           <div className="h-80 w-full mt-6">
               <ResponsiveContainer width="100%" height="100%">
