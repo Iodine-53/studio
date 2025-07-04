@@ -13,7 +13,6 @@ export const Chart = Node.create({
       chartType: {
         default: 'bar',
       },
-      // Store data and config as JSON strings for robustness
       chartData: {
         default: '[]', 
       },
@@ -23,6 +22,9 @@ export const Chart = Node.create({
       title: {
         default: 'My Chart',
       },
+      viewConfig: {
+        default: '{"legend":true,"tooltip":true,"grid":true}',
+      }
     };
   },
 
@@ -36,6 +38,7 @@ export const Chart = Node.create({
           chartData: element.getAttribute('data-chart-data'),
           chartConfig: element.getAttribute('data-chart-config'),
           title: element.getAttribute('data-title'),
+          viewConfig: element.getAttribute('data-view-config'),
         }
       }
     }];
@@ -48,6 +51,7 @@ export const Chart = Node.create({
         'data-chart-data': HTMLAttributes.chartData,
         'data-chart-config': HTMLAttributes.chartConfig,
         'data-title': HTMLAttributes.title,
+        'data-view-config': HTMLAttributes.viewConfig
     })];
   },
 
