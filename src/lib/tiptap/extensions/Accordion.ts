@@ -105,7 +105,8 @@ export const Accordion = Node.create<AccordionOptions>({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'accordion' }), 0]
+    // An atom node is a leaf node, so it cannot have a content hole (the '0').
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'accordion' })]
   },
 
   addNodeView() {
