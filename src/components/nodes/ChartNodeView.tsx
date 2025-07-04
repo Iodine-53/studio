@@ -223,11 +223,22 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
       case 'area':
         if (!xAxisKey || dataKeys.length === 0) return <p className="text-center p-4">Please select an X-Axis and at least one Data Series.</p>;
         
+        const processedData = chartData.map(row => {
+            const newRow: {[key: string]: any} = { ...row };
+            dataKeys.forEach(key => {
+              const value = parseFloat(row[key]);
+              if (!isNaN(value)) {
+                newRow[key] = value;
+              }
+            });
+            return newRow;
+        });
+
         const ChartComponent = chartType === 'bar' ? BarChart : chartType === 'line' ? LineChart : AreaChart;
         const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
         
         return (
-          <ChartComponent data={chartData}>
+          <ChartComponent data={processedData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey={xAxisKey} tick={{fontSize: 12}} />
             <YAxis tick={{fontSize: 12}} />
