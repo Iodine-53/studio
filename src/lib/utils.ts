@@ -2,11 +2,9 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import type { TiptapNode } from '@/components/PrintPreview';
 import { DocumentRenderer } from '@/components/PrintPreview';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -45,64 +43,53 @@ export const processImage = (file: File): Promise<string> => {
   });
 };
 
-export const exportToPdf = async (documentJson: TiptapNode, filename: string) => {
-    if (!documentJson?.content) {
-        console.error("No content to export");
-        return;
-    }
+export const generatePrintableHtml = (documentJson: TiptapNode): string => {
+  if (!documentJson?.content) {
+    return '';
+  }
 
-    const exportContainer = document.createElement('div');
-    document.body.appendChild(exportContainer);
+  // 1. Render our React component to a static HTML string
+  const documentHtml = renderToString(
+    React.createElement('div', { className: 'prose prose-sm sm:prose-base' },
+      React.createElement(DocumentRenderer, { content: documentJson.content })
+    )
+  );
 
-    Object.assign(exportContainer.style, {
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        width: '210mm',
-        zIndex: '-1',
-        opacity: '0',
-        pointerEvents: 'none',
-    });
-
-    const PrintableDocument: React.FC = () => {
-        return React.createElement('div', { className: 'bg-white' },
-            React.createElement('div', { className: 'prose prose-sm sm:prose-base max-w-none' },
-                React.createElement(DocumentRenderer, { content: documentJson.content! })
-            )
-        );
-    };
-
-    const root = createRoot(exportContainer);
-    await new Promise<void>((resolve) => {
-        root.render(React.createElement(PrintableDocument));
-        // A generous timeout to allow for rendering and image loading
-        setTimeout(resolve, 500);
-    });
-
-    // STEP 1: CAPTURE WITH HTML2CANVAS
-    const canvas = await html2canvas(exportContainer, {
-        scale: 2, // Higher resolution for better quality
-        useCORS: true,
-    });
-    
-    // Clean up the DOM as early as possible
-    root.unmount();
-    exportContainer.remove();
-
-    // STEP 2: COMPOSE WITH JSPDF
-    const imgData = canvas.toDataURL('image/png');
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-
-    // Create a PDF with the same dimensions as the captured canvas
-    const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'px',
-        format: [canvasWidth, canvasHeight],
-    });
-
-    pdf.addImage(imgData, 'PNG', 0, 0, canvasWidth, canvasHeight);
-
-    // STEP 3: SAVE
-    pdf.save(`${filename}.pdf`);
+  // 2. Create the full HTML document structure
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Print Preview</title>
+        
+        <!-- This is CRITICAL: It links to your compiled Tailwind CSS -->
+        <link rel="stylesheet" href="/globals.css">
+        
+        <style>
+          /* Basic print-friendly styles */
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact; /* Ensures colors print */
+              print-color-adjust: exact;
+            }
+          }
+          @page {
+            size: A4;
+            margin: 1in;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            width: 210mm;
+            min-height: 297mm;
+            box-sizing: border-box; /* Ensure padding is included in width */
+          }
+        </style>
+      </head>
+      <body class="p-[1in] bg-white">
+        ${documentHtml}
+      </body>
+    </html>
+  `;
 };

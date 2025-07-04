@@ -6,10 +6,10 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileDown } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
-import { exportToPdf } from "@/lib/utils";
+import { generatePrintableHtml } from "@/lib/utils";
 
 export default function EditorPage() {
   const params = useParams();
@@ -18,7 +18,6 @@ export default function EditorPage() {
   const [initialContent, setInitialContent] = useState<any>(null);
   const [currentContent, setCurrentContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Ref to hold the timeout ID for debouncing
@@ -77,15 +76,30 @@ export default function EditorPage() {
     setIsPreviewOpen(true);
   };
 
-  const handleExport = async () => {
-    if (!currentContent || !doc) return;
-    setIsExporting(true);
-    try {
-        await exportToPdf(currentContent, doc.title || 'document');
-    } catch (error) {
-        console.error("Failed to export PDF:", error);
-    } finally {
-        setIsExporting(false);
+  const handlePrint = () => {
+    if (!currentContent) {
+      alert("Cannot print an empty document.");
+      return;
+    }
+
+    const htmlContent = generatePrintableHtml(currentContent);
+    if (!htmlContent) {
+        alert("Cannot print an empty document.");
+        return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        // Optional: you can uncomment the lines below to automatically trigger the print dialog
+        // printWindow.onload = () => {
+        //   printWindow.focus(); // Required for some browsers
+        //   printWindow.print();
+        //   // printWindow.close(); // You might want to close it after printing
+        // };
+    } else {
+        alert("Please allow popups for this site to print the document.");
     }
   };
 
@@ -119,9 +133,9 @@ export default function EditorPage() {
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
-               <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-                {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
-                Download PDF
+               <Button variant="outline" onClick={handlePrint}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print
               </Button>
             </div>
           </nav>
