@@ -5,6 +5,8 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import type { TiptapNode } from '@/components/PrintPreview';
 import { DocumentRenderer } from '@/components/PrintPreview';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -49,10 +51,6 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
         return;
     }
 
-    // Dynamically import to ensure they only run on the client
-    const { default: jsPDF } = await import('jspdf');
-    const { default: html2canvas } = await import('html2canvas');
-
     const exportContainer = document.createElement('div');
     document.body.appendChild(exportContainer);
 
@@ -60,19 +58,19 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
         position: 'fixed',
         top: '0',
         left: '0',
-        width: '210mm', // Set a fixed width for consistent layout
+        width: '210mm',
         zIndex: '-1',
         opacity: '0',
         pointerEvents: 'none',
     });
 
-    const PrintableDocument: React.FC = () => (
-        <div className="bg-white">
-            <div className="prose prose-sm sm:prose-base max-w-none">
-                <DocumentRenderer content={documentJson.content!} />
-            </div>
-        </div>
-    );
+    const PrintableDocument: React.FC = () => {
+        return React.createElement('div', { className: 'bg-white' },
+            React.createElement('div', { className: 'prose prose-sm sm:prose-base max-w-none' },
+                React.createElement(DocumentRenderer, { content: documentJson.content! })
+            )
+        );
+    };
 
     const root = createRoot(exportContainer);
     await new Promise<void>((resolve) => {
