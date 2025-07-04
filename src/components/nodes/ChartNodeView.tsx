@@ -113,7 +113,20 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   };
 
   const handleAddRow = () => {
-    const newRow = availableKeys.reduce((acc, key) => ({ ...acc, [key]: '' }), {});
+    // If no data exists, add a default row to create the initial structure.
+    if (chartData.length === 0) {
+      const defaultRow = { label: 'New Item', value: 10 };
+      const newData = [defaultRow];
+      setChartData(newData);
+      updateAttributes({ chartData: JSON.stringify(newData) });
+      // After adding the first row, suggest default keys for the chart config
+      const newConfig = { nameKey: 'label', valueKey: 'value', xAxisKey: 'label', dataKey: 'value' };
+      updateAttributes({ chartConfig: JSON.stringify(newConfig) });
+      return;
+    }
+
+    // If data already exists, add a new blank row based on the existing keys.
+    const newRow = Object.keys(chartData[0]).reduce((acc, key) => ({ ...acc, [key]: '' }), {});
     const newData = [...chartData, newRow];
     setChartData(newData);
     updateAttributes({ chartData: JSON.stringify(newData) });
@@ -215,7 +228,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
                   </Table>
                 </div>
               )}
-               <Button onClick={handleAddRow} disabled={availableKeys.length === 0}>
+               <Button onClick={handleAddRow}>
                   <Plus className="mr-2 h-4 w-4"/>Add Row
                 </Button>
             </TabsContent>
@@ -257,5 +270,3 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
     </NodeViewWrapper>
   );
 };
-
-    
