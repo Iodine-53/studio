@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -99,5 +100,39 @@
   }
   callout-block[data-type='success'] {
     @apply border-green-400 bg-green-50 dark:bg-green-900/20;
+  }
+
+  /* Image Wrapper Layout Styles */
+  .image-wrapper {
+    @apply flex my-4;
+  }
+  .image-wrapper[data-align="left"] {
+    @apply justify-start;
+  }
+  .image-wrapper[data-align="center"] {
+    @apply justify-center;
+  }
+  .image-wrapper[data-align="right"] {
+    @apply justify-end;
+  }
+
+  .image-wrapper > img {
+    @apply max-w-full h-auto;
+  }
+
+  .image-wrapper[data-width="small"] > img {
+    @apply max-w-sm;
+  }
+  .image-wrapper[data-width="default"] > img {
+    @apply max-w-lg;
+  }
+  .image-wrapper[data-width="full"] > img {
+    @apply w-full;
+  }
+
+  .ProseMirror .ProseMirror-selectednode .image-wrapper {
+      outline: 3px solid hsl(var(--ring));
+      outline-offset: 2px;
+      @apply rounded-lg;
   }
 }

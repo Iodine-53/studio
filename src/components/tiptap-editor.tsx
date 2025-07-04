@@ -26,6 +26,7 @@ import { Drawing } from '@/lib/tiptap/extensions/Drawing';
 import { Chart } from '@/lib/tiptap/extensions/Chart';
 import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
 import { Accordion } from '@/lib/tiptap/extensions/Accordion';
+import { LayoutBubbleMenu } from './LayoutBubbleMenu';
 
 
 // Import a syntax highlighting theme
@@ -108,7 +109,8 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
 
 
   return (
-    <div className="flex flex-col justify-stretch min-h-[500px]">
+    <div className="flex flex-col justify-stretch min-h-[500px] relative">
+      {editor && <LayoutBubbleMenu editor={editor} />}
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
