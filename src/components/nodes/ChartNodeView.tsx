@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AreaChart as AreaChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon, PieChart as PieChartIcon, Upload, X, Plus, Trash2 } from 'lucide-react';
 import { useState, useMemo, useRef, ChangeEvent } from 'react';
 import Papa from 'papaparse';
@@ -22,7 +23,7 @@ type ChartType = 'bar' | 'line' | 'area' | 'pie';
 
 type ChartConfig = {
   xAxisKey?: string;
-  dataKey?: string;
+  dataKeys?: string[];
   nameKey?: string;
   valueKey?: string;
 };
@@ -62,32 +63,48 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   
   useMemo(() => {
     if (chartData.length > 0) {
-      setAvailableKeys(Object.keys(chartData[0]));
+      // Get all unique keys from all rows
+      const allKeys = chartData.reduce((keys, row) => {
+        Object.keys(row).forEach(key => {
+          if (!keys.includes(key)) {
+            keys.push(key);
+          }
+        });
+        return keys;
+      }, [] as string[]);
+      setAvailableKeys(allKeys);
     } else {
-        setAvailableKeys([]);
+      setAvailableKeys([]);
     }
   }, [chartData]);
   
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const onComplete = (data: any[], fields?: string[]) => {
+  const onFileComplete = (data: any[], fields?: string[]) => {
       setChartData(data);
       updateAttributes({ chartData: JSON.stringify(data) });
       const keys = fields || (data.length > 0 ? Object.keys(data[0]) : []);
-      setAvailableKeys(keys);
-      if (keys.length >= 2) {
-        const newConfig = chartType === 'pie' ? { nameKey: keys[0], valueKey: keys[1] } : { xAxisKey: keys[0], dataKey: keys[1] };
-        updateAttributes({ chartConfig: JSON.stringify(newConfig) });
+      if (keys.length > 0) {
+        setAvailableKeys(keys);
+        if (keys.length >= 2) {
+          const newConfig = { 
+            xAxisKey: keys[0], 
+            dataKeys: [keys[1]],
+            nameKey: keys[0], 
+            valueKey: keys[1]
+          };
+          updateAttributes({ chartConfig: JSON.stringify(newConfig) });
+        }
       }
-    };
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
     if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: (result) => onComplete(result.data, result.meta.fields),
+        complete: (result) => onFileComplete(result.data, result.meta.fields),
         error: (err) => console.error("CSV Parsing Error:", err),
       });
     } else if (file.type === 'application/json' || file.name.endsWith('.json')) {
@@ -95,7 +112,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
       reader.onload = (e) => {
         try {
           const json = JSON.parse(e.target.result as string);
-          if (Array.isArray(json)) onComplete(json);
+          if (Array.isArray(json)) onFileComplete(json);
         } catch (err) {
           console.error("Error parsing JSON file:", err);
         }
@@ -113,23 +130,27 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   };
 
   const handleAddRow = () => {
-    // If no data exists, add a default row to create the initial structure.
-    if (chartData.length === 0) {
-      const defaultRow = { label: 'New Item', value: 10 };
-      const newData = [defaultRow];
-      setChartData(newData);
-      updateAttributes({ chartData: JSON.stringify(newData) });
-      // After adding the first row, suggest default keys for the chart config
-      const newConfig = { nameKey: 'label', valueKey: 'value', xAxisKey: 'label', dataKey: 'value' };
-      updateAttributes({ chartConfig: JSON.stringify(newConfig) });
-      return;
-    }
-
-    // If data already exists, add a new blank row based on the existing keys.
-    const newRow = Object.keys(chartData[0]).reduce((acc, key) => ({ ...acc, [key]: '' }), {});
+    const newRow = availableKeys.reduce((acc, key) => ({ ...acc, [key]: '' }), {});
     const newData = [...chartData, newRow];
     setChartData(newData);
     updateAttributes({ chartData: JSON.stringify(newData) });
+  };
+  
+  const handleAddColumn = () => {
+    const newColumnName = window.prompt("Enter new column name:");
+    if (newColumnName && newColumnName.trim() !== "" && !availableKeys.includes(newColumnName)) {
+      const newKey = newColumnName.trim();
+      
+      const newData = chartData.map(row => ({
+        ...row,
+        [newKey]: '' // Default value for new column
+      }));
+
+      setChartData(newData);
+      updateAttributes({ chartData: JSON.stringify(newData) });
+    } else if (newColumnName && availableKeys.includes(newColumnName)) {
+      alert("Column name already exists.");
+    }
   };
 
   const handleRemoveRow = (rowIndex: number) => {
@@ -137,7 +158,42 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
     setChartData(newData);
     updateAttributes({ chartData: JSON.stringify(newData) });
   };
-
+  
+  const handleRemoveColumn = (keyToRemove: string) => {
+    if (window.confirm(`Are you sure you want to delete the "${keyToRemove}" column? This cannot be undone.`)) {
+        const newData = chartData.map(row => {
+            const newRow = {...row};
+            delete newRow[keyToRemove as keyof typeof newRow];
+            return newRow;
+        });
+        setChartData(newData);
+        updateAttributes({ chartData: JSON.stringify(newData) });
+        
+        const newConfig = { ...chartConfig };
+        if (newConfig.dataKeys) {
+            newConfig.dataKeys = newConfig.dataKeys.filter(k => k !== keyToRemove);
+        }
+        if (newConfig.xAxisKey === keyToRemove) {
+            delete newConfig.xAxisKey;
+        }
+        if (newConfig.nameKey === keyToRemove) {
+            delete newConfig.nameKey;
+        }
+         if (newConfig.valueKey === keyToRemove) {
+            delete newConfig.valueKey;
+        }
+        updateAttributes({ chartConfig: JSON.stringify(newConfig) });
+    }
+  }
+  
+  const handleDataKeyChange = (key: string, checked: boolean) => {
+    const currentKeys = chartConfig.dataKeys || [];
+    const newKeys = checked 
+      ? [...currentKeys, key]
+      : currentKeys.filter(k => k !== key);
+    
+    updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, dataKeys: newKeys }) });
+  };
 
   const renderChart = () => {
     if (chartData.length === 0) {
@@ -150,18 +206,36 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
       );
     }
     
-    const { xAxisKey, dataKey, nameKey, valueKey } = chartConfig;
+    const { xAxisKey, dataKeys = [], nameKey, valueKey } = chartConfig;
 
     switch (chartType) {
       case 'bar':
-        if (!xAxisKey || !dataKey) return <p className="text-center p-4">Please select an X-Axis and a Data Key.</p>;
-        return <BarChart data={chartData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey={xAxisKey} /><YAxis /><Tooltip /><Legend /><Bar dataKey={dataKey} fill={COLORS[0]} /></BarChart>;
       case 'line':
-        if (!xAxisKey || !dataKey) return <p className="text-center p-4">Please select an X-Axis and a Data Key.</p>;
-        return <LineChart data={chartData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey={xAxisKey} /><YAxis /><Tooltip /><Legend /><Line type="monotone" dataKey={dataKey} stroke={COLORS[1]} /></LineChart>;
       case 'area':
-        if (!xAxisKey || !dataKey) return <p className="text-center p-4">Please select an X-Axis and a Data Key.</p>;
-        return <AreaChart data={chartData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey={xAxisKey} /><YAxis /><Tooltip /><Legend /><Area type="monotone" dataKey={dataKey} stroke={COLORS[4]} fill={COLORS[4]} fillOpacity={0.3} /></AreaChart>;
+        if (!xAxisKey || dataKeys.length === 0) return <p className="text-center p-4">Please select an X-Axis and at least one Data Series.</p>;
+        
+        const ChartComponent = chartType === 'bar' ? BarChart : chartType === 'line' ? LineChart : AreaChart;
+        const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
+        
+        return (
+          <ChartComponent data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={xAxisKey} />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            {dataKeys.map((key, index) => (
+              <SeriesComponent 
+                key={key} 
+                type="monotone" // for line/area
+                dataKey={key} 
+                fill={COLORS[index % COLORS.length]} // for bar/area
+                stroke={COLORS[index % COLORS.length]} // for line
+                fillOpacity={chartType === 'area' ? 0.3 : 1}
+              />
+            ))}
+          </ChartComponent>
+        );
       case 'pie':
         if (!nameKey || !valueKey) return <p className="text-center p-4">Please select a Name Key and a Value Key.</p>;
         const pieData = chartData.map(d => ({ ...d, [valueKey]: Number(d[valueKey]) })).filter(d => !isNaN(d[valueKey]));
@@ -170,9 +244,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
         return null;
     }
   };
-
-  const currentConfigKey = chartType === 'pie' ? chartConfig.nameKey : chartConfig.xAxisKey;
-  const currentValueKey = chartType === 'pie' ? chartConfig.valueKey : chartConfig.dataKey;
 
   return (
     <NodeViewWrapper>
@@ -191,7 +262,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
               <TabsTrigger value="appearance">Appearance</TabsTrigger>
             </TabsList>
             <TabsContent value="data" className="mt-4 space-y-4">
-              <div>
+              <div className="flex gap-2">
                 <input type="file" accept=".csv, .json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                 <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
                     <Upload className="mr-2 h-4 w-4"/>Upload Data
@@ -202,7 +273,16 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
                   <Table>
                     <TableHeader className="sticky top-0 bg-muted">
                       <TableRow>
-                        {availableKeys.map(key => <TableHead key={key}>{key}</TableHead>)}
+                        {availableKeys.map(key => (
+                            <TableHead key={key}>
+                                <div className="flex items-center gap-1">
+                                    <span>{key}</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveColumn(key)}>
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </TableHead>
+                        ))}
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -228,9 +308,14 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
                   </Table>
                 </div>
               )}
-               <Button onClick={handleAddRow}>
+               <div className="flex gap-2">
+                <Button onClick={handleAddRow} size="sm">
                   <Plus className="mr-2 h-4 w-4"/>Add Row
                 </Button>
+                <Button onClick={handleAddColumn} size="sm" variant="outline">
+                  <Plus className="mr-2 h-4 w-4"/>Add Column
+                </Button>
+              </div>
             </TabsContent>
             <TabsContent value="appearance" className="mt-4 space-y-4">
               <div className="flex items-center gap-4">
@@ -241,22 +326,55 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
                   </Button>
                   ))}
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
+             
+              {chartType === 'pie' ? (
+                 <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <Label>{chartType === 'pie' ? 'Name Key' : 'X-Axis'}</Label>
-                      <Select value={currentConfigKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify(chartType === 'pie' ? {...chartConfig, nameKey: key} : {...chartConfig, xAxisKey: key}) })}>
+                      <Label>Name Key</Label>
+                      <Select value={chartConfig.nameKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, nameKey: key }) })}>
                           <SelectTrigger><SelectValue placeholder="Select a key..." /></SelectTrigger>
                           <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label>{chartType === 'pie' ? 'Value Key' : 'Data Key'}</Label>
-                      <Select value={currentValueKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify(chartType === 'pie' ? {...chartConfig, valueKey: key} : {...chartConfig, dataKey: key}) })}>
+                      <Label>Value Key</Label>
+                      <Select value={chartConfig.valueKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, valueKey: key }) })}>
                           <SelectTrigger><SelectValue placeholder="Select a value..." /></SelectTrigger>
                           <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                 </div>
+              ) : (
+                <>
+                  <div>
+                      <Label>X-Axis</Label>
+                      <Select value={chartConfig.xAxisKey} onValueChange={key => updateAttributes({ chartConfig: JSON.stringify({ ...chartConfig, xAxisKey: key }) })}>
+                          <SelectTrigger><SelectValue placeholder="Select a key..." /></SelectTrigger>
+                          <SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent>
+                      </Select>
+                  </div>
+                   <div>
+                      <Label>Series (Y-Axis)</Label>
+                      <div className="space-y-2 rounded-md border p-4">
+                        {availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (
+                          <div key={key} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`key-${key}`} 
+                              checked={chartConfig.dataKeys?.includes(key)}
+                              onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)}
+                            />
+                            <label htmlFor={`key-${key}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              {key}
+                            </label>
+                          </div>
+                        ))}
+                        {availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (
+                            <p className="text-sm text-muted-foreground">Select an X-Axis key first or add more columns.</p>
+                        )}
+                      </div>
+                  </div>
+                </>
+              )}
             </TabsContent>
           </Tabs>
            
