@@ -6,55 +6,24 @@ import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import { useEffect, useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// --- The New, Definitive Interactive Desktop Component ---
+// --- The New, Simplified Interactive Desktop Component ---
 const InteractiveTldrawCanvas = ({ tldrawState, onStateChange }: { tldrawState: string | null; onStateChange: (state: string) => void }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const store = tldrawState ? (JSON.parse(tldrawState) as TldrawSnapshot) : undefined;
   
-  const handleWrapperClick = () => {
-    // If we are not in edit mode, a click on the canvas should enter edit mode.
-    if (!isEditing) {
-      setIsEditing(true);
-    }
-  };
-
   return (
-    // The main wrapper controls entering edit mode.
-    <div
-      className={`relative h-[400px] w-full border rounded-lg ${isEditing ? 'z-50' : 'z-0'} ${isEditing ? '' : 'cursor-pointer'}`}
-      onClick={handleWrapperClick}
-    >
+    <div className="relative h-[400px] w-full border rounded-lg">
       <Tldraw
         store={store}
         onPersistenceChange={async (editor) => {
-          // We always save the state, tldraw is smart about not over-saving.
           onStateChange(await editor.store.toJson());
         }}
-        // The UI is hidden based on our editing state.
-        hideUi={!isEditing}
-        // This prop is critical. It prevents interaction in view mode and allows it in edit mode.
-        // My previous removal of this was incorrect and is the source of the bug.
-        isReadonly={!isEditing}
       />
-
-      {/* The "Done" button only appears when editing. */}
-      {isEditing && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent the wrapper's onClick from firing.
-            setIsEditing(false);
-          }}
-          className="absolute top-2 right-2 z-20 bg-white dark:bg-black text-black dark:text-white px-3 py-1 rounded-md shadow-md border border-gray-300 dark:border-gray-700 text-sm"
-        >
-          Done
-        </button>
-      )}
     </div>
   );
 };
 
 
-// --- 3. The Static Mobile Preview Component ---
+// --- The Static Mobile Preview Component ---
 const StaticTldrawPreview = ({ tldrawState }: { tldrawState: string | null }) => {
   const [svg, setSvg] = useState<string | null>(null);
 
@@ -86,7 +55,7 @@ const StaticTldrawPreview = ({ tldrawState }: { tldrawState: string | null }) =>
   return <div dangerouslySetInnerHTML={{ __html: svg }} />;
 };
 
-// --- 4. The Main Node View Component ---
+// --- The Main Node View Component ---
 export const DrawingNodeView = ({ node, updateAttributes }: NodeViewProps) => {
   const isDesktop = !useIsMobile();
 
