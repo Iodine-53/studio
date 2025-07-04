@@ -43,7 +43,10 @@ export const processImage = (file: File): Promise<string> => {
 };
 
 export const exportToPdf = async (documentJson: TiptapNode, filename: string) => {
-  if (!documentJson?.content) return;
+  if (!documentJson?.content) {
+    console.error("No content to export");
+    return;
+  }
   
   // Dynamically import html2pdf.js only on the client-side
   const html2pdf = (await import('html2pdf.js')).default;
@@ -66,32 +69,50 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
 
   // 2. Render the document content into the hidden container using React 18's createRoot
   const root = createRoot(printContainer);
+  const printableElement = React.createElement(
+    'div',
+    { className: 'prose prose-sm sm:prose-base max-w-none' },
+    React.createElement(DocumentRenderer, { content: documentJson.content })
+  );
+  
+  // In React 18, render is async. We wait for the render to complete.
   await new Promise<void>((resolve) => {
-    const printableElement = React.createElement(
-      'div',
-      { className: 'prose prose-sm sm:prose-base max-w-none' },
-      React.createElement(DocumentRenderer, { content: documentJson.content })
-    );
-
-    // In React 18, render is async. We use a timeout to wait for the DOM to update.
     root.render(printableElement);
-    setTimeout(resolve, 500); // Give it a bit more time for images/styles to load
+    // Use a short timeout to let React update the DOM
+    setTimeout(resolve, 500); 
   });
 
+  // 3. THE CRITICAL FIX: Wait for all images to load
+  const images = Array.from(printContainer.getElementsByTagName('img'));
+  const imageLoadPromises = images.map(img => {
+    if (img.complete) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      img.onload = () => resolve();
+      img.onerror = () => {
+        console.warn(`Could not load image: ${img.src}. It may be missing from the PDF.`);
+        resolve(); // Resolve anyway so one broken image doesn't stop the whole export
+      };
+    });
+  });
 
-  // 3. Configure and run html2pdf
+  // Wait for all image promises to settle
+  await Promise.allSettled(imageLoadPromises);
+
+  // 4. Configure and run html2pdf
   const options = {
     margin: 10,
     filename: `${filename}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   };
 
   await html2pdf().from(printContainer).set(options).save();
 
-  // 4. Clean up
+  // 5. Clean up
   root.unmount();
   printContainer.remove();
 };
