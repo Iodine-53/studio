@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Tldraw, TldrawSnapshot, TLSvgOptions } from '@tldraw/tldraw';
@@ -7,7 +6,7 @@ import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import { useEffect, useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// --- 2. The Interactive Desktop Component ---
+// --- The New, Definitive Interactive Desktop Component ---
 const InteractiveTldrawCanvas = ({ tldrawState, onStateChange }: { tldrawState: string | null; onStateChange: (state: string) => void }) => {
   const [isEditing, setIsEditing] = useState(false);
   const store = tldrawState ? (JSON.parse(tldrawState) as TldrawSnapshot) : undefined;
@@ -33,6 +32,9 @@ const InteractiveTldrawCanvas = ({ tldrawState, onStateChange }: { tldrawState: 
         }}
         // The UI is hidden based on our editing state.
         hideUi={!isEditing}
+        // This prop is critical. It prevents interaction in view mode and allows it in edit mode.
+        // My previous removal of this was incorrect and is the source of the bug.
+        isReadonly={!isEditing}
       />
 
       {/* The "Done" button only appears when editing. */}
@@ -102,4 +104,3 @@ export const DrawingNodeView = ({ node, updateAttributes }: NodeViewProps) => {
     </NodeViewWrapper>
   );
 };
-    
