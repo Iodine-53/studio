@@ -53,40 +53,38 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
   const html2pdf = (await import('html2pdf.js')).default;
 
   // 1. Create a container
-  const printContainer = document.createElement('div');
-  printContainer.id = 'pdf-export-container';
-  document.body.appendChild(printContainer);
+  const exportContainer = document.createElement('div');
+  document.body.appendChild(exportContainer);
 
-  // TEMPORARY DEBUGGING STYLES
-  Object.assign(printContainer.style, {
-    position: 'fixed', // Use fixed to overlay on top
+  // THE FINAL, ROBUST HIDING STYLES
+  Object.assign(exportContainer.style, {
+    position: 'fixed',
     top: '0',
     left: '0',
-    width: '100vw',
-    height: '100vh',
-    backgroundColor: 'rgba(0, 255, 0, 0.5)', // Bright green overlay
-    zIndex: '10000',
-    overflow: 'auto', // Make it scrollable
+    width: '210mm',      // Must have a defined width for layout
+    zIndex: '-1',         // Move it behind all other content
+    opacity: '0',         // Make it fully transparent
+    pointerEvents: 'none',// Prevent any interaction
   });
 
-
   // 2. Render the document content into the hidden container using React 18's createRoot
-  const root = createRoot(printContainer);
+  const root = createRoot(exportContainer);
   const printableElement = React.createElement(
     'div',
-    { 
-      // Add a white background and A4-like padding inside the green overlay for clarity
-      className: 'prose prose-sm sm:prose-base max-w-none bg-white mx-auto my-8 p-12 w-[210mm]'
-    },
-    React.createElement(DocumentRenderer, { content: documentJson.content })
+    { className: 'bg-white p-[1in]' }, // Added background and padding here
+    React.createElement(
+      'div',
+      { className: 'prose prose-sm sm:prose-base max-w-none' },
+      React.createElement(DocumentRenderer, { content: documentJson.content })
+    )
   );
   
   root.render(printableElement);
 
-  // Wait for React to render and images to load
-  await new Promise<void>((resolve) => setTimeout(resolve, 500));
+  // 3. THE CRITICAL FIX: Wait for React to render AND for all images to load
+  await new Promise<void>((resolve) => setTimeout(resolve, 500)); // Wait for React's next tick
 
-  const images = Array.from(printContainer.getElementsByTagName('img'));
+  const images = Array.from(exportContainer.getElementsByTagName('img'));
   const imageLoadPromises = images.map(img => {
     if (img.complete) {
       return Promise.resolve();
@@ -94,17 +92,17 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
     return new Promise<void>((resolve) => {
       img.onload = () => resolve();
       img.onerror = () => {
-        console.warn(`Could not load image: ${img.src}. It may be missing from the PDF.`);
-        resolve(); 
+        console.warn(`Could not load image: ${img.src}. It will be missing from the PDF.`);
+        resolve(); // Resolve anyway so one broken image doesn't stop the whole export
       };
     });
   });
 
   await Promise.allSettled(imageLoadPromises);
 
-  // 4. Configure and run html2pdf now that everything is ready
+  // 4. Configure and run html2pdf
   const options = {
-    margin: 10,
+    margin: 0, // Margins are handled by our 'p-[1in]' class
     filename: `${filename}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
@@ -112,11 +110,9 @@ export const exportToPdf = async (documentJson: TiptapNode, filename: string) =>
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   };
 
-  // Temporarily comment out the PDF generation and cleanup for debugging
-  // await html2pdf().from(printContainer).set(options).save();
+  await html2pdf().from(exportContainer).set(options).save();
 
   // 5. Clean up
-  // root.unmount();
-  // printContainer.remove();
+  root.unmount();
+  exportContainer.remove();
 };
-
