@@ -71,9 +71,9 @@ const Toolbar = ({ editor }: Props) => {
   };
 
   const lineHeights = [
-    { label: 'Single', value: '1' },
+    { label: '1.0', value: '1' },
     { label: '1.5', value: '1.5' },
-    { label: 'Double', value: '2' },
+    { label: '2.0', value: '2' },
   ];
 
   return (
