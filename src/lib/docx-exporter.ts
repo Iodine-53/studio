@@ -154,9 +154,23 @@ export const renderChartToImage = (chartConfig: any): Promise<string> => {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF5733', '#C70039', '#900C3F', '#581845'];
 
 function createTextRuns(node: TiptapNode): TextRun[] {
-    return node.content?.map(contentNode => {
+    return node.content?.flatMap(contentNode => {
         const text = contentNode.text || '';
-        if (!text) return null; // Skip empty text nodes
+        if (!text) return [];
+
+        const isLink = contentNode.marks?.some(mark => mark.type === 'link');
+        const linkMark = contentNode.marks?.find(mark => mark.type === 'link');
+        const href = linkMark?.attrs?.href;
+
+        if (isLink && href) {
+            // In docx.js, creating actual hyperlinks is more complex.
+            // For simplicity, we can represent them as styled text.
+            // A more advanced implementation might use fields.
+            return new TextRun({
+                text: text,
+                style: 'Hyperlink',
+            });
+        }
 
         return new TextRun({
             text: text,
@@ -165,7 +179,7 @@ function createTextRuns(node: TiptapNode): TextRun[] {
             underline: contentNode.marks?.some(mark => mark.type === 'underline') ? {} : undefined,
             strike: contentNode.marks?.some(mark => mark.type === 'strike'),
         });
-    }).filter((run): run is TextRun => run !== null) || [];
+    }) || [];
 }
 
 async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Table>> {
@@ -383,6 +397,32 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
          }
          return todoElements;
 
+    case 'embed': {
+      const { src } = node.attrs;
+      if (!src) return [];
+      
+      const textRuns: TextRun[] = [
+        new TextRun({
+          text: `[Embedded Video: `,
+        }),
+        new TextRun({
+          text: src,
+          style: 'Hyperlink',
+        }),
+        new TextRun({
+          text: `]`,
+        }),
+      ];
+
+      return [
+        new Paragraph({
+          children: textRuns,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+      ];
+    }
+
     default:
       if (node.content) {
         const children = await Promise.all(node.content.map(convertNodeToDocx));
@@ -400,6 +440,14 @@ export const exportToDocx = async (docJson: TiptapNode) => {
   const elements = (await Promise.all(docJson.content.map(convertNodeToDocx))).flat();
 
   const doc = new Document({
+    styles: {
+        hyperlink: {
+            run: {
+                color: "0563C1",
+                underline: {},
+            },
+        },
+    },
     numbering: {
       config: [
           {

@@ -26,6 +26,7 @@ import {
   Split,
   AlertTriangle,
   Image,
+  Film,
   CheckSquare,
   Rows,
   Baseline,
@@ -464,6 +465,19 @@ const Toolbar = ({ editor }: Props) => {
             </Toggle>
           </TooltipTrigger>
           <TooltipContent><p>Image</p></TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Toggle
+              size="sm"
+              aria-label="Embed Video"
+              onPressedChange={() => editor.chain().focus().setEmbed({ src: '' }).run()}
+            >
+              <Film className="h-4 w-4" />
+            </Toggle>
+          </TooltipTrigger>
+          <TooltipContent><p>Embed Video</p></TooltipContent>
         </Tooltip>
 
         {editor.isActive('table') && (

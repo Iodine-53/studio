@@ -30,6 +30,8 @@ import { LayoutBubbleMenu } from './LayoutBubbleMenu';
 import { BlockActionsMenu } from './BlockActionsMenu';
 import { TrailingNode } from '@/lib/tiptap/extensions/TrailingNode';
 import { LineHeight } from '@/lib/tiptap/extensions/LineHeight';
+import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
+import { Embed } from '@/lib/tiptap/extensions/Embed';
 
 
 // Import a syntax highlighting theme
@@ -54,6 +56,12 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
       StarterKit.configure({
         codeBlock: false,
         image: false, // Disable default image to use our custom one
+        link: {
+            // Turn off default link-on-paste, we are using a custom handler
+            linkOnPaste: false,
+            // open links in a new tab
+            openOnClick: 'whenNotEditable',
+        },
       }),
       Underline,
       TextAlign.configure({
@@ -79,6 +87,8 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
       Chart,
       TodoListExtension,
       Accordion,
+      Embed,
+      PasteHandler,
       TrailingNode,
       LineHeight,
     ],

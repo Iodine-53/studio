@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, CodeSquare, Minus, Table, AlertTriangle, Image, CheckSquare, Brush, BarChart, Rows
+  Heading1, Heading2, Heading3, List, ListOrdered, Pilcrow, CodeSquare, Minus, Table, AlertTriangle, Image, Film, CheckSquare, Brush, BarChart, Rows
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -48,6 +48,13 @@ const getCommandItems = (): CommandItem[] => [
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).insertContent({ type: 'chartBlock' }).run();
     },
+  },
+  {
+    title: "Embed Video",
+    icon: Film,
+    command: ({ editor, range }) => {
+        editor.chain().focus().deleteRange(range).setEmbed({ src: '' }).run();
+    }
   },
   {
     title: "Image",
