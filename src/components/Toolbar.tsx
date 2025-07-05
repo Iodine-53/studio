@@ -29,6 +29,8 @@ import {
   CheckSquare,
   Rows,
   Baseline,
+  Undo,
+  Redo,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -94,6 +96,37 @@ const Toolbar = ({ editor }: Props) => {
           className="hidden"
           accept="image/*"
         />
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Toggle
+              size="sm"
+              onPressedChange={() => editor.chain().focus().undo().run()}
+              disabled={!editor.can().undo()}
+              aria-label="Undo"
+            >
+              <Undo className="h-4 w-4" />
+            </Toggle>
+          </TooltipTrigger>
+          <TooltipContent><p>Undo</p></TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Toggle
+              size="sm"
+              onPressedChange={() => editor.chain().focus().redo().run()}
+              disabled={!editor.can().redo()}
+              aria-label="Redo"
+            >
+              <Redo className="h-4 w-4" />
+            </Toggle>
+          </TooltipTrigger>
+          <TooltipContent><p>Redo</p></TooltipContent>
+        </Tooltip>
+
+        <Separator orientation="vertical" className="h-8 mx-1" />
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Toggle
