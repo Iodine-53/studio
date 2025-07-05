@@ -50,7 +50,7 @@ const getCommandItems = (): CommandItem[] => [
     },
   },
   {
-    title: "Embed Video",
+    title: "Embed Content",
     icon: Film,
     command: ({ editor, range }) => {
         editor.chain().focus().deleteRange(range).setEmbed({ src: '' }).run();

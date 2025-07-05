@@ -32,6 +32,8 @@ import {
   Baseline,
   Undo,
   Redo,
+  Palette,
+  Font,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -40,6 +42,7 @@ import { processImage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 
@@ -86,6 +89,15 @@ const Toolbar = ({ editor }: Props) => {
   };
   
   const currentLineHeight = getActiveLineHeight();
+
+  const FONT_SIZES = ['12', '14', '16', '18', '20', '24', '30', '36', '48'];
+  const FONT_FAMILIES = [
+      { name: 'Inter', value: 'Inter, sans-serif' },
+      { name: 'Space Grotesk', value: 'Space Grotesk, sans-serif' },
+      { name: 'Serif', value: 'serif' },
+      { name: 'Monospace', value: 'monospace' },
+      { name: 'Cursive', value: 'cursive' },
+  ];
 
   return (
     <TooltipProvider>
@@ -190,6 +202,70 @@ const Toolbar = ({ editor }: Props) => {
 
         <Separator orientation="vertical" className="h-8 mx-1" />
         
+        <Popover>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Font Settings">
+                  <Font className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent><p>Font Settings</p></TooltipContent>
+          </Tooltip>
+          <PopoverContent className="w-60 p-4">
+              <div className="space-y-4">
+                  <div>
+                      <Label>Font Family</Label>
+                      <Select
+                          value={editor.getAttributes('textStyle').fontFamily || 'Inter, sans-serif'}
+                          onValueChange={val => editor.chain().focus().setFontFamily(val).run()}
+                      >
+                          <SelectTrigger><SelectValue placeholder="Select font..." /></SelectTrigger>
+                          <SelectContent>
+                              {FONT_FAMILIES.map(font => (
+                                  <SelectItem key={font.name} value={font.value}>{font.name}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div>
+                      <Label>Font Size</Label>
+                      <Select
+                          value={editor.getAttributes('textStyle').fontSize?.replace('px', '') || '16'}
+                          onValueChange={val => editor.chain().focus().setFontSize(`${val}px`).run()}
+                      >
+                          <SelectTrigger><SelectValue placeholder="Select size..." /></SelectTrigger>
+                          <SelectContent>
+                              {FONT_SIZES.map(size => (
+                                  <SelectItem key={size} value={size}>{size}px</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => editor.chain().focus().unsetFontFamily().unsetFontSize().run()}>Reset Font</Button>
+              </div>
+          </PopoverContent>
+        </Popover>
+
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button asChild variant="ghost" size="icon" className="h-9 w-9 cursor-pointer">
+                    <label htmlFor="font-color-picker" className="cursor-pointer p-2 h-full w-full flex items-center justify-center">
+                        <Palette className="h-4 w-4" />
+                        <input
+                            id="font-color-picker"
+                            type="color"
+                            className="absolute h-0 w-0 opacity-0 cursor-pointer"
+                            onInput={(event: React.ChangeEvent<HTMLInputElement>) => editor.chain().focus().setColor(event.target.value).run()}
+                            value={editor.getAttributes('textStyle').color || '#000000'}
+                        />
+                    </label>
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>Font Color</p></TooltipContent>
+        </Tooltip>
+
         <Popover>
           <Tooltip>
             <TooltipTrigger asChild>

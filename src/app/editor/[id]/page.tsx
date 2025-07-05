@@ -31,6 +31,10 @@ import { TrailingNode } from '@/lib/tiptap/extensions/TrailingNode';
 import { LineHeight } from '@/lib/tiptap/extensions/LineHeight';
 import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 import { Embed } from '@/lib/tiptap/extensions/Embed';
+import TextStyle from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import FontFamily from '@tiptap/extension-font-family';
+import { FontSize } from '@/lib/tiptap/extensions/FontSize';
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
@@ -78,6 +82,7 @@ export default function EditorPage() {
       TableRow, TableHeader, TableCell, Callout, SlashCommand, CustomImage, TaskList,
       TaskItem.configure({ nested: true }),
       Drawing, Chart, TodoListExtension, Accordion, Embed, PasteHandler, TrailingNode, LineHeight,
+      TextStyle, Color, FontFamily, FontSize,
     ],
     editorProps: {
       attributes: {
@@ -140,7 +145,6 @@ export default function EditorPage() {
       }
     }
   }, [editor, doc]);
-
 
   const handleOpenPreview = () => {
     setIsPreviewOpen(true);

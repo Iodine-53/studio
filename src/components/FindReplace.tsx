@@ -1,3 +1,4 @@
+
 "use client";
 
 import { type Editor } from "@tiptap/react";
@@ -72,7 +73,7 @@ export const FindReplace = ({ editor, isOpen, onClose }: Props) => {
   return (
     <Card className="absolute top-4 right-4 z-20 w-96 shadow-xl">
       <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
-        <CardTitle className="text-base font-semibold">Find & Replace</CardTitle>
+        <CardTitle className="text-base font-semibold">Find &amp; Replace</CardTitle>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
           <X size={16} />
           <span className="sr-only">Close</span>
