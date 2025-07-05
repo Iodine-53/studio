@@ -8,29 +8,14 @@ import { useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
-import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
 import { lowlight } from 'lowlight';
 import css from 'highlight.js/lib/languages/css';
 import javascript from 'highlight.js/lib/languages/javascript';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
-import Table from '@tiptap/extension-table';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
-import TableRow from '@tiptap/extension-table-row';
-import { Callout } from '@/lib/tiptap/extensions/Callout';
 import { SlashCommand } from '@/components/editor/slash-command';
-import { CustomImage } from '@/lib/tiptap/extensions/Image';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import { Drawing } from '@/lib/tiptap/extensions/Drawing';
-import { Chart } from '@/lib/tiptap/extensions/Chart';
-import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
-import { Accordion } from '@/lib/tiptap/extensions/Accordion';
 import { TrailingNode } from '@/lib/tiptap/extensions/TrailingNode';
 import { LineHeight } from '@/lib/tiptap/extensions/LineHeight';
-import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
-import { Embed } from '@/lib/tiptap/extensions/Embed';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import FontFamily from '@tiptap/extension-font-family';
@@ -68,21 +53,29 @@ export default function EditorPage() {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        // Keep paragraph and headings, disable all other blocks from starterkit
+        blockquote: false,
+        bulletList: false,
         codeBlock: false,
-        image: false, // Disable default image to use our custom one
+        horizontalRule: false,
+        listItem: false,
+        orderedList: false,
+        // from original config
+        image: false,
         link: {
             linkOnPaste: false,
             openOnClick: 'whenNotEditable',
         },
       }),
       Underline,
-      TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'] }),
-      CodeBlockLowlight.configure({ lowlight }),
-      Table.configure({ resizable: true }),
-      TableRow, TableHeader, TableCell, Callout, SlashCommand, CustomImage, TaskList,
-      TaskItem.configure({ nested: true }),
-      Drawing, Chart, TodoListExtension, Accordion, Embed, PasteHandler, TrailingNode, LineHeight,
-      TextStyle, Color, FontFamily, FontSize,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      SlashCommand,
+      TrailingNode,
+      LineHeight,
+      TextStyle, 
+      Color, 
+      FontFamily, 
+      FontSize,
     ],
     editorProps: {
       attributes: {
@@ -194,12 +187,12 @@ export default function EditorPage() {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={handleOpenPreview}>
-                <Eye className="h-4 w-4 mr-2" />
-                Preview
+                <Eye className="h-4 w-4" />
+                <span className="hidden md:inline">Preview</span>
               </Button>
               <Button variant="outline" onClick={handleDocxExport} disabled={isExportingDocx}>
-                {isExportingDocx ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
-                {isExportingDocx ? 'Exporting...' : 'Export DOCX'}
+                {isExportingDocx ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                <span className="hidden md:inline">{isExportingDocx ? 'Exporting...' : 'Export DOCX'}</span>
               </Button>
             </div>
           </nav>

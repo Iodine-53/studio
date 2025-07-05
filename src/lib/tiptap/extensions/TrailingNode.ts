@@ -6,8 +6,10 @@ import { Plugin, PluginKey } from '@tiptap/pm/state'
  * An array of node types that should be followed by a paragraph.
  * These are typically "atom" or complex block-level nodes that a user
  * can't easily type after.
+ * Since we are removing most complex blocks, this list is now empty,
+ * but the extension remains useful for any custom blocks added in the future.
  */
-const trailingNodeTypes = ['image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'table', 'horizontalRule', 'callout', 'codeBlock']
+const trailingNodeTypes: string[] = []
 
 export const TrailingNode = Extension.create({
   name: 'trailingNode',

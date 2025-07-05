@@ -11,37 +11,18 @@ import {
   Heading3,
   Pilcrow,
   Underline,
-  List,
-  ListOrdered,
   AlignLeft,
   AlignCenter,
   AlignRight,
   AlignJustify,
-  CodeSquare,
-  Minus,
-  Table,
-  Trash2,
-  Plus,
-  Merge,
-  Split,
-  AlertTriangle,
-  Image,
-  Film,
-  CheckSquare,
-  Rows,
   Baseline,
   Undo,
   Redo,
-  Palette,
   Type,
-  Brush,
-  BarChart,
-  ListTodo,
+  Plus
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
-import { useRef, type ChangeEvent } from "react";
-import { processImage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -56,27 +37,14 @@ type Props = {
 };
 
 const Toolbar = ({ editor }: Props) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!editor) {
     return null;
   }
-
-  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const compressedBase64 = await processImage(file);
-      editor.chain().focus().setImage({ src: compressedBase64 }).run();
-    } catch (error) {
-      console.error("Image processing failed:", error);
-    }
-    
-    if(event.target) {
-      event.target.value = '';
-    }
-  };
+  
+  const handleAddBlock = () => {
+    editor.chain().focus().enter().insertContent('/').run();
+  }
 
   const getActiveLineHeight = () => {
     const types = ['heading', 'paragraph', 'listItem'];
@@ -106,7 +74,7 @@ const Toolbar = ({ editor }: Props) => {
   return (
     <TooltipProvider>
       <div className="flex w-full flex-col gap-1 rounded-t-xl border-b bg-muted/50 p-2">
-        {/* Row 1: Text Formatting */}
+        {/* Only one row of tools now */}
         <div className="flex w-full flex-wrap items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -197,9 +165,9 @@ const Toolbar = ({ editor }: Props) => {
               </TooltipTrigger>
               <TooltipContent><p>Underline</p></TooltipContent>
             </Tooltip>
-
-            <Separator orientation="vertical" className="h-8 mx-1" />
             
+            <Separator orientation="vertical" className="h-8 mx-1" />
+
             <Popover>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -417,275 +385,23 @@ const Toolbar = ({ editor }: Props) => {
               </TooltipTrigger>
               <TooltipContent><p>Justify</p></TooltipContent>
             </Tooltip>
-        </div>
 
-        {/* Row 2: Block Tools */}
-        <div className="flex w-full flex-wrap items-center gap-1">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              className="hidden"
-              accept="image/*"
-            />
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  pressed={editor.isActive("bulletList")}
-                  onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
-                  aria-label="Toggle bullet list"
-                >
-                  <List className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Bulleted List</p></TooltipContent>
-            </Tooltip>
+             <Separator orientation="vertical" className="h-8 mx-1" />
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  pressed={editor.isActive("orderedList")}
-                  onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
-                  aria-label="Toggle ordered list"
-                >
-                  <ListOrdered className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Numbered List</p></TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  pressed={editor.isActive('taskList')}
-                  onPressedChange={() => editor.chain().focus().toggleTaskList().run()}
-                  aria-label="Toggle task list"
-                >
-                  <CheckSquare className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Task List</p></TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
+                  <Button
                     size="sm"
-                    onPressedChange={() => editor.chain().focus().insertTodoList().run()}
-                    aria-label="Insert todo list block"
-                >
-                    <ListTodo className="h-4 w-4" />
-                </Toggle>
+                    variant="ghost"
+                    onClick={handleAddBlock}
+                    aria-label="Add block"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Block
+                  </Button>
               </TooltipTrigger>
-              <TooltipContent><p>Todo Block</p></TooltipContent>
+              <TooltipContent><p>Insert a block (triggers /)</p></TooltipContent>
             </Tooltip>
-
-            <Separator orientation="vertical" className="h-8 mx-1" />
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  pressed={editor.isActive("codeBlock")}
-                  onPressedChange={() => editor.chain().focus().toggleCodeBlock().run()}
-                  aria-label="Toggle code block"
-                >
-                  <CodeSquare className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Code Block</p></TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  onPressedChange={() => editor.chain().focus().setHorizontalRule().run()}
-                  aria-label="Insert horizontal rule"
-                >
-                  <Minus className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Divider</p></TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  onPressedChange={() => editor.chain().focus().insertAccordion().run()}
-                  aria-label="Insert accordion"
-                >
-                  <Rows className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Accordion</p></TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Toggle
-                        size="sm"
-                        onPressedChange={() => editor.chain().focus().insertContent({ type: 'chartBlock' }).run()}
-                        aria-label="Insert chart"
-                    >
-                        <BarChart className="h-4 w-4" />
-                    </Toggle>
-                </TooltipTrigger>
-                <TooltipContent><p>Chart</p></TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Toggle
-                        size="sm"
-                        onPressedChange={() => editor.chain().focus().insertContent({ type: 'drawing' }).run()}
-                        aria-label="Insert drawing"
-                    >
-                        <Brush className="h-4 w-4" />
-                    </Toggle>
-                </TooltipTrigger>
-                <TooltipContent><p>Drawing</p></TooltipContent>
-            </Tooltip>
-
-            <Separator orientation="vertical" className="h-8 mx-1" />
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  onPressedChange={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-                  aria-label="Insert table"
-                >
-                  <Table className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Table</p></TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  aria-label="Insert Image"
-                  onPressedChange={() => fileInputRef.current?.click()}
-                >
-                  <Image className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Image</p></TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  aria-label="Embed Content"
-                  onPressedChange={() => editor.chain().focus().setEmbed({ src: '' }).run()}
-                >
-                  <Film className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Embed Content</p></TooltipContent>
-            </Tooltip>
-
-            <Separator orientation="vertical" className="h-8 mx-1" />
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  size="sm"
-                  pressed={editor.isActive('callout')}
-                  onPressedChange={() => editor.chain().focus().toggleCallout({ type: 'info' }).run()}
-                  aria-label="Toggle callout"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent><p>Callout</p></TooltipContent>
-            </Tooltip>
-
-            {editor.isActive('table') && (
-              <>
-                <Separator orientation="vertical" className="h-8 mx-1" />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      size="sm"
-                      onPressedChange={() => editor.chain().focus().addColumnAfter().run()}
-                      aria-label="Add column after"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Toggle>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Add Column After</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      size="sm"
-                      onPressedChange={() => editor.chain().focus().deleteColumn().run()}
-                      aria-label="Delete column"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Toggle>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Delete Column</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      size="sm"
-                      onPressedChange={() => editor.chain().focus().addRowAfter().run()}
-                      aria-label="Add row after"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Toggle>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Add Row After</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      size="sm"
-                      onPressedChange={() => editor.chain().focus().deleteRow().run()}
-                      aria-label="Delete row"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Toggle>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Delete Row</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      size="sm"
-                      onPressedChange={() => editor.chain().focus().mergeOrSplit().run()}
-                      aria-label="Merge cells"
-                    >
-                      <Merge className="h-4 w-4" />
-                    </Toggle>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Merge/Split Cells</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      size="sm"
-                      onPressedChange={() => editor.chain().focus().deleteTable().run()}
-                      aria-label="Delete table"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Toggle>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Delete Table</p></TooltipContent>
-                </Tooltip>
-              </>
-            )}
         </div>
       </div>
     </TooltipProvider>
