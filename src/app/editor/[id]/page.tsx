@@ -8,11 +8,6 @@ import { useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
-import { lowlight } from 'lowlight';
-import css from 'highlight.js/lib/languages/css';
-import javascript from 'highlight.js/lib/languages/javascript';
-import typescript from 'highlight.js/lib/languages/typescript';
-import xml from 'highlight.js/lib/languages/xml';
 import { SlashCommand } from '@/components/editor/slash-command';
 import { TrailingNode } from '@/lib/tiptap/extensions/TrailingNode';
 import { LineHeight } from '@/lib/tiptap/extensions/LineHeight';
@@ -28,12 +23,6 @@ import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
-
-// Register languages for code block highlighting
-lowlight.registerLanguage('html', xml);
-lowlight.registerLanguage('css', css);
-lowlight.registerLanguage('js', javascript);
-lowlight.registerLanguage('ts', typescript);
 
 
 export default function EditorPage() {
@@ -186,13 +175,13 @@ export default function EditorPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleOpenPreview}>
+              <Button variant="outline" size="icon" onClick={handleOpenPreview}>
                 <Eye className="h-4 w-4" />
-                <span className="hidden md:inline">Preview</span>
+                <span className="hidden md:inline sr-only md:not-sr-only">Preview</span>
               </Button>
-              <Button variant="outline" onClick={handleDocxExport} disabled={isExportingDocx}>
+              <Button variant="outline" size="icon" onClick={handleDocxExport} disabled={isExportingDocx}>
                 {isExportingDocx ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                <span className="hidden md:inline">{isExportingDocx ? 'Exporting...' : 'Export DOCX'}</span>
+                <span className="hidden md:inline sr-only md:not-sr-only">{isExportingDocx ? 'Exporting...' : 'Export DOCX'}</span>
               </Button>
             </div>
           </nav>
