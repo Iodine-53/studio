@@ -16,6 +16,7 @@ import {
   HorizontalPositionAlign,
   VerticalPositionAlign,
   TextWrappingType,
+  IParagraphOptions,
 } from 'docx';
 import {
   Chart,
@@ -159,27 +160,36 @@ function createTextRuns(node: TiptapNode): TextRun[] {
         const text = contentNode.text || '';
         if (!text) return [];
 
-        const isLink = contentNode.marks?.some(mark => mark.type === 'link');
         const linkMark = contentNode.marks?.find(mark => mark.type === 'link');
         const href = linkMark?.attrs?.href;
 
-        if (isLink && href) {
-            // In docx.js, creating actual hyperlinks is more complex.
-            // For simplicity, we can represent them as styled text.
-            // A more advanced implementation might use fields.
-            return new TextRun({
+        // Handle links first, as they have a dedicated style
+        if (href) {
+            // Note: The 'Hyperlink' style in docx will typically define the color and underline.
+            return [new TextRun({
                 text: text,
                 style: 'Hyperlink',
-            });
+            })];
         }
 
-        return new TextRun({
+        // Handle other text styles
+        const textStyleMark = contentNode.marks?.find(mark => mark.type === 'textStyle');
+        const color = textStyleMark?.attrs?.color?.substring(1); // Remove '#'
+        const fontFamily = textStyleMark?.attrs?.fontFamily;
+        const fontSizePx = parseInt(textStyleMark?.attrs?.fontSize, 10);
+        // Conversion: 1px = 0.75pt, 1pt = 2 half-points. So 1px = 1.5 half-points.
+        const size = !isNaN(fontSizePx) ? Math.round(fontSizePx * 1.5) : undefined; 
+
+        return [new TextRun({
             text: text,
             bold: contentNode.marks?.some(mark => mark.type === 'bold'),
             italics: contentNode.marks?.some(mark => mark.type === 'italic'),
             underline: contentNode.marks?.some(mark => mark.type === 'underline') ? {} : undefined,
             strike: contentNode.marks?.some(mark => mark.type === 'strike'),
-        });
+            color: color,
+            font: fontFamily ? { name: fontFamily } : undefined,
+            size: size,
+        })];
     }) || [];
 }
 
@@ -199,7 +209,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
     case 'paragraph':
        return [
         new Paragraph({
-          children: createTextRuns(node),
+          children: createTextRuns(node).length > 0 ? createTextRuns(node) : [new TextRun('')],
           spacing: { after: 100 },
           alignment: node.attrs?.textAlign ? node.attrs.textAlign.toUpperCase() as AlignmentType : AlignmentType.LEFT,
         }),
@@ -223,8 +233,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           } else { // chartBlock
               const { chartData, chartConfig, chartType, title, viewConfig } = node.attrs;
               nodeTitle = title;
-              const parsedData = JSON.parse(chartData || '[]'
-);
+              const parsedData = JSON.parse(chartData || '[]');
               const parsedConfig = JSON.parse(chartConfig || '{}');
               const parsedViewConfig = JSON.parse(viewConfig || '{}');
       
@@ -325,25 +334,25 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
     case 'orderedList':
         const listItems = await Promise.all(
             (node.content || []).map(async (listItemNode) => {
-                // A listItem contains one or more paragraphs. We will process the text runs from them.
-                const allRuns = (listItemNode.content || []).map(p => createTextRuns(p)).flat();
+                const itemParagraphs = (await Promise.all((listItemNode.content || []).map(convertNodeToDocx))).flat();
                 
-                return new Paragraph({
-                    children: allRuns.length > 0 ? allRuns : [new TextRun('')],
-                    bullet: node.type === 'bulletList' ? { level: 0 } : undefined,
-                    numbering: node.type === 'orderedList' ? { reference: 'default-numbering', level: 0 } : undefined,
+                itemParagraphs.forEach(p => {
+                    (p as Paragraph).properties.numbering = node.type === 'orderedList' 
+                        ? { reference: 'default-numbering', level: 0 } 
+                        : undefined;
+                    (p as Paragraph).properties.bullet = node.type === 'bulletList' 
+                        ? { level: 0 } 
+                        : undefined;
                 });
+                return itemParagraphs;
             })
         );
-        return listItems;
+        return listItems.flat();
 
     case 'taskList':
         return (await Promise.all((node.content || []).map(async taskItemNode => {
             const checkbox = taskItemNode.attrs?.checked ? '☑' : '☐';
-            const textRuns = taskItemNode.content?.map(contentNode => new TextRun({
-                text: contentNode.text || '',
-                strike: taskItemNode.attrs?.checked,
-            })) || [];
+            const textRuns = taskItemNode.content?.flatMap(p => p.content?.map(c => new TextRun({ text: c.text, strike: taskItemNode.attrs?.checked })) || []) || [];
             
             return new Paragraph({
                 children: [new TextRun(`${checkbox} `), ...textRuns],

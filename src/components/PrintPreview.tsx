@@ -2,15 +2,14 @@
 "use client";
 
 import { X, CheckSquare, Square, AlertTriangle, ExternalLink, Video } from "lucide-react";
-import React, { type FC, useRef, useEffect } from "react";
+import React, { type FC, useRef, useEffect, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { CSSProperties } from 'react';
 import { ReactSketchCanvas, type ReactSketchCanvasRef } from 'react-sketch-canvas';
 
 
 type TiptapMark = {
-    type: 'bold' | 'italic' | 'underline' | 'strike' | 'link';
+    type: 'bold' | 'italic' | 'underline' | 'strike' | 'link' | 'textStyle';
     attrs?: Record<string, any>;
 };
 
@@ -62,11 +61,25 @@ const StaticDrawing: FC<{ node: TiptapNode }> = ({ node }) => {
 
 
 const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
-    let children = renderNodes(node.content);
+    // Base case: if it's a text node, start with the text content.
+    // Otherwise, recursively render child nodes.
+    let children: React.ReactNode = node.type === 'text'
+        ? node.text
+        : renderNodes(node.content);
 
+    // Apply marks to the children.
     if (node.marks) {
-        for (const mark of node.marks) {
-            switch(mark.type) {
+        const textStyleAttrs: CSSProperties = {};
+        // It's often better to apply styling marks first, then semantic ones.
+        const marks = [...node.marks].reverse();
+
+        for (const mark of marks) {
+            switch (mark.type) {
+                case 'textStyle':
+                    if (mark.attrs?.color) textStyleAttrs.color = mark.attrs.color;
+                    if (mark.attrs?.fontFamily) textStyleAttrs.fontFamily = mark.attrs.fontFamily;
+                    if (mark.attrs?.fontSize) textStyleAttrs.fontSize = mark.attrs.fontSize;
+                    break;
                 case 'bold':
                     children = <strong>{children}</strong>;
                     break;
@@ -84,17 +97,27 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                     break;
             }
         }
+
+        if (Object.keys(textStyleAttrs).length > 0) {
+            children = <span style={textStyleAttrs}>{children}</span>;
+        }
+    }
+    
+    // If it's a text node, we've already processed it and its marks.
+    if (node.type === 'text') {
+        return <>{children}</>;
     }
 
-    // Create a style object from node attributes for text alignment and line height.
-    const style: CSSProperties = {};
-    if (node.attrs?.textAlign) {
-      style.textAlign = node.attrs.textAlign;
-    }
-    if (node.attrs?.lineHeight) {
-      style.lineHeight = node.attrs.lineHeight;
-    }
-    const hasStyle = Object.keys(style).length > 0;
+
+  // Create a style object from node attributes for text alignment and line height.
+  const style: CSSProperties = {};
+  if (node.attrs?.textAlign) {
+    style.textAlign = node.attrs.textAlign;
+  }
+  if (node.attrs?.lineHeight) {
+    style.lineHeight = node.attrs.lineHeight;
+  }
+  const hasStyle = Object.keys(style).length > 0;
 
   switch (node.type) {
     case 'heading':
@@ -103,8 +126,6 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       return <Tag style={hasStyle ? style : undefined}>{children}</Tag>;
     case 'paragraph':
       return <p style={hasStyle ? style : undefined}>{children || <br/>}</p>;
-    case 'text':
-      return <>{node.text}</>;
     case 'image': {
       const layout = node.attrs?.layout || {};
       const align = layout.align || 'center';
