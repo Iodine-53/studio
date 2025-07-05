@@ -83,6 +83,16 @@
       @apply font-bold bg-gray-100 dark:bg-gray-800;
     }
   }
+  
+  /* Make the editor canvas full-width, but constrain text for readability. */
+  .prose {
+    max-width: none;
+  }
+  .prose > :is(h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote, pre) {
+    max-width: 75ch; /* A good readable width for text */
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 @layer components {
