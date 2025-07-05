@@ -141,4 +141,9 @@
       outline-offset: 2px;
       @apply rounded-lg;
   }
+
+  /* Style for search results */
+  .search-result {
+    @apply bg-yellow-300/70 rounded-sm;
+  }
 }

@@ -1,9 +1,37 @@
 
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useEditor, type Editor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
+import { lowlight } from 'lowlight';
+import css from 'highlight.js/lib/languages/css';
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import xml from 'highlight.js/lib/languages/xml';
+import Table from '@tiptap/extension-table';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import TableRow from '@tiptap/extension-table-row';
+import { Callout } from '@/lib/tiptap/extensions/Callout';
+import { SlashCommand } from '@/components/editor/slash-command';
+import { CustomImage } from '@/lib/tiptap/extensions/Image';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import { Drawing } from '@/lib/tiptap/extensions/Drawing';
+import { Chart } from '@/lib/tiptap/extensions/Chart';
+import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
+import { Accordion } from '@/lib/tiptap/extensions/Accordion';
+import { TrailingNode } from '@/lib/tiptap/extensions/TrailingNode';
+import { LineHeight } from '@/lib/tiptap/extensions/LineHeight';
+import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
+import { Embed } from '@/lib/tiptap/extensions/Embed';
+
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
 import { ArrowLeft, Loader2, Eye, Printer, FileText } from "lucide-react";
@@ -12,25 +40,68 @@ import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
 
+// Register languages for code block highlighting
+lowlight.registerLanguage('html', xml);
+lowlight.registerLanguage('css', css);
+lowlight.registerLanguage('js', javascript);
+lowlight.registerLanguage('ts', typescript);
+
+
 export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
   const [doc, setDoc] = useState<Document | null>(null);
-  const [initialContent, setInitialContent] = useState<any>(null);
   const [currentContent, setCurrentContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Ref to hold the timeout ID for debouncing
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-
+  
   const idFromParams = Array.isArray(params.id) ? params.id[0] : params.id;
   const docId = Number(idFromParams);
+  
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        codeBlock: false,
+        image: false, // Disable default image to use our custom one
+        link: {
+            linkOnPaste: false,
+            openOnClick: 'whenNotEditable',
+        },
+      }),
+      Underline,
+      TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'] }),
+      CodeBlockLowlight.configure({ lowlight }),
+      Table.configure({ resizable: true }),
+      TableRow, TableHeader, TableCell, Callout, SlashCommand, CustomImage, TaskList,
+      TaskItem.configure({ nested: true }),
+      Drawing, Chart, TodoListExtension, Accordion, Embed, PasteHandler, TrailingNode, LineHeight,
+    ],
+    editorProps: {
+      attributes: {
+        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none min-h-[350px] w-full',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const json = editor.getJSON();
+      setCurrentContent(json); // Update content for print preview
+      if (doc) {
+        if (debounceTimeout.current) {
+          clearTimeout(debounceTimeout.current);
+        }
+        debounceTimeout.current = setTimeout(() => {
+          saveDocument({ ...doc, content: json });
+          console.log("Document auto-saved!");
+        }, 1000);
+      }
+    },
+  });
 
   useEffect(() => {
     if (isNaN(docId)) {
-      router.push("/"); // Redirect if ID is not a number
+      router.push("/");
       return;
     }
 
@@ -39,7 +110,6 @@ export default function EditorPage() {
       const loadedDoc = await getDocument(docId);
       if (loadedDoc) {
         setDoc(loadedDoc);
-        setInitialContent(loadedDoc.content);
         setCurrentContent(loadedDoc.content);
       } else {
         console.error("Document not found");
@@ -52,27 +122,25 @@ export default function EditorPage() {
         fetchDocument();
     }
     
-    // Cleanup the debounce timer when the component unmounts
     return () => {
       if (debounceTimeout.current) {
         clearTimeout(debounceTimeout.current);
       }
     };
   }, [docId, router]);
-
-  const handleUpdate = (content: any) => {
-    setCurrentContent(content);
-    if (doc) {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
+  
+  // Effect to sync loaded document content to the editor instance
+  useEffect(() => {
+    if (editor && doc && !editor.isDestroyed) {
+      const editorContent = editor.getJSON();
+      const docContent = doc.content;
+      // Only set content if it's different to prevent loops and cursor jumps
+      if (JSON.stringify(editorContent) !== JSON.stringify(docContent)) {
+        editor.commands.setContent(docContent, false);
       }
-
-      debounceTimeout.current = setTimeout(() => {
-        saveDocument({ ...doc, content: content });
-        console.log("Document auto-saved!");
-      }, 1000); // 1-second debounce delay
     }
-  };
+  }, [editor, doc]);
+
 
   const handleOpenPreview = () => {
     setIsPreviewOpen(true);
@@ -83,14 +151,7 @@ export default function EditorPage() {
         alert("Cannot print an empty document.");
         return;
     }
-
-    // 1. Get the document's JSON (which is our currentContent)
-    const documentJson = currentContent;
-
-    // 2. Save it to localStorage under a specific key
-    localStorage.setItem('documentToPrint', JSON.stringify(documentJson));
-
-    // 3. Open the dedicated print page in a new tab
+    localStorage.setItem('documentToPrint', JSON.stringify(currentContent));
     const printWindow = window.open('/print', '_blank');
     if (!printWindow) {
         alert("Please allow popups to print the document.");
@@ -114,7 +175,7 @@ export default function EditorPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !editor) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -157,7 +218,7 @@ export default function EditorPage() {
         </header>
         <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
           <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border">
-            <TiptapEditor content={initialContent} onUpdate={handleUpdate} />
+            <TiptapEditor editor={editor} />
           </div>
         </main>
       </div>
