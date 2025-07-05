@@ -69,7 +69,7 @@ export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewPr
 
     return (
         <NodeViewWrapper
-            className="my-4"
+            className="my-4 custom-node-wrapper"
             data-align={textAlign}
             style={{ width: `${width}%` }}
         >

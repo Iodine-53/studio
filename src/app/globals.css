@@ -120,15 +120,15 @@
   }
   
   /* Align custom blocks using margin */
-  .ProseMirror [data-align="center"] {
+  .custom-node-wrapper[data-align="center"] {
     margin-left: auto;
     margin-right: auto;
   }
-  .ProseMirror [data-align="right"] {
+  .custom-node-wrapper[data-align="right"] {
     margin-left: auto;
     margin-right: 0;
   }
-  .ProseMirror [data-align="left"] {
+  .custom-node-wrapper[data-align="left"] {
     margin-left: 0;
     margin-right: auto;
   }

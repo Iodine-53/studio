@@ -42,7 +42,7 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
 
   return (
     <NodeViewWrapper
-      className="my-4"
+      className="my-4 custom-node-wrapper"
       data-align={textAlign}
       style={{ width: `${width}%` }}
     >

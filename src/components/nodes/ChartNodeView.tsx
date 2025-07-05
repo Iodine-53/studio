@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { AreaChart as AreaChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon, PieChart as PieChartIcon, Upload, X, Plus, Trash2, Settings, Check as CheckIcon, Settings2, GripVertical } from 'lucide-react';
-import { useState, useMemo, useRef, ChangeEvent, useCallback } from 'react';
+import { useState, useMemo, useRef, ChangeEvent, useCallback, useEffect } from 'react';
 import Papa from 'papaparse';
 import { cn } from '@/lib/utils';
 
@@ -53,11 +53,13 @@ const CustomLegend = (props: any) => {
 };
 
 export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: NodeViewProps) => {
-  const isEditing = selected;
   const { textAlign, layout } = node.attrs;
   const width = layout?.width || 100;
 
-  // States for edit mode
+  // State for the component's own editing mode
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // States for edit mode content
   const [title, setTitle] = useState(node.attrs.title);
   const [chartType, setChartType] = useState(node.attrs.chartType);
   const [chartData, setChartData] = useState<any[]>([]);
@@ -67,14 +69,27 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   
-  // Effect to sync state when editing mode is entered
-  useMemo(() => {
+  // When Tiptap selection changes, close the editor if the node is no longer selected
+  useEffect(() => {
+    if (!selected) {
+      setIsEditing(false);
+    }
+  }, [selected]);
+  
+  // When entering edit mode, load the current node attributes into local state
+  useEffect(() => {
     if (isEditing) {
       setTitle(node.attrs.title);
       setChartType(node.attrs.chartType);
-      setChartData(JSON.parse(node.attrs.chartData || '[]'));
-      setChartConfig(JSON.parse(node.attrs.chartConfig || '{}'));
-      setViewConfig(JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}'));
+      try {
+        setChartData(JSON.parse(node.attrs.chartData || '[]'));
+        setChartConfig(JSON.parse(node.attrs.chartConfig || '{}'));
+        setViewConfig(JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}'));
+      } catch (e) {
+        console.error("Failed to parse chart attributes", e);
+        setChartData([]);
+        setChartConfig({});
+      }
     }
   }, [isEditing, node.attrs]);
 
@@ -93,7 +108,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     }
   }, [chartData]);
   
-  const handleSave = () => {
+  const handleSaveAndClose = () => {
     updateAttributes({
       title,
       chartType,
@@ -101,6 +116,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       chartConfig: JSON.stringify(chartConfig),
       viewConfig: JSON.stringify(viewConfig),
     });
+    setIsEditing(false); // Close the editor UI
   };
 
   const onFileComplete = (data: any[], fields?: string[]) => {
@@ -118,7 +134,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
           setChartConfig(newConfig);
         }
       }
-      handleSave(); // Auto-save after file upload
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -201,7 +216,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center p-8">
             <BarChartIcon className="h-12 w-12 mb-4"/>
             <p className="font-semibold">No data yet.</p>
-            <p className="text-sm">Select to upload a file or add data manually.</p>
+            <p className="text-sm">Select to open the editor and add data.</p>
         </div>
       );
     }
@@ -257,7 +272,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   if (isEditing) {
       return (
           <NodeViewWrapper 
-            className="my-4"
+            className="my-4 custom-node-wrapper"
             data-align={textAlign}
             style={{ width: `${width}%` }}
           >
@@ -267,7 +282,8 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
               <CardHeader className="flex-row items-center justify-between bg-muted/50 p-3">
                   <Input className="text-lg font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Chart Title"/>
                   <div className="flex gap-2">
-                    <Button onClick={handleSave} size="sm"><CheckIcon className="mr-2 h-4 w-4" /> Save</Button>
+                    <Button onClick={handleSaveAndClose} size="sm"><CheckIcon className="mr-2 h-4 w-4" /> Save & Close</Button>
+                    <Button onClick={() => setIsEditing(false)} size="sm" variant="ghost">Cancel</Button>
                   </div>
               </CardHeader>
               <CardContent className="pt-4">
@@ -303,7 +319,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
 
   return (
     <NodeViewWrapper 
-        className="my-4"
+        className="my-4 custom-node-wrapper"
         data-align={textAlign}
         style={{ width: `${width}%` }}
     >
@@ -316,6 +332,13 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
               {renderChart(savedChartData, node.attrs.chartType, savedChartConfig, savedViewConfig)}
             </ResponsiveContainer>
          </div>
+         {selected && (
+            <div className="absolute top-2 right-2 opacity-0 group-hover/chart-view:opacity-100 transition-opacity">
+                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setIsEditing(true)}>
+                    <Settings className="h-4 w-4" />
+                </Button>
+            </div>
+         )}
       </div>
     </NodeViewWrapper>
   );
