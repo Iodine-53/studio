@@ -33,8 +33,9 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
   updateAttributes,
   selected,
 }) => {
-  const { src, layout } = node.attrs
-  const { align, width } = layout || { align: 'center', width: 100 }
+  const { src, layout, textAlign } = node.attrs
+  const { width } = layout || { width: 100 }
+  const align = textAlign || 'center';
   
   const embedUrl = useMemo(() => getEmbedUrl(src), [src])
   

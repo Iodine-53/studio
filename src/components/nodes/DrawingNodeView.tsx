@@ -15,7 +15,8 @@ import { cn } from '@/lib/utils';
 export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const { paths } = node.attrs;
-    const { align, width } = node.attrs.layout || { align: 'center', width: 75 };
+    const { width } = node.attrs.layout || { width: 75 };
+    const align = node.attrs.textAlign || 'center';
 
     const isEditing = selected;
 

@@ -28,7 +28,6 @@ export const Chart = Node.create({
       },
       layout: {
         default: {
-          align: 'center',
           width: 75,
         },
       },

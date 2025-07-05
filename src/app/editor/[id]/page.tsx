@@ -86,7 +86,18 @@ export default function EditorPage() {
         },
       }),
       Underline,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TextAlign.configure({ 
+        types: [
+          'heading', 
+          'paragraph',
+          'image',
+          'chartBlock',
+          'drawing',
+          'accordion',
+          'todoList',
+          'embed'
+        ] 
+      }),
       SlashCommand,
       TrailingNode,
       LineHeight,

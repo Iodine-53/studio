@@ -24,8 +24,9 @@ const AccordionNodeView: React.FC<NodeViewProps> = ({
   updateAttributes,
   selected,
 }) => {
-  const { items, title, subtitle, layout } = node.attrs;
-  const { align, width } = layout || { align: 'center', width: 75 };
+  const { items, title, subtitle, layout, textAlign } = node.attrs;
+  const { width } = layout || { width: 75 };
+  const align = textAlign || 'center';
   const [isEditing, setIsEditing] = useState(false)
 
   const addItem = useCallback(() => {

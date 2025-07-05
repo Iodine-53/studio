@@ -4,13 +4,8 @@
 import { BubbleMenu, Editor } from "@tiptap/react";
 import { NodeSelection } from "@tiptap/pm/state";
 import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
   Scaling,
 } from "lucide-react";
-import { Toggle } from "@/components/ui/toggle";
-import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -67,13 +62,6 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
       shouldShow={() => !!getSelectedLayoutNode()}
       className="flex items-center gap-1 p-1 bg-card border rounded-lg shadow-xl"
     >
-      {/* Alignment Controls */}
-      <Toggle size="sm" pressed={getLayoutAttribute('align') === 'left'} onPressedChange={() => updateLayoutAttribute('align', 'left')} aria-label="Align left"><AlignLeft size={16} /></Toggle>
-      <Toggle size="sm" pressed={getLayoutAttribute('align') === 'center'} onPressedChange={() => updateLayoutAttribute('align', 'center')} aria-label="Align center"><AlignCenter size={16} /></Toggle>
-      <Toggle size="sm" pressed={getLayoutAttribute('align') === 'right'} onPressedChange={() => updateLayoutAttribute('align', 'right')} aria-label="Align right"><AlignRight size={16} /></Toggle>
-
-      <Separator orientation="vertical" className="h-6 mx-1" />
-
       {/* Width Controls with Slider */}
       <Popover>
         <PopoverTrigger asChild>

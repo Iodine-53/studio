@@ -16,8 +16,9 @@ type Task = {
 };
 
 const TodoListComponent = ({ node, updateAttributes, selected }: NodeViewProps) => {
-  const { tasks, title, layout } = node.attrs;
-  const { align, width } = layout || { align: 'center', width: 75 };
+  const { tasks, title, layout, textAlign } = node.attrs;
+  const { width } = layout || { width: 75 };
+  const align = textAlign || 'center';
   const [inputValue, setInputValue] = useState('');
 
   const isEditing = selected;

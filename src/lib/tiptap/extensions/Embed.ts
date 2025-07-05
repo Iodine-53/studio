@@ -24,7 +24,6 @@ export const Embed = Node.create({
       },
       layout: { // Adding layout support for consistency
         default: {
-          align: 'center',
           width: 100,
         },
       },
@@ -47,9 +46,9 @@ export const Embed = Node.create({
             return {
                 src: src,
                 layout: {
-                    align: layoutWrapper?.getAttribute('data-align') || 'center',
                     width: width,
-                }
+                },
+                textAlign: layoutWrapper?.getAttribute('data-align') || 'center',
             }
         },
       },
@@ -57,11 +56,11 @@ export const Embed = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    const { layout = {}, src, ...restAttrs } = HTMLAttributes;
-    const { align, width } = layout;
+    const { layout = {}, src, textAlign, ...restAttrs } = HTMLAttributes;
+    const { width } = layout;
 
     const wrapperAttrs = {
-      'data-align': align,
+      'data-align': textAlign,
       class: 'layout-wrapper',
     };
 

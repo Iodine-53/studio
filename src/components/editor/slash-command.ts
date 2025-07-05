@@ -33,7 +33,7 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Check List", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleTaskList().run(); } },
 
   // Block Elements
-  { title: "Image", icon: Image, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setImage({ src: 'https://placehold.co/600x400.png', 'data-ai-hint': 'placeholder image' }).run(); } },
+  { title: "Image", icon: Image, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setImage({ src: null }).run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCodeBlock().run(); } },
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
@@ -95,7 +95,7 @@ const renderItems = () => {
         return (component.ref as any)?.onKeyDown(props);
       },
       onExit() {
-        if (popup) {
+        if (popup && popup[0]) {
           popup[0].destroy();
         }
         if (component) {

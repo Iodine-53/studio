@@ -96,7 +96,6 @@ export const Accordion = Node.create<AccordionOptions>({
       },
       layout: {
         default: {
-          align: 'center',
           width: 75,
         },
       },

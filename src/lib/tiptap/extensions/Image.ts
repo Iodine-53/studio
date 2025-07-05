@@ -1,8 +1,10 @@
 
-import { Node, mergeAttributes } from '@tiptap/core'
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { ImageNodeView } from '@/components/nodes/ImageNodeView';
 
 export interface ImageOptions {
-  HTMLAttributes: Record<string, any>
+  HTMLAttributes: Record<string, any>;
 }
 
 declare module '@tiptap/core' {
@@ -11,8 +13,8 @@ declare module '@tiptap/core' {
       /**
        * Add an image
        */
-      setImage: (options: { src: string; alt?: string; title?: string }) => ReturnType
-    }
+      setImage: (options: { src: string | null; alt?: string; title?: string }) => ReturnType;
+    };
   }
 }
 
@@ -20,8 +22,14 @@ export const CustomImage = Node.create<ImageOptions>({
   name: 'image',
   group: 'block',
   draggable: true,
-  selectable: true, // Make the node selectable
-  atom: true, // Treat as a single unit
+  selectable: true,
+  atom: true,
+
+  addOptions() {
+    return {
+      HTMLAttributes: {},
+    };
+  },
 
   addAttributes() {
     return {
@@ -36,11 +44,10 @@ export const CustomImage = Node.create<ImageOptions>({
       },
       layout: {
         default: {
-          align: 'center',
           width: 75,
         },
       },
-    }
+    };
   },
 
   parseHTML() {
@@ -49,40 +56,37 @@ export const CustomImage = Node.create<ImageOptions>({
         tag: 'div.layout-wrapper', // Parse the wrapper div
         getAttrs: (dom: HTMLElement) => {
           const contentWrapper = dom.firstChild as HTMLElement;
-          // Ignore text nodes
           if (!contentWrapper || contentWrapper.nodeType === 3) return false;
 
           const img = contentWrapper.querySelector('img');
           if (!img) return false;
-          
+
           const widthStyle = contentWrapper.style.maxWidth;
           const width = widthStyle && widthStyle.endsWith('%') ? parseInt(widthStyle, 10) : 75;
 
           return {
-              src: img?.getAttribute('src'),
-              alt: img?.getAttribute('alt'),
-              title: img?.getAttribute('title'),
-              layout: {
-                  align: dom.getAttribute('data-align') || 'center',
-                  width: width,
-              }
-          }
-        }
+            src: img?.getAttribute('src'),
+            alt: img?.getAttribute('alt'),
+            title: img?.getAttribute('title'),
+            layout: {
+              width: width,
+            },
+            textAlign: dom.getAttribute('data-align') || 'center',
+          };
+        },
       },
-    ]
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    const { layout = {}, ...restAttrs } = HTMLAttributes;
-    const { align, width } = layout;
+    const { layout = {}, textAlign, ...restAttrs } = HTMLAttributes;
+    const { width } = layout;
 
-    // The wrapper for alignment
     const wrapperAttrs = {
-      'data-align': align,
+      'data-align': textAlign,
       class: 'layout-wrapper',
     };
 
-    // The image itself will be inside a container that controls its width
     const imageContainerAttrs = {
       style: `max-width: ${typeof width === 'number' ? `${width}%` : '100%'}`,
     };
@@ -90,18 +94,24 @@ export const CustomImage = Node.create<ImageOptions>({
     return [
       'div',
       wrapperAttrs,
-      ['div', imageContainerAttrs, ['img', mergeAttributes(restAttrs, { class: 'rounded-lg w-full' })]],
+      ['div', imageContainerAttrs, ['img', mergeAttributes(this.options.HTMLAttributes, restAttrs, { class: 'rounded-lg w-full' })]],
     ];
   },
-
+  
   addCommands() {
     return {
-      setImage: options => ({ commands }) => {
-        return commands.insertContent({
-          type: this.name,
-          attrs: options,
-        })
-      },
-    }
+      setImage:
+        (options) =>
+        ({ commands }) => {
+          return commands.insertContent({
+            type: this.name,
+            attrs: options,
+          });
+        },
+    };
   },
-})
+
+  addNodeView() {
+    return ReactNodeViewRenderer(ImageNodeView);
+  },
+});

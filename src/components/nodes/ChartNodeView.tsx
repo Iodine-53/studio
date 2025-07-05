@@ -65,7 +65,8 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   
-  const { align, width } = node.attrs.layout || { align: 'center', width: 75 };
+  const { width } = node.attrs.layout || { width: 75 };
+  const align = node.attrs.textAlign || 'center';
 
   const startEditing = () => {
     setTitle(node.attrs.title);

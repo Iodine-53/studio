@@ -221,10 +221,14 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
       try {
           let imageBuffer: Buffer;
           let nodeTitle = 'Image';
-          const { layout } = node.attrs;
-          const { align = 'center', width = 75 } = layout || {};
+          const { layout, textAlign } = node.attrs;
+          const { width = 75 } = layout || {};
+          const align = textAlign || 'center';
 
           if (node.type === 'image') {
+              if (!node.attrs?.src) {
+                return [new Paragraph({ children: [new TextRun({ text: `[Empty Image]` })] })];
+              }
               imageBuffer = await getImageBuffer(node.attrs?.src);
           } else if (node.type === 'drawing') {
               const drawingImageBase64 = await renderDrawingToImage(node.attrs?.paths);

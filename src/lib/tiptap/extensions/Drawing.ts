@@ -16,7 +16,6 @@ export const Drawing = Node.create({
       },
       layout: {
         default: {
-          align: 'center',
           width: 75,
         },
       },
