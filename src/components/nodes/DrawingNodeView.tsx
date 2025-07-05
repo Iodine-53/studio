@@ -9,15 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Undo, Redo, Eraser, Pen, Check } from 'lucide-react';
+import { Undo, Redo, Eraser, Pen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProps) => {
+export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const { paths } = node.attrs;
     const { align, width } = node.attrs.layout || { align: 'center', width: 75 };
 
-    const [isEditing, setIsEditing] = useState(false);
+    const isEditing = selected;
+
     const [strokeColor, setStrokeColor] = useState('#000000');
     const [strokeWidth, setStrokeWidth] = useState(4);
     const [eraserWidth, setEraserWidth] = useState(10);
@@ -25,7 +26,6 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
 
     useEffect(() => {
         if (canvasRef.current && paths) {
-            // Load initial paths only once
             try {
                 const parsedPaths = JSON.parse(paths);
                 if (Array.isArray(parsedPaths) && parsedPaths.length > 0) {
@@ -35,7 +35,7 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
                 console.error("Failed to parse sketch paths", e);
             }
         }
-    }, []); // Empty dependency array to run only on mount
+    }, []);
 
     const handleStroke = async () => {
         if (canvasRef.current) {
@@ -63,24 +63,10 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
 
     const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setStrokeColor(e.target.value);
-        // If user is erasing and picks a color, switch them back to pen mode.
         if (isErasing) {
             setPenMode();
         }
     }
-
-    const handleWrapperClick = () => {
-        if (!isEditing) {
-            setIsEditing(true);
-            editor.setEditable(false); 
-        }
-    };
-
-    const handleDoneClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsEditing(false);
-        editor.setEditable(true); 
-    };
 
     return (
         <NodeViewWrapper
@@ -91,13 +77,11 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
                 className={cn(
                     "p-2 border rounded-lg bg-card transition-shadow relative w-full",
                     isEditing && "ring-2 ring-primary shadow-lg",
-                    !isEditing && "cursor-pointer"
                 )}
                 style={{ maxWidth: typeof width === 'number' ? `${width}%` : '100%' }}
-                onClick={handleWrapperClick}
             >
                 {isEditing && (
-                    <div className="flex flex-wrap items-center justify-between gap-4 mb-2 p-2 rounded-md bg-muted/50">
+                    <div className="flex flex-wrap items-center justify-start gap-4 mb-2 p-2 rounded-md bg-muted/50">
                         <div className="flex items-center gap-2">
                             <Button variant="ghost" size="icon" onClick={handleUndo} title="Undo"><Undo className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={handleRedo} title="Redo"><Redo className="h-4 w-4" /></Button>
@@ -130,28 +114,22 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
                                />
                             </div>
                         </div>
-
-                        <Button onClick={handleDoneClick} size="sm">
-                            <Check className="mr-2 h-4 w-4"/>
-                            Done
-                        </Button>
                     </div>
                 )}
                 
-                <div className={cn(!isEditing && "pointer-events-none")}>
-                     <ReactSketchCanvas
-                        ref={canvasRef}
-                        className="w-full h-96 bg-background rounded-md"
-                        strokeWidth={strokeWidth}
-                        eraserWidth={eraserWidth}
-                        strokeColor={strokeColor}
-                        canvasColor="hsl(var(--background))"
-                        onStroke={handleStroke}
-                    />
-                </div>
+                <ReactSketchCanvas
+                    ref={canvasRef}
+                    className="w-full h-96 bg-background rounded-md"
+                    strokeWidth={strokeWidth}
+                    eraserWidth={eraserWidth}
+                    strokeColor={strokeColor}
+                    canvasColor="hsl(var(--background))"
+                    onStroke={handleStroke}
+                    readOnly={!isEditing}
+                />
 
                 {!isEditing && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-card/50 opacity-0 hover:opacity-100 transition-opacity rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center bg-card/50 opacity-0 hover:opacity-100 transition-opacity rounded-lg pointer-events-none">
                         <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border">
                              <Pen className="h-5 w-5 text-muted-foreground" />
                             <span className="text-sm font-semibold text-muted-foreground">Click to draw</span>

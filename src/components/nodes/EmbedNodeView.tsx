@@ -1,7 +1,7 @@
 
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import type { NodeViewProps } from '@tiptap/react'
 import { NodeViewWrapper } from '@tiptap/react'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,6 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
   node,
   updateAttributes,
   selected,
-  editor
 }) => {
   const { src, layout } = node.attrs
   const { align, width } = layout || { align: 'center', width: 100 }
@@ -42,27 +41,28 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
   const [isEditing, setIsEditing] = useState(!src)
   const [inputValue, setInputValue] = useState(src || '')
 
+  useEffect(() => {
+    // If the node is deselected, exit editing mode, but only if there's a URL saved.
+    // This prevents the input from disappearing if you click away before entering a URL.
+    if (!selected && src) {
+      setIsEditing(false)
+    }
+  }, [selected, src])
+
+
   const handleSave = () => {
     updateAttributes({ src: inputValue })
     setIsEditing(false)
   }
 
-  const handleWrapperClick = () => {
-    if (!isEditing) {
-        editor.setEditable(false);
-    }
-  }
-
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
-    editor.setEditable(false);
   }
 
   const handleDoneClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     handleSave();
-    editor.setEditable(true);
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -76,7 +76,6 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
     <NodeViewWrapper
       className="layout-wrapper"
       data-align={align}
-      onClick={handleWrapperClick}
     >
       <div
         className={cn(
@@ -93,13 +92,14 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Enter a URL..."
+                placeholder="Enter a YouTube or Vimeo URL..."
                 autoFocus
               />
               <Button onClick={handleDoneClick}>
                 <Check className="h-4 w-4" />
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">Paste a YouTube or Vimeo link and press Enter.</p>
           </div>
         ) : embedUrl ? (
           <div className="relative w-full aspect-video">

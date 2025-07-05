@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
 import { Plus, X, Check, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,12 @@ type Task = {
   completed: boolean;
 };
 
-const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) => {
+const TodoListComponent = ({ node, updateAttributes, selected }: NodeViewProps) => {
   const { tasks, title, layout } = node.attrs;
   const { align, width } = layout || { align: 'center', width: 75 };
   const [inputValue, setInputValue] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+
+  const isEditing = selected;
 
   const addTask = () => {
     if (inputValue.trim() !== '') {
@@ -51,19 +52,6 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
     }
   };
 
-  const handleWrapperClick = () => {
-    if (!isEditing) {
-      setIsEditing(true);
-      editor.setEditable(false);
-    }
-  };
-
-  const handleDoneClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent re-triggering the wrapper click
-    setIsEditing(false);
-    editor.setEditable(true);
-  };
-
   const completedCount = tasks.filter((task: Task) => task.completed).length;
   const totalCount = tasks.length;
 
@@ -71,7 +59,6 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
     <NodeViewWrapper 
         className="layout-wrapper"
         data-align={align}
-        onClick={handleWrapperClick}
     >
       <Card 
         className={cn(
@@ -104,7 +91,6 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
                 onClick={(e) => e.stopPropagation()} // Prevent wrapper click from propagating
               />
               <Button onClick={(e) => { e.stopPropagation(); addTask(); }}><Plus size={16} /> Add</Button>
-              <Button variant="secondary" onClick={handleDoneClick}><Check size={16}/> Done</Button>
             </div>
           )}
           
@@ -114,10 +100,10 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
             </div>
           )}
 
-          <div className={cn("space-y-2", !isEditing && "pointer-events-none")}>
+          <div className="space-y-2">
               {tasks.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4 text-sm">
-                  {isEditing ? "No tasks yet. Add one above!" : "Click to add tasks"}
+                  {isEditing ? "No tasks yet. Add one above!" : "Select to add tasks"}
                 </p>
               ) : (
                 tasks.map((task: Task) => (
@@ -134,7 +120,8 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
                         'flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors',
                         task.completed 
                           ? 'bg-green-500 border-green-500 text-white' 
-                          : 'border-muted-foreground hover:border-primary'
+                          : 'border-muted-foreground hover:border-primary',
+                        !isEditing && 'pointer-events-none'
                       )}
                       aria-label={task.completed ? 'Mark as not completed' : 'Mark as completed'}
                     >
@@ -146,22 +133,24 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
                     )}>
                       {task.text}
                     </span>
-                    <Button 
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-                      className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                      aria-label="Delete task"
-                    >
-                      <X size={14} />
-                    </Button>
+                    {isEditing && (
+                        <Button 
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+                          className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                          aria-label="Delete task"
+                        >
+                          <X size={14} />
+                        </Button>
+                    )}
                   </div>
                 ))
               )
             }
           </div>
           {!isEditing && (
-            <div className="absolute inset-0 flex items-center justify-center bg-card/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+            <div className="absolute inset-0 flex items-center justify-center bg-card/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none">
                 <div className="flex items-center gap-2 bg-background/80 px-4 py-2 rounded-full border">
                      <Edit className="h-5 w-5 text-muted-foreground" />
                     <span className="text-sm font-semibold text-muted-foreground">Click to edit tasks</span>
