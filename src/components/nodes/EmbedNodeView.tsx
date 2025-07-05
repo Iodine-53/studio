@@ -33,8 +33,8 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
   updateAttributes,
   selected,
 }) => {
-  const { src, textAlign } = node.attrs
-  const align = textAlign || 'center';
+  const { src, textAlign, layout } = node.attrs
+  const width = layout?.width || 100;
   
   const embedUrl = useMemo(() => getEmbedUrl(src), [src])
   
@@ -75,7 +75,8 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
   return (
     <NodeViewWrapper
       className="my-4"
-      data-align={align}
+      data-align={textAlign}
+      style={{ width: `${width}%` }}
     >
       <div
         className={cn(

@@ -52,7 +52,7 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
     return selectedNodeInfo?.layout[key];
   }
 
-  const currentWidth = getLayoutAttribute('width') ?? 75;
+  const currentWidth = getLayoutAttribute('width') ?? 100;
 
   return (
     <BubbleMenu

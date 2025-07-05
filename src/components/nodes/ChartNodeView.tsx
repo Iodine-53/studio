@@ -54,6 +54,8 @@ const CustomLegend = (props: any) => {
 
 export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const { textAlign, layout } = node.attrs;
+  const width = layout?.width || 100;
 
   // States for edit mode
   const [title, setTitle] = useState(node.attrs.title);
@@ -65,8 +67,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   
-  const align = node.attrs.textAlign || 'center';
-
   const startEditing = () => {
     setTitle(node.attrs.title);
     setChartType(node.attrs.chartType);
@@ -255,7 +255,11 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
 
   if (isEditing) {
       return (
-          <NodeViewWrapper data-align={align} className="my-4">
+          <NodeViewWrapper 
+            className="my-4"
+            data-align={textAlign}
+            style={{ width: `${width}%` }}
+          >
             <Card 
               className="overflow-hidden relative w-full"
             >
@@ -299,7 +303,11 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   const savedViewConfig = JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}');
 
   return (
-    <NodeViewWrapper data-align={align} className="my-4">
+    <NodeViewWrapper 
+        className="my-4"
+        data-align={textAlign}
+        style={{ width: `${width}%` }}
+    >
       <div 
         className="relative group/chart-view w-full"
       >

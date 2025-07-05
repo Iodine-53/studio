@@ -14,10 +14,9 @@ import { cn } from '@/lib/utils';
 
 export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
-    const { paths } = node.attrs;
-    const align = node.attrs.textAlign || 'center';
-
+    const { paths, textAlign, layout } = node.attrs;
     const isEditing = selected;
+    const width = layout?.width || 100;
 
     const [strokeColor, setStrokeColor] = useState('#000000');
     const [strokeWidth, setStrokeWidth] = useState(4);
@@ -70,8 +69,9 @@ export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewPr
 
     return (
         <NodeViewWrapper
-            data-align={align}
             className="my-4"
+            data-align={textAlign}
+            style={{ width: `${width}%` }}
         >
             <div
                 className={cn(

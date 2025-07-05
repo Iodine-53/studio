@@ -9,8 +9,8 @@ import { processImage } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
-  const { src } = node.attrs;
-  const align = node.attrs.textAlign || 'center';
+  const { src, textAlign, layout } = node.attrs;
+  const width = layout?.width || 100;
 
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +41,11 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
   };
 
   return (
-    <NodeViewWrapper className="my-4" data-align={align}>
+    <NodeViewWrapper
+      className="my-4"
+      data-align={textAlign}
+      style={{ width: `${width}%` }}
+    >
       <div
         className={cn('relative w-full', selected && 'ring-2 ring-primary ring-offset-2 rounded-lg')}
       >

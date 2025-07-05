@@ -4,6 +4,7 @@
 import { type Editor, EditorContent } from '@tiptap/react'
 import Toolbar from './Toolbar'
 import { BlockActionsMenu } from './BlockActionsMenu';
+import { LayoutBubbleMenu } from './LayoutBubbleMenu';
 import 'highlight.js/styles/atom-one-dark.css'
 
 // Define the component's props
@@ -16,6 +17,7 @@ const TiptapEditor = ({ editor }: Props) => {
   return (
     <div className="flex flex-col justify-stretch min-h-[500px] relative">
       {editor && <BlockActionsMenu editor={editor} />}
+      {editor && <LayoutBubbleMenu editor={editor} />}
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>

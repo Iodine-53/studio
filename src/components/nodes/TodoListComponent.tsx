@@ -16,11 +16,10 @@ type Task = {
 };
 
 const TodoListComponent = ({ node, updateAttributes, selected }: NodeViewProps) => {
-  const { tasks, title, textAlign } = node.attrs;
-  const align = textAlign || 'center';
-  const [inputValue, setInputValue] = useState('');
-
+  const { tasks, title, textAlign, layout } = node.attrs;
   const isEditing = selected;
+  const width = layout?.width || 100;
+  const [inputValue, setInputValue] = useState('');
 
   const addTask = () => {
     if (inputValue.trim() !== '') {
@@ -58,7 +57,8 @@ const TodoListComponent = ({ node, updateAttributes, selected }: NodeViewProps) 
   return (
     <NodeViewWrapper 
         className="my-4"
-        data-align={align}
+        data-align={textAlign}
+        style={{ width: `${width}%` }}
     >
       <Card 
         className={cn(
