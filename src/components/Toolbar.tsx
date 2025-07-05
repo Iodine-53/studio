@@ -28,11 +28,19 @@ import {
   Image,
   CheckSquare,
   Rows,
+  Baseline,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
 import { useRef, type ChangeEvent } from "react";
 import { processImage } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   editor: Editor | null;
@@ -60,6 +68,12 @@ const Toolbar = ({ editor }: Props) => {
       event.target.value = '';
     }
   };
+
+  const lineHeights = [
+    { label: 'Single', value: '1' },
+    { label: '1.5', value: '1.5' },
+    { label: 'Double', value: '2' },
+  ];
 
   return (
     <div className="flex w-full flex-wrap items-center gap-1 rounded-t-xl border-b bg-muted/50 p-2">
@@ -106,6 +120,30 @@ const Toolbar = ({ editor }: Props) => {
       >
         <Underline className="h-4 w-4" />
       </Toggle>
+      <Separator orientation="vertical" className="h-8 mx-1" />
+       <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Line height">
+            <Baseline className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {lineHeights.map(({ label, value }) => (
+            <DropdownMenuItem
+              key={value}
+              onSelect={() => editor.chain().focus().setLineHeight(value).run()}
+              className={editor.isActive('textStyle', { lineHeight: value }) ? 'is-active' : ''}
+            >
+              {label}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuItem
+            onSelect={() => editor.chain().focus().unsetLineHeight().run()}
+          >
+            Default
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Separator orientation="vertical" className="h-8 mx-1" />
       <Toggle
         size="sm"

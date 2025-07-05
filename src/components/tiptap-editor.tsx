@@ -29,6 +29,7 @@ import { Accordion } from '@/lib/tiptap/extensions/Accordion';
 import { LayoutBubbleMenu } from './LayoutBubbleMenu';
 import { BlockActionsMenu } from './BlockActionsMenu';
 import { TrailingNode } from '@/lib/tiptap/extensions/TrailingNode';
+import { LineHeight } from '@/lib/tiptap/extensions/LineHeight';
 
 
 // Import a syntax highlighting theme
@@ -51,17 +52,12 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        listItem: {
-          HTMLAttributes: {
-            class: 'leading-snug'
-          }
-        },
         codeBlock: false,
         image: false, // Disable default image to use our custom one
       }),
       Underline,
       TextAlign.configure({
-        types: ['heading', 'paragraph'],
+        types: ['heading', 'paragraph', 'listItem'],
       }),
       CodeBlockLowlight.configure({
         lowlight,
@@ -84,6 +80,7 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
       TodoListExtension,
       Accordion,
       TrailingNode,
+      LineHeight,
     ],
     editorProps: {
       attributes: {
