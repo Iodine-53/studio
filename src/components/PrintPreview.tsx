@@ -54,8 +54,14 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       return <p>{children || <br/>}</p>;
     case 'text':
       return <>{node.text}</>;
-    case 'image':
-      return <img src={node.attrs?.src} alt={node.attrs?.alt || ''} className="max-w-full my-4 rounded-md" />;
+    case 'image': {
+      const layout = node.attrs?.layout || {};
+      return (
+        <div data-align={layout.align || 'center'} data-width={layout.width || 'default'} className="layout-wrapper">
+          <img src={node.attrs?.src} alt={node.attrs?.alt || ''} className="max-w-full my-4 rounded-lg" />
+        </div>
+      );
+    }
     case 'bulletList':
         return <ul className="list-disc pl-6">{children}</ul>;
     case 'orderedList':
@@ -96,52 +102,62 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                 <div>{children}</div>
             </div>
         );
-    case 'drawing':
-        return <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground">[Drawing Content]</div>
+    case 'drawing': {
+      const layout = node.attrs?.layout || {};
+      return (
+        <div data-align={layout.align || 'center'} data-width={layout.width || 'default'} className="layout-wrapper">
+          <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground w-full">[Drawing Content]</div>
+        </div>
+      );
+    }
     
-    case 'chartBlock':
-        try {
-            const chartData = JSON.parse(node.attrs?.chartData || '[]');
-            const chartConfig = JSON.parse(node.attrs?.chartConfig || '{}');
-            const chartType = node.attrs?.chartType || 'bar';
-            const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-            
-            const ChartComponent = chartType === 'bar' ? BarChart : chartType === 'line' ? LineChart : chartType === 'area' ? AreaChart : PieChart;
-            const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
-            
-            return (
-                <div className="my-4 p-4 border rounded-lg not-prose">
-                    <h4 className="font-bold text-lg mb-2">{node.attrs?.title}</h4>
-                    <div className="h-80 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                        {chartType === 'pie' ? (
-                            <PieChart>
-                                <Pie data={chartData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                                    {chartData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                                </Pie>
-                                <Tooltip/>
-                                <Legend/>
-                            </PieChart>
-                        ) : (
-                            <ChartComponent data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
-                                <YAxis tick={{fontSize: 12}} />
-                                <Tooltip />
-                                <Legend />
-                                {chartConfig.dataKeys?.map((key: string, index: number) => (
-                                    <SeriesComponent key={key} dataKey={key} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
-                                ))}
-                            </ChartComponent>
-                        )}
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            )
-        } catch(e) {
-            return <div className="my-4 p-4 border rounded-lg text-center text-destructive">[Invalid Chart Data]</div>
-        }
-
+    case 'chartBlock': {
+      try {
+        const layout = node.attrs?.layout || {};
+        const chartData = JSON.parse(node.attrs?.chartData || '[]');
+        const chartConfig = JSON.parse(node.attrs?.chartConfig || '{}');
+        const chartType = node.attrs?.chartType || 'bar';
+        const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+        
+        const ChartComponent = chartType === 'bar' ? BarChart : chartType === 'line' ? LineChart : chartType === 'area' ? AreaChart : PieChart;
+        const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
+        
+        return (
+          <div data-align={layout.align || 'center'} data-width={layout.width || 'default'} className="layout-wrapper">
+            <div className="my-4 p-4 border rounded-lg not-prose w-full">
+              <h4 className="font-bold text-lg mb-2">{node.attrs?.title}</h4>
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  {chartType === 'pie' ? (
+                    <PieChart>
+                      <Pie data={chartData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+                        {chartData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip/>
+                      <Legend/>
+                    </PieChart>
+                  ) : (
+                    <ChartComponent data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
+                      <YAxis tick={{fontSize: 12}} />
+                      <Tooltip />
+                      <Legend />
+                      {chartConfig.dataKeys?.map((key: string, index: number) => (
+                        <SeriesComponent key={key} dataKey={key} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
+                      ))}
+                    </ChartComponent>
+                  )}
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        );
+      } catch(e) {
+        return <div className="my-4 p-4 border rounded-lg text-center text-destructive">[Invalid Chart Data]</div>
+      }
+    }
+    
     case 'accordion':
         return (
             <div className="my-4 p-4 border rounded-lg not-prose">
