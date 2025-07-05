@@ -6,9 +6,11 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, Printer } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, Printer, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
+import { saveAs } from 'file-saver';
+import { exportToDocx } from '@/lib/docx-exporter';
 
 export default function EditorPage() {
   const params = useParams();
@@ -17,6 +19,7 @@ export default function EditorPage() {
   const [initialContent, setInitialContent] = useState<any>(null);
   const [currentContent, setCurrentContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Ref to hold the timeout ID for debouncing
@@ -94,6 +97,23 @@ export default function EditorPage() {
     }
   };
 
+  const handleDocxExport = async () => {
+    if (!currentContent) {
+        alert("Cannot export an empty document.");
+        return;
+    }
+    setIsExportingDocx(true);
+    try {
+        const blob = await exportToDocx(currentContent);
+        saveAs(blob, `${doc?.title || 'Document'}.docx`);
+    } catch (error) {
+        console.error("Failed to export DOCX", error);
+        alert("An error occurred while exporting to DOCX. Please check the console for details.");
+    } finally {
+        setIsExportingDocx(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -127,6 +147,10 @@ export default function EditorPage() {
                <Button variant="outline" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-2" />
                 Print
+              </Button>
+              <Button variant="outline" onClick={handleDocxExport} disabled={isExportingDocx}>
+                {isExportingDocx ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+                {isExportingDocx ? 'Exporting...' : 'Export DOCX'}
               </Button>
             </div>
           </nav>
