@@ -2,18 +2,8 @@
 
 import { BubbleMenu, Editor } from "@tiptap/react";
 import { NodeSelection } from "@tiptap/pm/state";
-import { MoreVertical, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-type Props = {
-  editor: Editor;
-};
 
 // List of node types this menu should appear for.
 // We are targeting block-level atom nodes and wrappers.
@@ -60,19 +50,9 @@ export const BlockActionsMenu = ({ editor }: Props) => {
       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleAddBlockBelow} title="Add block below">
         <Plus size={16} />
       </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title="More options">
-            <MoreVertical size={16} />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-            <Trash2 className="mr-2 h-4 w-4" />
-            <span>Delete block</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleDelete} title="Delete block">
+        <Trash2 size={16} />
+      </Button>
     </BubbleMenu>
   );
 };
