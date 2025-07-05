@@ -53,7 +53,7 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
       StarterKit.configure({
         listItem: {
           HTMLAttributes: {
-            class: 'leading-normal'
+            class: 'leading-snug'
           }
         },
         codeBlock: false,
