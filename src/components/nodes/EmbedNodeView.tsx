@@ -6,7 +6,7 @@ import type { NodeViewProps } from '@tiptap/react'
 import { NodeViewWrapper } from '@tiptap/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Check, Edit, VideoOff } from 'lucide-react'
+import { Check, Edit, Video, Link2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const YOUTUBE_REGEX = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
@@ -87,13 +87,13 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
       >
         {isEditing ? (
           <div className="p-4 space-y-2 border rounded-lg bg-card">
-            <p className="text-sm font-medium">Embed Video</p>
+            <p className="text-sm font-medium">Embed Content</p>
             <div className="flex gap-2">
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Enter YouTube or Vimeo URL..."
+                placeholder="Enter a URL..."
                 autoFocus
               />
               <Button onClick={handleDoneClick}>
@@ -116,10 +116,28 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
                 </Button>
             </div>
           </div>
+        ) : src ? (
+            <div className="flex items-center gap-4 p-4 border rounded-lg bg-card hover:bg-muted/50 transition-colors">
+                <div className="flex-shrink-0">
+                    <Link2 className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <div className="flex-grow min-w-0">
+                    <p className="text-sm font-medium truncate">{src}</p>
+                    <a href={src} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline break-all">
+                        Open link in new tab
+                    </a>
+                </div>
+                <div className="flex-shrink-0">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleEditClick}>
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Edit URL</span>
+                    </Button>
+                </div>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center p-4 aspect-video border-2 border-dashed rounded-lg bg-muted/50">
-            <VideoOff className="w-10 h-10 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">Invalid or missing video URL.</p>
+            <Video className="w-10 h-10 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">Invalid or missing embed URL.</p>
             <Button size="sm" variant="outline" className="mt-2" onClick={handleEditClick}>
               <Edit className="mr-2 h-4 w-4"/>
               Edit URL

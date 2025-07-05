@@ -1,7 +1,7 @@
 
 "use client";
 
-import { X, CheckSquare, Square, AlertTriangle, ExternalLink, VideoOff } from "lucide-react";
+import { X, CheckSquare, Square, AlertTriangle, ExternalLink, Video } from "lucide-react";
 import React, { type FC, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -270,12 +270,12 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         <div data-align={align} className="layout-wrapper">
           <div style={{ maxWidth: `${width}%` }} className="w-full">
             <div className="my-4 p-4 border rounded-lg not-prose text-center bg-muted/30">
-                <VideoOff className="inline-block h-8 w-8 text-muted-foreground mb-2" />
-                <p className="font-semibold">Embedded Video</p>
+                <ExternalLink className="inline-block h-8 w-8 text-muted-foreground mb-2" />
+                <p className="font-semibold">Embedded Content</p>
                 <a href={src} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline break-all">
                     {src}
                 </a>
-                <p className="text-xs text-muted-foreground mt-2">(Video will not display in printout)</p>
+                <p className="text-xs text-muted-foreground mt-2">(Link will open in a new tab)</p>
             </div>
           </div>
         </div>

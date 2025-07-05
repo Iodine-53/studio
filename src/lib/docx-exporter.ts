@@ -78,7 +78,8 @@ const renderDrawingToImage = (pathsString: string): Promise<string> => {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const data = JSON.parse(pathsString || '[]');
+    const data = JSON.parse(pathsString || '[]'
+);
     if (Array.isArray(data)) {
       data.forEach(path => {
         ctx.beginPath();
@@ -222,7 +223,8 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           } else { // chartBlock
               const { chartData, chartConfig, chartType, title, viewConfig } = node.attrs;
               nodeTitle = title;
-              const parsedData = JSON.parse(chartData || '[]');
+              const parsedData = JSON.parse(chartData || '[]'
+);
               const parsedConfig = JSON.parse(chartConfig || '{}');
               const parsedViewConfig = JSON.parse(viewConfig || '{}');
       
@@ -403,7 +405,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
       
       const textRuns: TextRun[] = [
         new TextRun({
-          text: `[Embedded Video: `,
+          text: `[Embedded Content: `,
         }),
         new TextRun({
           text: src,

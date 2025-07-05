@@ -18,9 +18,6 @@ const isUrl = (str: string) => {
   }
 };
 
-const YOUTUBE_REGEX = /^(https?:)?\/\/(www\.)?(youtube\.com|youtu\.be)\/.+$/;
-const VIMEO_REGEX = /^(https?:)?\/\/(www\.)?(vimeo\.com)\/.+$/;
-
 export const PasteHandler = Extension.create({
   name: 'pasteHandler',
 
@@ -34,24 +31,11 @@ export const PasteHandler = Extension.create({
             const { selection } = state;
             const text = event.clipboardData?.getData('text/plain') || '';
 
-            // 1. Smart Link: If there's a selection and the pasted text is a URL
-            if (selection.from !== selection.to && isUrl(text)) {
-              // Ensure we don't apply to a selected embed or image node
-              if (state.selection.content().size > 0) {
-                 const node = state.selection.content().content.firstChild;
-                 if (node && (node.type.name === 'image' || node.type.name === 'embed')) {
-                    return false;
-                 }
-              }
-              this.editor.commands.setLink({ href: text });
-              return true; // We've handled the paste
-            }
-
-            // 2. Auto-Embed: Check for video links on empty lines
-            const isVideoUrl = YOUTUBE_REGEX.test(text) || VIMEO_REGEX.test(text);
+            // Auto-Embed: If pasting a URL on an empty line, create an embed.
+            const isPastedUrl = isUrl(text);
             const isonEmptyLine = selection.$from.parent.content.size === 0;
 
-            if (isVideoUrl && isonEmptyLine) {
+            if (isPastedUrl && isonEmptyLine) {
               this.editor.chain().focus().deleteRange(selection).setEmbed({ src: text }).run();
               return true; // We've handled the paste
             }
