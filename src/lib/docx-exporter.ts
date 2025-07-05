@@ -13,6 +13,9 @@ import {
   WidthType,
   ShadingType,
   BorderStyle,
+  HorizontalPositionAlign,
+  VerticalPositionAlign,
+  TextWrappingType,
 } from 'docx';
 import {
   Chart,
@@ -165,7 +168,6 @@ function createTextRuns(node: TiptapNode): TextRun[] {
     }).filter((run): run is TextRun => run !== null) || [];
 }
 
-
 async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Table>> {
   switch (node.type) {
     case 'heading':
@@ -189,111 +191,89 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
       ];
     
     case 'image':
+    case 'chartBlock':
+    case 'drawing':
       try {
-        const imageBuffer = await getImageBuffer(node.attrs?.src);
-        return [new Paragraph({
-          children: [new ImageRun({
+          let imageBuffer: Buffer;
+          let nodeTitle = 'Image';
+          const { layout } = node.attrs;
+          const { align = 'center', width = 75 } = layout || {};
+
+          if (node.type === 'image') {
+              imageBuffer = await getImageBuffer(node.attrs?.src);
+          } else if (node.type === 'drawing') {
+              const drawingImageBase64 = await renderDrawingToImage(node.attrs?.paths);
+              if (!drawingImageBase64) throw new Error("Drawing rendering returned empty.");
+              imageBuffer = await getImageBuffer(drawingImageBase64);
+          } else { // chartBlock
+              const { chartData, chartConfig, chartType, title, viewConfig } = node.attrs;
+              nodeTitle = title;
+              const parsedData = JSON.parse(chartData || '[]');
+              const parsedConfig = JSON.parse(chartConfig || '{}');
+              const parsedViewConfig = JSON.parse(viewConfig || '{}');
+      
+              if (parsedData.length === 0) {
+                  return [new Paragraph({ children: [new TextRun({ text: `[Chart: ${nodeTitle} - No data]` })] })];
+              }
+              
+              let finalData;
+              if (chartType === 'pie') {
+                  finalData = {
+                      labels: parsedData.map((d: any) => d[parsedConfig.nameKey]),
+                      datasets: [{ data: parsedData.map((d: any) => d[parsedConfig.valueKey]), backgroundColor: parsedData.map((_: any, i: number) => COLORS[i % COLORS.length]) }],
+                  };
+              } else {
+                  finalData = {
+                      labels: parsedData.map((d: any) => d[parsedConfig.xAxisKey]),
+                      datasets: (parsedConfig.dataKeys || []).map((key: string, i: number) => ({
+                          label: key, data: parsedData.map((d: any) => parseFloat(d[key]) || 0),
+                          backgroundColor: COLORS[i % COLORS.length] + '80', borderColor: COLORS[i % COLORS.length],
+                          borderWidth: 1, fill: chartType === 'area',
+                      })),
+                  };
+              }
+              
+              const finalChartConfig = {
+                  type: chartType === 'area' ? 'line' : chartType,
+                  data: finalData,
+                  options: {
+                      plugins: { title: { display: !!nodeTitle, text: nodeTitle, font: { size: 16 } }, legend: { display: parsedViewConfig.legend }, tooltip: { enabled: parsedViewConfig.tooltip } },
+                      scales: chartType === 'pie' ? {} : { x: { grid: { display: parsedViewConfig.grid } }, y: { grid: { display: parsedViewConfig.grid } } }
+                  },
+              };
+              const chartImageBase64 = await renderChartToImage(finalChartConfig);
+              if (!chartImageBase64) throw new Error("Chart rendering returned empty.");
+              imageBuffer = await getImageBuffer(chartImageBase64);
+          }
+          
+          const imageWidthInPixels = Math.floor(450 * (width / 100));
+          const imageHeightInPixels = Math.floor(300 * (width / 100));
+
+          const imageRun = new ImageRun({
             data: imageBuffer,
-            transformation: { width: 450, height: 300 },
-          })],
-          alignment: AlignmentType.CENTER,
-        })];
+            transformation: { width: imageWidthInPixels, height: imageHeightInPixels },
+            floating: (align === 'left' || align === 'right') ? {
+                horizontalPosition: { align: align.toUpperCase() as HorizontalPositionAlign },
+                verticalPosition: { align: VerticalPositionAlign.TOP },
+                wrap: { type: TextWrappingType.SQUARE },
+            } : undefined
+          });
+
+          return [new Paragraph({
+              children: [imageRun],
+              alignment: align === 'center' ? AlignmentType.CENTER : undefined,
+          })];
+
       } catch (e) {
-        console.error("Error processing image for DOCX:", e);
-        return [new Paragraph({ children: [ new TextRun({ text: `[Image failed to load: ${node.attrs?.src}]` }) ]})];
+        console.error(`Error processing ${node.type} for DOCX:`, e);
+        return [new Paragraph({ children: [ new TextRun({ text: `[${node.type} failed to load]` }) ]})];
       }
 
     case 'horizontalRule':
       return [new Paragraph({
-        border: { bottom: { color: "auto", space: 1, style: "single", size: 6 } },
+        border: { bottom: { color: "auto", space: 1, style: BorderStyle.SINGLE, size: 6 } },
       })];
     
-    case 'chartBlock':
-      try {
-        const { chartData, chartConfig, chartType, title, viewConfig } = node.attrs;
-        const parsedData = JSON.parse(chartData || '[]');
-        const parsedConfig = JSON.parse(chartConfig || '{}');
-        const parsedViewConfig = JSON.parse(viewConfig || '{}');
-
-        if (parsedData.length === 0) {
-          return [new Paragraph({ children: [ new TextRun({ text: `[Chart: ${title} - No data]` }) ]})];
-        }
-
-        let finalData;
-
-        if (chartType === 'pie') {
-          const pieLabels = parsedData.map((d: any) => d[parsedConfig.nameKey]);
-          const pieDatasetData = parsedData.map((d: any) => d[parsedConfig.valueKey]);
-          finalData = {
-            labels: pieLabels,
-            datasets: [{
-              data: pieDatasetData,
-              backgroundColor: pieDatasetData.map((_: any, index: number) => COLORS[index % COLORS.length]),
-            }],
-          };
-        } else { // bar, line, area
-          const labels = parsedData.map((d: any) => d[parsedConfig.xAxisKey]);
-          const datasets = (parsedConfig.dataKeys || []).map((key: string, index: number) => ({
-            label: key,
-            data: parsedData.map((d: any) => parseFloat(d[key]) || 0),
-            backgroundColor: COLORS[index % COLORS.length] + '80',
-            borderColor: COLORS[index % COLORS.length],
-            borderWidth: 1,
-            fill: chartType === 'area',
-          }));
-          finalData = { labels, datasets };
-        }
-
-        const finalChartConfig = {
-          type: chartType === 'area' ? 'line' : chartType,
-          data: finalData,
-          options: {
-            plugins: {
-              title: { display: !!title, text: title, font: { size: 16 } },
-              legend: { display: parsedViewConfig.legend },
-              tooltip: { enabled: parsedViewConfig.tooltip }
-            },
-            scales: chartType === 'pie' ? {} : {
-              x: { grid: { display: parsedViewConfig.grid } },
-              y: { grid: { display: parsedViewConfig.grid } }
-            }
-          },
-        };
-        
-        const chartImageBase64 = await renderChartToImage(finalChartConfig);
-        if (!chartImageBase64) throw new Error("Chart rendering returned empty.");
-
-        const imageBuffer = await getImageBuffer(chartImageBase64);
-        return [new Paragraph({
-          children: [new ImageRun({
-            data: imageBuffer,
-            transformation: { width: 450, height: 300 },
-          })],
-          alignment: AlignmentType.CENTER,
-        })];
-      } catch (e) {
-        console.error("Error processing chart for DOCX:", e);
-        return [new Paragraph({ children: [ new TextRun({ text: `[Chart failed to render]` }) ]})];
-      }
-
-    case 'drawing':
-      try {
-        const drawingImageBase64 = await renderDrawingToImage(node.attrs?.paths);
-        if (!drawingImageBase64) throw new Error("Drawing rendering returned empty.");
-
-        const imageBuffer = await getImageBuffer(drawingImageBase64);
-        return [new Paragraph({
-          children: [new ImageRun({
-            data: imageBuffer,
-            transformation: { width: 450, height: 300 },
-          })],
-          alignment: AlignmentType.CENTER,
-        })];
-      } catch (e) {
-        console.error("Error processing drawing for DOCX:", e);
-        return [new Paragraph({ children: [ new TextRun({ text: `[Drawing failed to render]` }) ]})];
-      }
-
     case 'codeBlock':
       const codeText = node.content?.map(n => n.text).join('\n') || '';
       return [new Paragraph({
@@ -329,15 +309,17 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
     case 'orderedList':
         const listItems = await Promise.all(
             (node.content || []).map(async (listItemNode) => {
-                const itemContent = createTextRuns(listItemNode);
+                // A listItem contains one or more paragraphs. We will process the text runs from them.
+                const allRuns = (listItemNode.content || []).map(p => createTextRuns(p)).flat();
+                
                 return new Paragraph({
-                    children: itemContent,
+                    children: allRuns.length > 0 ? allRuns : [new TextRun('')],
                     bullet: node.type === 'bulletList' ? { level: 0 } : undefined,
                     numbering: node.type === 'orderedList' ? { reference: 'default-numbering', level: 0 } : undefined,
                 });
             })
         );
-        return listItems.flat();
+        return listItems;
 
     case 'taskList':
         return (await Promise.all((node.content || []).map(async taskItemNode => {
