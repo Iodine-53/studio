@@ -28,6 +28,7 @@ import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
 import { Accordion } from '@/lib/tiptap/extensions/Accordion';
 import { LayoutBubbleMenu } from './LayoutBubbleMenu';
 import { BlockActionsMenu } from './BlockActionsMenu';
+import { TrailingNode } from '@/lib/tiptap/extensions/TrailingNode';
 
 
 // Import a syntax highlighting theme
@@ -82,6 +83,7 @@ const TiptapEditor = ({ content, onUpdate = () => {} }: Props) => {
       Chart,
       TodoListExtension,
       Accordion,
+      TrailingNode,
     ],
     editorProps: {
       attributes: {
