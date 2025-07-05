@@ -15,7 +15,6 @@ import { cn } from '@/lib/utils';
 export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const { paths } = node.attrs;
-    const { width } = node.attrs.layout || { width: 75 };
     const align = node.attrs.textAlign || 'center';
 
     const isEditing = selected;
@@ -72,14 +71,13 @@ export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewPr
     return (
         <NodeViewWrapper
             data-align={align}
-            className="layout-wrapper"
+            className="my-4"
         >
             <div
                 className={cn(
                     "p-2 border rounded-lg bg-card transition-shadow relative w-full",
                     isEditing && "ring-2 ring-primary shadow-lg",
                 )}
-                style={{ maxWidth: typeof width === 'number' ? `${width}%` : '100%' }}
             >
                 {isEditing && (
                     <div className="flex flex-wrap items-center justify-start gap-4 mb-2 p-2 rounded-md bg-muted/50">

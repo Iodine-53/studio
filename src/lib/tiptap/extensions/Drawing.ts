@@ -14,11 +14,6 @@ export const Drawing = Node.create({
       paths: {
         default: '[]',
       },
-      layout: {
-        default: {
-          width: 75,
-        },
-      },
     }
   },
 

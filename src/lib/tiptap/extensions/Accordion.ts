@@ -94,11 +94,6 @@ export const Accordion = Node.create<AccordionOptions>({
           }
         },
       },
-      layout: {
-        default: {
-          width: 75,
-        },
-      },
     }
   },
 

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { X, CheckSquare, Square, AlertTriangle, ExternalLink, Video } from "lucide-react";
+import { X, CheckSquare, Square, AlertTriangle, Download, Video } from "lucide-react";
 import React, { type FC, useRef, useEffect, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -28,8 +28,7 @@ const renderNodes = (nodes: TiptapNode[] | undefined) => nodes?.map(renderNode);
 // New StaticDrawing component to render sketches in the print preview
 const StaticDrawing: FC<{ node: TiptapNode }> = ({ node }) => {
   const canvasRef = useRef<ReactSketchCanvasRef>(null);
-  const { paths, layout } = node.attrs || {};
-  const { align = 'center', width = 75 } = layout || {};
+  const { paths } = node.attrs || {};
 
   useEffect(() => {
     if (canvasRef.current && paths) {
@@ -45,15 +44,13 @@ const StaticDrawing: FC<{ node: TiptapNode }> = ({ node }) => {
   }, [paths]);
 
   return (
-    <div data-align={align} className="layout-wrapper">
-      <div style={{ maxWidth: `${width}%` }}>
-        <div className="my-4 border rounded-lg overflow-hidden pointer-events-none">
-          <ReactSketchCanvas
-            ref={canvasRef}
-            className="w-full h-96"
-            canvasColor="white"
-          />
-        </div>
+    <div data-align={node.attrs?.textAlign} className="w-full">
+      <div className="my-4 border rounded-lg overflow-hidden pointer-events-none">
+        <ReactSketchCanvas
+          ref={canvasRef}
+          className="w-full h-96"
+          canvasColor="white"
+        />
       </div>
     </div>
   );
@@ -127,14 +124,10 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'paragraph':
       return <p style={hasStyle ? style : undefined}>{children || <br/>}</p>;
     case 'image': {
-      const layout = node.attrs?.layout || {};
-      const align = layout.align || 'center';
-      const width = layout.width || 100;
+      const align = node.attrs?.textAlign || 'center';
       return (
-        <div data-align={align} className="layout-wrapper">
-          <div style={{ maxWidth: `${width}%` }}>
+        <div data-align={align} className="w-full">
             <img src={node.attrs?.src} alt={node.attrs?.alt || ''} className="my-4 rounded-lg w-full" />
-          </div>
         </div>
       );
     }
@@ -183,9 +176,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     
     case 'chartBlock': {
       try {
-        const layout = node.attrs?.layout || {};
-        const align = layout.align || 'center';
-        const width = layout.width || 100;
+        const align = node.attrs?.textAlign || 'center';
         const chartData = JSON.parse(node.attrs?.chartData || '[]');
         const chartConfig = JSON.parse(node.attrs?.chartConfig || '{}');
         const chartType = node.attrs?.chartType || 'bar';
@@ -195,35 +186,33 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
         
         return (
-          <div data-align={align} className="layout-wrapper">
-            <div style={{ maxWidth: `${width}%` }} className="w-full">
-                <div className="my-4 p-4 border rounded-lg not-prose">
-                <h4 className="font-bold text-lg mb-2">{node.attrs?.title}</h4>
-                <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                    {chartType === 'pie' ? (
-                        <PieChart>
-                        <Pie data={chartData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                            {chartData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip/>
-                        <Legend/>
-                        </PieChart>
-                    ) : (
-                        <ChartComponent data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
-                        <YAxis tick={{fontSize: 12}} />
-                        <Tooltip />
-                        <Legend />
-                        {chartConfig.dataKeys?.map((key: string, index: number) => (
-                            <SeriesComponent key={key} dataKey={key} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
-                        ))}
-                        </ChartComponent>
-                    )}
-                    </ResponsiveContainer>
-                </div>
-                </div>
+          <div data-align={align} className="w-full">
+            <div className="my-4 p-4 border rounded-lg not-prose">
+            <h4 className="font-bold text-lg mb-2">{node.attrs?.title}</h4>
+            <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                {chartType === 'pie' ? (
+                    <PieChart>
+                    <Pie data={chartData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+                        {chartData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip/>
+                    <Legend/>
+                    </PieChart>
+                ) : (
+                    <ChartComponent data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
+                    <YAxis tick={{fontSize: 12}} />
+                    <Tooltip />
+                    <Legend />
+                    {chartConfig.dataKeys?.map((key: string, index: number) => (
+                        <SeriesComponent key={key} dataKey={key} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
+                    ))}
+                    </ChartComponent>
+                )}
+                </ResponsiveContainer>
+            </div>
             </div>
           </div>
         );
@@ -233,25 +222,21 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
     
     case 'accordion': {
-        const layout = node.attrs?.layout || {};
-        const align = layout.align || 'center';
-        const width = layout.width || 100;
+        const align = node.attrs?.textAlign || 'center';
         return (
-            <div data-align={align} className="layout-wrapper">
-                <div style={{ maxWidth: `${width}%` }} className="w-full">
-                    <div className="my-4 p-4 border rounded-lg not-prose">
-                        <h3 className="font-bold text-xl">{node.attrs?.title}</h3>
-                        <p className="text-muted-foreground mb-4">{node.attrs?.subtitle}</p>
-                        <div className="space-y-3">
-                            {node.attrs?.items.map((item: any) => (
-                                <div key={item.id} className="border-t pt-2">
-                                    <h4 className="font-semibold">{item.title}</h4>
-                                    <div className="text-sm text-foreground/80 leading-relaxed prose prose-sm max-w-none">
-                                        {item.content.split('\n').map((line: string, i: number) => <p key={i}>{line}</p>)}
-                                    </div>
+            <div data-align={align} className="w-full">
+                <div className="my-4 p-4 border rounded-lg not-prose">
+                    <h3 className="font-bold text-xl">{node.attrs?.title}</h3>
+                    <p className="text-muted-foreground mb-4">{node.attrs?.subtitle}</p>
+                    <div className="space-y-3">
+                        {node.attrs?.items.map((item: any) => (
+                            <div key={item.id} className="border-t pt-2">
+                                <h4 className="font-semibold">{item.title}</h4>
+                                <div className="text-sm text-foreground/80 leading-relaxed prose prose-sm max-w-none">
+                                    {item.content.split('\n').map((line: string, i: number) => <p key={i}>{line}</p>)}
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -259,45 +244,39 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
 
     case 'todoList': {
-        const layout = node.attrs?.layout || {};
-        const align = layout.align || 'center';
-        const width = layout.width || 100;
+        const align = node.attrs?.textAlign || 'center';
         return (
-            <div data-align={align} className="layout-wrapper">
-                <div style={{ maxWidth: `${width}%` }} className="w-full">
-                    <div className="my-4 p-4 border rounded-lg not-prose">
-                        <h4 className="font-bold text-xl mb-2">{node.attrs?.title}</h4>
-                        <ul className="space-y-2 list-none pl-0">
-                            {node.attrs?.tasks.map((task: any) => (
-                                <li key={task.id} className="flex items-center gap-2">
-                                    {task.completed ? <CheckSquare className="h-5 w-5 text-primary flex-shrink-0"/> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0"/>}
-                                    <span className={cn(task.completed && 'line-through text-muted-foreground')}>
-                                        {task.text}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+            <div data-align={align} className="w-full">
+                <div className="my-4 p-4 border rounded-lg not-prose">
+                    <h4 className="font-bold text-xl mb-2">{node.attrs?.title}</h4>
+                    <ul className="space-y-2 list-none pl-0">
+                        {node.attrs?.tasks.map((task: any) => (
+                            <li key={task.id} className="flex items-center gap-2">
+                                {task.completed ? <CheckSquare className="h-5 w-5 text-primary flex-shrink-0"/> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0"/>}
+                                <span className={cn(task.completed && 'line-through text-muted-foreground')}>
+                                    {task.text}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
         );
     }
 
     case 'embed': {
-      const { src, layout } = node.attrs;
-      const { align, width } = layout || { align: 'center', width: 100 };
+      const { src } = node.attrs;
+      const align = node.attrs?.textAlign || 'center';
       
       return (
-        <div data-align={align} className="layout-wrapper">
-          <div style={{ maxWidth: `${width}%` }} className="w-full">
-            <div className="my-4 p-4 border rounded-lg not-prose text-center bg-muted/30">
-                <ExternalLink className="inline-block h-8 w-8 text-muted-foreground mb-2" />
-                <p className="font-semibold">Embedded Content</p>
-                <a href={src} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline break-all">
-                    {src}
-                </a>
-                <p className="text-xs text-muted-foreground mt-2">(Link will open in a new tab)</p>
-            </div>
+        <div data-align={align} className="w-full">
+          <div className="my-4 p-4 border rounded-lg not-prose text-center bg-muted/30">
+              <Download className="inline-block h-8 w-8 text-muted-foreground mb-2" />
+              <p className="font-semibold">Embedded Content</p>
+              <a href={src} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline break-all">
+                  {src}
+              </a>
+              <p className="text-xs text-muted-foreground mt-2">(Link will open in a new tab)</p>
           </div>
         </div>
       );
@@ -344,10 +323,10 @@ export const PrintPreview: FC<PrintPreviewProps> = ({ isOpen, onClose, content }
             <button
               onClick={handleOpenInNewTab}
               className="p-2 text-white bg-black/50 rounded-full hover:bg-black/80"
-              title="Open in new tab"
+              title="Download or Print"
             >
-              <ExternalLink size={24} />
-              <span className="sr-only">Open in new tab</span>
+              <Download size={24} />
+              <span className="sr-only">Download or Print</span>
             </button>
             <button
               onClick={onClose}

@@ -40,11 +40,6 @@ export const TodoListExtension = Node.create({
           }
         },
       },
-      layout: {
-        default: {
-          width: 75,
-        },
-      },
     }
   },
 

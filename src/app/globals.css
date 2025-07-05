@@ -112,29 +112,6 @@
     @apply border-green-400 bg-green-50 dark:bg-green-900/20;
   }
 
-  /* Generic Layout Wrapper Styles for Custom Nodes */
-  .layout-wrapper {
-    /* Using flow-root as a modern clearfix to contain floated children */
-    @apply my-4 flow-root;
-  }
-
-  .layout-wrapper > * {
-    @apply max-w-full;
-  }
-
-  .layout-wrapper[data-align="left"] > * {
-    @apply float-left mr-6 mb-2; /* Add margin for spacing */
-  }
-
-  .layout-wrapper[data-align="center"] > * {
-    /* For center, we don't float. We use margin auto. */
-    @apply mx-auto;
-  }
-
-  .layout-wrapper[data-align="right"] > * {
-    @apply float-right ml-6 mb-2;
-  }
-
   /* Visual indicator for any selected custom node */
   .ProseMirror .ProseMirror-selectednode {
       outline: 3px solid hsl(var(--ring));

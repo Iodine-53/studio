@@ -33,8 +33,7 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
   updateAttributes,
   selected,
 }) => {
-  const { src, layout, textAlign } = node.attrs
-  const { width } = layout || { width: 100 }
+  const { src, textAlign } = node.attrs
   const align = textAlign || 'center';
   
   const embedUrl = useMemo(() => getEmbedUrl(src), [src])
@@ -75,15 +74,14 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
 
   return (
     <NodeViewWrapper
-      className="layout-wrapper"
+      className="my-4"
       data-align={align}
     >
       <div
         className={cn(
-            'my-4 overflow-hidden w-full transition-shadow relative group',
+            'overflow-hidden w-full transition-shadow relative group',
             selected && !isEditing && 'ring-2 ring-primary ring-offset-2 rounded-lg'
         )}
-        style={{ maxWidth: typeof width === 'number' ? `${width}%` : '100%' }}
       >
         {isEditing ? (
           <div className="p-4 space-y-2 border rounded-lg bg-card">

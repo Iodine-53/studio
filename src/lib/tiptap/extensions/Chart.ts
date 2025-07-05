@@ -26,11 +26,6 @@ export const Chart = Node.create({
       viewConfig: {
         default: '{"legend":true,"tooltip":true,"grid":true}',
       },
-      layout: {
-        default: {
-          width: 75,
-        },
-      },
     };
   },
 

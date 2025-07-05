@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 
 export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
   const { src } = node.attrs;
-  const { width } = node.attrs.layout || { width: 75 };
   const align = node.attrs.textAlign || 'center';
 
   const [isLoading, setIsLoading] = useState(false);
@@ -42,10 +41,9 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
   };
 
   return (
-    <NodeViewWrapper className="layout-wrapper" data-align={align}>
+    <NodeViewWrapper className="my-4" data-align={align}>
       <div
-        className={cn('relative w-full my-4', selected && 'ring-2 ring-primary ring-offset-2 rounded-lg')}
-        style={{ maxWidth: typeof width === 'number' ? `${width}%` : '100%' }}
+        className={cn('relative w-full', selected && 'ring-2 ring-primary ring-offset-2 rounded-lg')}
       >
         {src ? (
           <img src={src} alt={node.attrs.alt || ''} className="rounded-lg w-full block" />

@@ -24,8 +24,7 @@ const AccordionNodeView: React.FC<NodeViewProps> = ({
   updateAttributes,
   selected,
 }) => {
-  const { items, title, subtitle, layout, textAlign } = node.attrs;
-  const { width } = layout || { width: 75 };
+  const { items, title, subtitle, textAlign } = node.attrs;
   const align = textAlign || 'center';
   const [isEditing, setIsEditing] = useState(false)
 
@@ -56,12 +55,11 @@ const AccordionNodeView: React.FC<NodeViewProps> = ({
 
   return (
     <NodeViewWrapper
-      className="layout-wrapper"
+      className="my-4"
       data-align={align}
     >
       <Card 
-        className={cn('my-4 overflow-hidden w-full', selected && 'ring-2 ring-primary ring-offset-2')}
-        style={{ maxWidth: typeof width === 'number' ? `${width}%` : '100%' }}
+        className={cn('overflow-hidden w-full', selected && 'ring-2 ring-primary ring-offset-2')}
       >
         <CardHeader className="bg-muted/30">
           {isEditing ? (
