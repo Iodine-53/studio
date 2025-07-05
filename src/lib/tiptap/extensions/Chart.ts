@@ -1,3 +1,4 @@
+
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { ChartNodeView } from '@/components/nodes/ChartNodeView';
@@ -28,7 +29,7 @@ export const Chart = Node.create({
       layout: {
         default: {
           align: 'center',
-          width: 'default',
+          width: 75,
         },
       },
     };

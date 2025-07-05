@@ -1,3 +1,4 @@
+
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { DrawingNodeView } from '@/components/nodes/DrawingNodeView'
@@ -16,7 +17,7 @@ export const Drawing = Node.create({
       layout: {
         default: {
           align: 'center',
-          width: 'default',
+          width: 75,
         },
       },
     }

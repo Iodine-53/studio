@@ -1,3 +1,4 @@
+
 "use client";
 
 import { BubbleMenu, Editor } from "@tiptap/react";
@@ -6,12 +7,14 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
-  Maximize,
-  Minimize,
-  RectangleHorizontal,
+  Scaling,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 type Props = {
   editor: Editor;
@@ -34,7 +37,7 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
     return null;
   };
 
-  const updateLayoutAttribute = (key: string, value: string) => {
+  const updateLayoutAttribute = (key: string, value: string | number) => {
     const selectedNodeInfo = getSelectedLayoutNode();
     if (!selectedNodeInfo) return;
     
@@ -51,8 +54,10 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
   
   const getLayoutAttribute = (key: string) => {
     const selectedNodeInfo = getSelectedLayoutNode();
-    return selectedNodeInfo?.layout[key] || '';
+    return selectedNodeInfo?.layout[key];
   }
+
+  const currentWidth = getLayoutAttribute('width') ?? 75;
 
   return (
     <BubbleMenu
@@ -69,10 +74,27 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
 
       <Separator orientation="vertical" className="h-6 mx-1" />
 
-      {/* Width Controls */}
-      <Toggle size="sm" pressed={getLayoutAttribute('width') === 'small'} onPressedChange={() => updateLayoutAttribute('width', 'small')} aria-label="Small width"><Minimize size={16} /></Toggle>
-      <Toggle size="sm" pressed={getLayoutAttribute('width') === 'default'} onPressedChange={() => updateLayoutAttribute('width', 'default')} aria-label="Default width"><RectangleHorizontal size={16} /></Toggle>
-      <Toggle size="sm" pressed={getLayoutAttribute('width') === 'full'} onPressedChange={() => updateLayoutAttribute('width', 'full')} aria-label="Full width"><Maximize size={16} /></Toggle>
+      {/* Width Controls with Slider */}
+      <Popover>
+        <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Scaling size={16} />
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-4">
+            <div className="space-y-4">
+                <Label htmlFor="width-slider">Width: {currentWidth}%</Label>
+                <Slider
+                    id="width-slider"
+                    min={20}
+                    max={100}
+                    step={1}
+                    value={[currentWidth]}
+                    onValueChange={(value) => updateLayoutAttribute('width', value[0])}
+                />
+            </div>
+        </PopoverContent>
+      </Popover>
     </BubbleMenu>
   );
 };

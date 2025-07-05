@@ -43,7 +43,7 @@ export const TodoListExtension = Node.create({
       layout: {
         default: {
           align: 'center',
-          width: 'default',
+          width: 75,
         },
       },
     }

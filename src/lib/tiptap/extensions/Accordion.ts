@@ -1,3 +1,4 @@
+
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import AccordionNodeView from '@/components/nodes/AccordionNodeView'
@@ -96,7 +97,7 @@ export const Accordion = Node.create<AccordionOptions>({
       layout: {
         default: {
           align: 'center',
-          width: 'full',
+          width: 75,
         },
       },
     }

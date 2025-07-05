@@ -37,7 +37,7 @@ export const CustomImage = Node.create<ImageOptions>({
       layout: {
         default: {
           align: 'center',
-          width: 'default',
+          width: 75,
         },
       },
     }
@@ -48,18 +48,25 @@ export const CustomImage = Node.create<ImageOptions>({
       {
         tag: 'div.layout-wrapper', // Parse the wrapper div
         getAttrs: (dom: HTMLElement) => {
-            const img = dom.querySelector('img');
-            if (!img) return false;
-            
-            return {
-                src: img?.getAttribute('src'),
-                alt: img?.getAttribute('alt'),
-                title: img?.getAttribute('title'),
-                layout: {
-                    align: dom.getAttribute('data-align') || 'center',
-                    width: dom.getAttribute('data-width') || 'default',
-                }
-            }
+          const contentWrapper = dom.firstChild as HTMLElement;
+          // Ignore text nodes
+          if (!contentWrapper || contentWrapper.nodeType === 3) return false;
+
+          const img = contentWrapper.querySelector('img');
+          if (!img) return false;
+          
+          const widthStyle = contentWrapper.style.maxWidth;
+          const width = widthStyle && widthStyle.endsWith('%') ? parseInt(widthStyle, 10) : 75;
+
+          return {
+              src: img?.getAttribute('src'),
+              alt: img?.getAttribute('alt'),
+              title: img?.getAttribute('title'),
+              layout: {
+                  align: dom.getAttribute('data-align') || 'center',
+                  width: width,
+              }
+          }
         }
       },
     ]
@@ -67,16 +74,23 @@ export const CustomImage = Node.create<ImageOptions>({
 
   renderHTML({ HTMLAttributes }) {
     const { layout = {}, ...restAttrs } = HTMLAttributes;
-    // This is the wrapper that will control layout
+    const { align, width } = layout;
+
+    // The wrapper for alignment
+    const wrapperAttrs = {
+      'data-align': align,
+      class: 'layout-wrapper',
+    };
+
+    // The image itself will be inside a container that controls its width
+    const imageContainerAttrs = {
+      style: `max-width: ${typeof width === 'number' ? `${width}%` : '100%'}`,
+    };
+
     return [
       'div',
-      {
-        'data-align': layout.align,
-        'data-width': layout.width,
-        class: 'layout-wrapper', // Use the generic layout class
-      },
-      // The actual image goes inside
-      ['img', mergeAttributes(restAttrs, { class: 'rounded-lg' })]
+      wrapperAttrs,
+      ['div', imageContainerAttrs, ['img', mergeAttributes(restAttrs, { class: 'rounded-lg w-full' })]],
     ];
   },
 

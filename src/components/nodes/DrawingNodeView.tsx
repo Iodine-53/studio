@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProps) => {
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const { paths } = node.attrs;
-    const { align, width } = node.attrs.layout || {};
+    const { align, width } = node.attrs.layout || { align: 'center', width: 75 };
 
     const [isEditing, setIsEditing] = useState(false);
     const [strokeColor, setStrokeColor] = useState('#000000');
@@ -85,7 +85,6 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
     return (
         <NodeViewWrapper
             data-align={align}
-            data-width={width}
             className="layout-wrapper"
         >
             <div
@@ -94,6 +93,7 @@ export const DrawingNodeView = ({ node, updateAttributes, editor }: NodeViewProp
                     isEditing && "ring-2 ring-primary shadow-lg",
                     !isEditing && "cursor-pointer"
                 )}
+                style={{ maxWidth: typeof width === 'number' ? `${width}%` : '100%' }}
                 onClick={handleWrapperClick}
             >
                 {isEditing && (

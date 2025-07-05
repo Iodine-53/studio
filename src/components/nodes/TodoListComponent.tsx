@@ -17,7 +17,7 @@ type Task = {
 
 const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) => {
   const { tasks, title, layout } = node.attrs;
-  const { align, width } = layout || {};
+  const { align, width } = layout || { align: 'center', width: 75 };
   const [inputValue, setInputValue] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -71,13 +71,15 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
     <NodeViewWrapper 
         className="layout-wrapper"
         data-align={align}
-        data-width={width}
         onClick={handleWrapperClick}
     >
-      <Card className={cn(
+      <Card 
+        className={cn(
           "my-4 relative group transition-shadow w-full",
           isEditing && "ring-2 ring-primary shadow-lg"
-        )}>
+        )}
+        style={{ maxWidth: typeof width === 'number' ? `${width}%` : '100%' }}
+      >
         <CardHeader>
            {isEditing ? (
             <Input

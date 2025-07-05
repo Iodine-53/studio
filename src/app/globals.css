@@ -131,16 +131,6 @@
     @apply max-w-full;
   }
 
-  .layout-wrapper[data-width="small"] > * {
-    @apply max-w-sm w-full;
-  }
-  .layout-wrapper[data-width="default"] > * {
-    @apply max-w-lg w-full;
-  }
-  .layout-wrapper[data-width="full"] > * {
-    @apply w-full;
-  }
-
   /* Visual indicator for any selected custom node */
   .ProseMirror .ProseMirror-selectednode {
       outline: 3px solid hsl(var(--ring));
