@@ -1,4 +1,3 @@
-
 "use client";
 
 import { type Editor } from "@tiptap/react";
@@ -33,7 +32,7 @@ import {
   Undo,
   Redo,
   Palette,
-  Font,
+  Type,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -207,7 +206,7 @@ const Toolbar = ({ editor }: Props) => {
             <TooltipTrigger asChild>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Font Settings">
-                  <Font className="h-4 w-4" />
+                  <Type className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
             </TooltipTrigger>
