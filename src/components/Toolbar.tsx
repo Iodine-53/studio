@@ -48,6 +48,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 
 type Props = {
@@ -221,7 +222,7 @@ const Toolbar = ({ editor }: Props) => {
                               <SelectTrigger><SelectValue placeholder="Select font..." /></SelectTrigger>
                               <SelectContent>
                                   {FONT_FAMILIES.map(font => (
-                                      <SelectItem key={font.name} value={font.value}>{font.name}</SelectItem>
+                                      <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>{font.name}</SelectItem>
                                   ))}
                               </SelectContent>
                           </Select>
@@ -240,28 +241,19 @@ const Toolbar = ({ editor }: Props) => {
                               </SelectContent>
                           </Select>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full" onClick={() => editor.chain().focus().unsetFontFamily().unsetFontSize().run()}>Reset Font</Button>
+                      <div>
+                          <Label>Font Color</Label>
+                          <Input
+                              type="color"
+                              className="w-full h-10 p-1 cursor-pointer"
+                              onInput={(event: React.ChangeEvent<HTMLInputElement>) => editor.chain().focus().setColor(event.target.value).run()}
+                              value={editor.getAttributes('textStyle').color || '#000000'}
+                          />
+                      </div>
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => editor.chain().focus().unsetFontFamily().unsetFontSize().unsetColor().run()}>Reset Formatting</Button>
                   </div>
               </PopoverContent>
             </Popover>
-
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button asChild variant="ghost" size="icon" className="h-9 w-9 cursor-pointer">
-                        <label htmlFor="font-color-picker" className="cursor-pointer p-2 h-full w-full flex items-center justify-center">
-                            <Palette className="h-4 w-4" />
-                            <input
-                                id="font-color-picker"
-                                type="color"
-                                className="absolute h-0 w-0 opacity-0 cursor-pointer"
-                                onInput={(event: React.ChangeEvent<HTMLInputElement>) => editor.chain().focus().setColor(event.target.value).run()}
-                                value={editor.getAttributes('textStyle').color || '#000000'}
-                            />
-                        </label>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent><p>Font Color</p></TooltipContent>
-            </Tooltip>
 
             <Popover>
               <Tooltip>
