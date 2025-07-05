@@ -15,6 +15,27 @@ import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import FontFamily from '@tiptap/extension-font-family';
 import { FontSize } from '@/lib/tiptap/extensions/FontSize';
+import { CustomImage } from '@/lib/tiptap/extensions/Image';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableCell } from '@tiptap/extension-table-cell';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import { lowlight } from 'lowlight/lib/core';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import css from 'highlight.js/lib/languages/css';
+import js from 'highlight.js/lib/languages/javascript';
+import ts from 'highlight.js/lib/languages/typescript';
+import html from 'highlight.js/lib/languages/xml'; // for HTML
+import HorizontalRule from '@tiptap/extension-horizontal-rule';
+import { Chart } from '@/lib/tiptap/extensions/Chart';
+import { Drawing } from '@/lib/tiptap/extensions/Drawing';
+import { Accordion } from '@/lib/tiptap/extensions/Accordion';
+import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
+import { Embed } from '@/lib/tiptap/extensions/Embed';
+import { Callout } from '@/lib/tiptap/extensions/Callout';
+import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
@@ -23,6 +44,12 @@ import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
+
+// Register languages for code block syntax highlighting
+lowlight.registerLanguage('html', html);
+lowlight.registerLanguage('css', css);
+lowlight.registerLanguage('js', js);
+lowlight.registerLanguage('ts', ts);
 
 
 export default function EditorPage() {
@@ -42,15 +69,17 @@ export default function EditorPage() {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Keep paragraph and headings, disable all other blocks from starterkit
-        blockquote: false,
-        bulletList: false,
+        // Disable Tiptap's default complex blocks to use our own custom versions
         codeBlock: false,
         horizontalRule: false,
-        listItem: false,
+        bulletList: false,
         orderedList: false,
-        // from original config
+        listItem: false,
+        taskItem: false,
+        taskList: false,
         image: false,
+        blockquote: false,
+        // from original config
         link: {
             linkOnPaste: false,
             openOnClick: 'whenNotEditable',
@@ -65,6 +94,22 @@ export default function EditorPage() {
       Color, 
       FontFamily, 
       FontSize,
+      CustomImage,
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      CodeBlockLowlight.configure({ lowlight }),
+      HorizontalRule,
+      Chart,
+      Drawing,
+      Accordion,
+      TodoListExtension,
+      Embed,
+      Callout,
+      PasteHandler,
     ],
     editorProps: {
       attributes: {
@@ -175,13 +220,13 @@ export default function EditorPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={handleOpenPreview}>
-                <Eye className="h-4 w-4" />
-                <span className="hidden md:inline sr-only md:not-sr-only">Preview</span>
+              <Button variant="outline" size="sm" onClick={handleOpenPreview} className="relative">
+                <Eye className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Preview</span>
               </Button>
-              <Button variant="outline" size="icon" onClick={handleDocxExport} disabled={isExportingDocx}>
-                {isExportingDocx ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                <span className="hidden md:inline sr-only md:not-sr-only">{isExportingDocx ? 'Exporting...' : 'Export DOCX'}</span>
+              <Button variant="outline" size="sm" onClick={handleDocxExport} disabled={isExportingDocx} className="relative">
+                {isExportingDocx ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 md:mr-2" />}
+                <span className="hidden md:inline">{isExportingDocx ? 'Exporting...' : 'Export DOCX'}</span>
               </Button>
             </div>
           </nav>
