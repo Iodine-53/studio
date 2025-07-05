@@ -34,14 +34,12 @@ import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
 import { useRef, type ChangeEvent } from "react";
 import { processImage } from "@/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+
 
 type Props = {
   editor: Editor | null;
@@ -70,11 +68,21 @@ const Toolbar = ({ editor }: Props) => {
     }
   };
 
-  const lineHeights = [
-    { label: '1.0', value: '1' },
-    { label: '1.5', value: '1.5' },
-    { label: '2.0', value: '2' },
-  ];
+  const getActiveLineHeight = () => {
+    const types = ['heading', 'paragraph', 'listItem'];
+    for (const type of types) {
+        if (editor.isActive(type)) {
+            const lineHeight = editor.getAttributes(type).lineHeight;
+            if (lineHeight) {
+                return parseFloat(lineHeight);
+            }
+        }
+    }
+    // A reasonable default if no specific line height is set on the active node.
+    return 1.5; 
+  };
+  
+  const currentLineHeight = getActiveLineHeight();
 
   return (
     <TooltipProvider>
@@ -148,34 +156,46 @@ const Toolbar = ({ editor }: Props) => {
 
         <Separator orientation="vertical" className="h-8 mx-1" />
         
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+        <Popover>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Line height">
                   <Baseline className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {lineHeights.map(({ label, value }) => (
-                  <DropdownMenuItem
-                    key={value}
-                    onSelect={() => editor.chain().focus().setLineHeight(value).run()}
-                    className={editor.isActive('textStyle', { lineHeight: value }) ? 'is-active' : ''}
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent><p>Line Height</p></TooltipContent>
+          </Tooltip>
+          <PopoverContent className="w-60 p-4">
+              <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                      <Label htmlFor="line-height-slider" className="shrink-0 mr-4">Line Height</Label>
+                      <span className="text-sm font-mono text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                          {currentLineHeight.toFixed(2)}
+                      </span>
+                  </div>
+                  <Slider
+                      id="line-height-slider"
+                      min={0.25}
+                      max={2.0}
+                      step={0.05}
+                      value={[currentLineHeight]}
+                      onValueChange={(value) => {
+                          editor.chain().focus().setLineHeight(String(value[0])).run()
+                      }}
+                  />
+                  <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => editor.chain().focus().unsetLineHeight().run()}
                   >
-                    {label}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuItem
-                  onSelect={() => editor.chain().focus().unsetLineHeight().run()}
-                >
-                  Default
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </TooltipTrigger>
-          <TooltipContent><p>Line Height</p></TooltipContent>
-        </Tooltip>
+                      Reset to Default
+                  </Button>
+              </div>
+          </PopoverContent>
+        </Popover>
 
         <Separator orientation="vertical" className="h-8 mx-1" />
 
