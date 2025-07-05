@@ -2,10 +2,11 @@
 "use client";
 
 import { X, CheckSquare, Square, AlertTriangle, ExternalLink } from "lucide-react";
-import type { FC } from "react";
+import React, { type FC, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { CSSProperties } from 'react';
+import { ReactSketchCanvas, type ReactSketchCanvasRef } from 'react-sketch-canvas';
 
 
 type TiptapMark = {
@@ -24,6 +25,41 @@ export type TiptapNode = {
 const renderNode = (node: TiptapNode, key: number) => <NodeRenderer key={key} node={node} />;
 
 const renderNodes = (nodes: TiptapNode[] | undefined) => nodes?.map(renderNode);
+
+// New StaticDrawing component to render sketches in the print preview
+const StaticDrawing: FC<{ node: TiptapNode }> = ({ node }) => {
+  const canvasRef = useRef<ReactSketchCanvasRef>(null);
+  const { paths, layout } = node.attrs || {};
+  const { align = 'center', width = 75 } = layout || {};
+
+  useEffect(() => {
+    if (canvasRef.current && paths) {
+      try {
+        const parsedPaths = JSON.parse(paths);
+        if (Array.isArray(parsedPaths) && parsedPaths.length > 0) {
+            canvasRef.current.loadPaths(parsedPaths);
+        }
+      } catch (e) {
+        console.error('Failed to load drawing paths for print preview.', e);
+      }
+    }
+  }, [paths]);
+
+  return (
+    <div data-align={align} className="layout-wrapper">
+      <div style={{ maxWidth: `${width}%` }}>
+        <div className="my-4 border rounded-lg overflow-hidden pointer-events-none">
+          <ReactSketchCanvas
+            ref={canvasRef}
+            className="w-full h-96"
+            canvasColor="white"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     let children = renderNodes(node.content);
@@ -118,18 +154,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                 <div>{children}</div>
             </div>
         );
-    case 'drawing': {
-      const layout = node.attrs?.layout || {};
-      const align = layout.align || 'center';
-      const width = layout.width || 100;
-      return (
-        <div data-align={align} className="layout-wrapper">
-          <div style={{ maxWidth: `${width}%` }}>
-            <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground w-full">[Drawing Content]</div>
-          </div>
-        </div>
-      );
-    }
+    case 'drawing':
+      return <StaticDrawing node={node} />;
     
     case 'chartBlock': {
       try {
