@@ -1,4 +1,3 @@
-
 "use client";
 
 import { BubbleMenu, Editor } from "@tiptap/react";
@@ -19,7 +18,7 @@ type Props = {
 };
 
 // List of node types that support these layout controls
-const LAYOUT_NODE_TYPES = ['image', 'chartBlock', 'drawing'];
+const LAYOUT_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'accordion', 'todoList'];
 
 export const LayoutBubbleMenu = ({ editor }: Props) => {
   

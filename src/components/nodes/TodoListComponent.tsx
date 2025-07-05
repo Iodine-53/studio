@@ -16,34 +16,33 @@ type Task = {
 };
 
 const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) => {
-  const [tasks, setTasks] = useState<Task[]>(node.attrs.tasks || [])
-  const [inputValue, setInputValue] = useState('')
+  const { tasks, title, layout } = node.attrs;
+  const { align, width } = layout || {};
+  const [inputValue, setInputValue] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    updateAttributes({ tasks })
-  }, [tasks, updateAttributes])
 
   const addTask = () => {
     if (inputValue.trim() !== '') {
-      const newTasks: Task[] = [...tasks, { 
+      const newTasks: Task[] = [...(tasks || []), { 
         id: Date.now(), 
         text: inputValue.trim(), 
         completed: false 
       }]
-      setTasks(newTasks)
-      setInputValue('')
+      updateAttributes({ tasks: newTasks });
+      setInputValue('');
     }
   }
 
   const deleteTask = (id: number) => {
-    setTasks(tasks.filter(task => task.id !== id))
+    updateAttributes({ tasks: tasks.filter((task: Task) => task.id !== id) });
   }
 
   const toggleTask = (id: number) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ))
+    updateAttributes({
+      tasks: tasks.map((task: Task) => 
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    });
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -65,28 +64,30 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
     editor.setEditable(true);
   };
 
-  const completedCount = tasks.filter(task => task.completed).length;
+  const completedCount = tasks.filter((task: Task) => task.completed).length;
   const totalCount = tasks.length;
 
   return (
     <NodeViewWrapper 
-        className="p-4 cursor-pointer"
+        className="layout-wrapper"
+        data-align={align}
+        data-width={width}
         onClick={handleWrapperClick}
     >
       <Card className={cn(
-          "max-w-lg mx-auto relative group transition-shadow",
+          "my-4 relative group transition-shadow w-full",
           isEditing && "ring-2 ring-primary shadow-lg"
         )}>
         <CardHeader>
            {isEditing ? (
             <Input
-              value={node.attrs.title}
+              value={title}
               onChange={(e) => updateAttributes({ title: e.target.value })}
               className="text-2xl font-semibold leading-none tracking-tight font-headline border-0 shadow-none focus-visible:ring-0 p-0"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <CardTitle className="font-headline">{node.attrs.title}</CardTitle>
+            <CardTitle className="font-headline">{title}</CardTitle>
           )}
         </CardHeader>
         <CardContent>
@@ -117,7 +118,7 @@ const TodoListComponent = ({ node, updateAttributes, editor }: NodeViewProps) =>
                   {isEditing ? "No tasks yet. Add one above!" : "Click to add tasks"}
                 </p>
               ) : (
-                tasks.map(task => (
+                tasks.map((task: Task) => (
                   <div 
                     key={task.id} 
                     className={cn(
