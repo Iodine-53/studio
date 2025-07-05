@@ -1,4 +1,3 @@
-
 "use client";
 
 import { BubbleMenu, Editor } from "@tiptap/react";
@@ -43,7 +42,7 @@ export const BlockActionsMenu = ({ editor }: Props) => {
       tippyOptions={{
         duration: 100,
         placement: "right-start",
-        offset: [0, 16],
+        offset: [0, 8],
       }}
       shouldShow={shouldShow}
       className="flex items-center gap-1 p-1 bg-card border rounded-full shadow-xl"

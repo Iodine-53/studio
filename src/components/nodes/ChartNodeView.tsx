@@ -52,8 +52,8 @@ const CustomLegend = (props: any) => {
     );
 };
 
-export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
-  const [isEditing, setIsEditing] = useState(false);
+export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: NodeViewProps) => {
+  const isEditing = selected;
   const { textAlign, layout } = node.attrs;
   const width = layout?.width || 100;
 
@@ -67,14 +67,17 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   
-  const startEditing = () => {
-    setTitle(node.attrs.title);
-    setChartType(node.attrs.chartType);
-    setChartData(JSON.parse(node.attrs.chartData || '[]'));
-    setChartConfig(JSON.parse(node.attrs.chartConfig || '{}'));
-    setViewConfig(JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}'));
-    setIsEditing(true);
-  };
+  // Effect to sync state when editing mode is entered
+  useMemo(() => {
+    if (isEditing) {
+      setTitle(node.attrs.title);
+      setChartType(node.attrs.chartType);
+      setChartData(JSON.parse(node.attrs.chartData || '[]'));
+      setChartConfig(JSON.parse(node.attrs.chartConfig || '{}'));
+      setViewConfig(JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}'));
+    }
+  }, [isEditing, node.attrs]);
+
   
   useMemo(() => {
     if (chartData.length > 0) {
@@ -98,10 +101,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
       chartConfig: JSON.stringify(chartConfig),
       viewConfig: JSON.stringify(viewConfig),
     });
-    setIsEditing(false);
   };
-  
-  const handleCancel = () => setIsEditing(false);
 
   const onFileComplete = (data: any[], fields?: string[]) => {
       setChartData(data);
@@ -118,6 +118,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
           setChartConfig(newConfig);
         }
       }
+      handleSave(); // Auto-save after file upload
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -200,7 +201,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center p-8">
             <BarChartIcon className="h-12 w-12 mb-4"/>
             <p className="font-semibold">No data yet.</p>
-            <p className="text-sm">Upload a file or add data manually in edit mode.</p>
+            <p className="text-sm">Select to upload a file or add data manually.</p>
         </div>
       );
     }
@@ -261,14 +262,12 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
             style={{ width: `${width}%` }}
           >
             <Card 
-              className="overflow-hidden relative w-full"
+              className="overflow-hidden relative w-full ring-2 ring-primary"
             >
               <CardHeader className="flex-row items-center justify-between bg-muted/50 p-3">
                   <Input className="text-lg font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Chart Title"/>
                   <div className="flex gap-2">
                     <Button onClick={handleSave} size="sm"><CheckIcon className="mr-2 h-4 w-4" /> Save</Button>
-                    <Button variant="ghost" onClick={handleCancel} size="sm">Cancel</Button>
-                    <Button size="icon" variant="ghost" className="h-9 w-9 text-destructive" onClick={deleteNode}><Trash2 className="h-4 w-4"/></Button>
                   </div>
               </CardHeader>
               <CardContent className="pt-4">
@@ -309,15 +308,9 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode }: NodeViewPr
         style={{ width: `${width}%` }}
     >
       <div 
-        className="relative group/chart-view w-full"
+        className={cn("relative group/chart-view w-full p-4 border rounded-lg not-prose", selected && 'ring-2 ring-primary')}
       >
-         <div className="absolute top-2 right-2 z-10 opacity-0 group-hover/chart-view:opacity-100 transition-opacity flex gap-2">
-            <Button size="icon" variant="secondary" onClick={startEditing}>
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">Edit Chart</span>
-            </Button>
-         </div>
-         <h4 className="font-bold text-lg mb-2">{node.attrs.title}</h4>
+         <h4 className="font-bold text-lg mb-2 text-center">{node.attrs.title}</h4>
          <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               {renderChart(savedChartData, node.attrs.chartType, savedChartConfig, savedViewConfig)}

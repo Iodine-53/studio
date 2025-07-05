@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Undo, Redo, Eraser, Pen } from 'lucide-react';
+import { Undo, Redo, Eraser, Pen, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
@@ -130,8 +130,8 @@ export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewPr
                 {!isEditing && (
                     <div className="absolute inset-0 flex items-center justify-center bg-card/50 opacity-0 hover:opacity-100 transition-opacity rounded-lg pointer-events-none">
                         <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border">
-                             <Pen className="h-5 w-5 text-muted-foreground" />
-                            <span className="text-sm font-semibold text-muted-foreground">Click to draw</span>
+                             <Edit className="h-5 w-5 text-muted-foreground" />
+                            <span className="text-sm font-semibold text-muted-foreground">Select to draw</span>
                         </div>
                     </div>
                 )}

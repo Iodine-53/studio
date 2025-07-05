@@ -114,13 +114,13 @@ const TodoListComponent = ({ node, updateAttributes, selected }: NodeViewProps) 
                     )}
                   >
                     <button 
-                      onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
+                      onClick={(e) => { if (isEditing) { e.stopPropagation(); toggleTask(task.id); } }}
                       className={cn(
                         'flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors',
                         task.completed 
                           ? 'bg-green-500 border-green-500 text-white' 
-                          : 'border-muted-foreground hover:border-primary',
-                        !isEditing && 'pointer-events-none'
+                          : 'border-muted-foreground',
+                        isEditing ? 'hover:border-primary cursor-pointer' : 'cursor-default'
                       )}
                       aria-label={task.completed ? 'Mark as not completed' : 'Mark as completed'}
                     >
@@ -148,11 +148,11 @@ const TodoListComponent = ({ node, updateAttributes, selected }: NodeViewProps) 
               )
             }
           </div>
-          {!isEditing && (
+          {!isEditing && tasks.length > 0 && (
             <div className="absolute inset-0 flex items-center justify-center bg-card/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none">
                 <div className="flex items-center gap-2 bg-background/80 px-4 py-2 rounded-full border">
                      <Edit className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-muted-foreground">Click to edit tasks</span>
+                    <span className="text-sm font-semibold text-muted-foreground">Select to edit tasks</span>
                 </div>
             </div>
           )}

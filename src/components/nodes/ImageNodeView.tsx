@@ -47,7 +47,7 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
       style={{ width: `${width}%` }}
     >
       <div
-        className={cn('relative w-full', selected && 'ring-2 ring-primary ring-offset-2 rounded-lg')}
+        className={cn('relative w-full group', selected && 'ring-2 ring-primary ring-offset-2 rounded-lg')}
       >
         {src ? (
           <img src={src} alt={node.attrs.alt || ''} className="rounded-lg w-full block" />

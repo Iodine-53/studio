@@ -87,14 +87,7 @@ const AccordionNodeView: React.FC<NodeViewProps> = ({
         </CardHeader>
 
         {selected && (
-            <div className="p-2 bg-muted/50 border-b flex justify-between items-center">
-                <Button
-                onClick={() => setIsEditing(!isEditing)}
-                variant="ghost"
-                size="sm"
-                >
-                {isEditing ? 'Finish Editing' : 'Edit Content'}
-                </Button>
+            <div className="p-2 bg-muted/50 border-b flex justify-end">
                 {isEditing && (
                     <Button
                     onClick={addItem}
@@ -162,7 +155,7 @@ const AccordionNodeView: React.FC<NodeViewProps> = ({
         </CardContent>
          {items.length === 0 && (
           <div className="p-8 text-center text-muted-foreground">
-            <p>No accordion items yet. Select this block and click "Edit Content" to get started.</p>
+            <p>No accordion items yet. Select this block to add items.</p>
           </div>
         )}
       </Card>

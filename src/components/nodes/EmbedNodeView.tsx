@@ -42,10 +42,13 @@ export const EmbedNodeView: React.FC<NodeViewProps> = ({
   const [inputValue, setInputValue] = useState(src || '')
 
   useEffect(() => {
-    // If the node is deselected, exit editing mode, but only if there's a URL saved.
-    // This prevents the input from disappearing if you click away before entering a URL.
-    if (!selected && src) {
-      setIsEditing(false)
+    // If the node is selected and there's no src, enter editing mode.
+    if (selected && !src) {
+        setIsEditing(true);
+    }
+    // If the node is deselected, exit editing mode.
+    if (!selected) {
+        setIsEditing(false)
     }
   }, [selected, src])
 
