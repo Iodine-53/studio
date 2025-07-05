@@ -5,6 +5,8 @@ import { X, CheckSquare, Square, AlertTriangle, ExternalLink } from "lucide-reac
 import type { FC } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { CSSProperties } from 'react';
+
 
 type TiptapMark = {
     type: 'bold' | 'italic' | 'underline' | 'strike';
@@ -45,13 +47,23 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         }
     }
 
+    // Create a style object from node attributes for text alignment and line height.
+    const style: CSSProperties = {};
+    if (node.attrs?.textAlign) {
+      style.textAlign = node.attrs.textAlign;
+    }
+    if (node.attrs?.lineHeight) {
+      style.lineHeight = node.attrs.lineHeight;
+    }
+    const hasStyle = Object.keys(style).length > 0;
+
   switch (node.type) {
     case 'heading':
       const level = node.attrs?.level || 1;
       const Tag = `h${level}` as keyof JSX.IntrinsicElements;
-      return <Tag>{children}</Tag>;
+      return <Tag style={hasStyle ? style : undefined}>{children}</Tag>;
     case 'paragraph':
-      return <p>{children || <br/>}</p>;
+      return <p style={hasStyle ? style : undefined}>{children || <br/>}</p>;
     case 'text':
       return <>{node.text}</>;
     case 'image': {
@@ -67,7 +79,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'orderedList':
         return <ol className="list-decimal pl-6">{children}</ol>;
     case 'listItem':
-        return <li>{children}</li>;
+        return <li style={hasStyle ? style : undefined}>{children}</li>;
     case 'codeBlock':
         return <pre className="bg-muted text-muted-foreground p-4 rounded-md overflow-x-auto"><code>{children}</code></pre>
     case 'horizontalRule':
