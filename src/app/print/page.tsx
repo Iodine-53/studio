@@ -138,16 +138,11 @@ export default function PrintPage() {
               /* Typography */
               h1, h2, h3, h4, h5, h6 {
                 page-break-after: avoid !important;
-                page-break-inside: avoid !important;
               }
               
               p, ul, ol {
                 orphans: 3;
                 widows: 3;
-              }
-              
-              ul, ol {
-                page-break-inside: avoid !important;
               }
             }
         `}</style>
