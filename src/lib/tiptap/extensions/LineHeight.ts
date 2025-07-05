@@ -16,7 +16,6 @@ export const LineHeight = Extension.create({
   addOptions() {
     return {
       types: ['heading', 'paragraph', 'listItem'],
-      defaultLineHeight: '1.5',
     }
   },
 
@@ -27,7 +26,7 @@ export const LineHeight = Extension.create({
         attributes: {
           lineHeight: {
             default: null,
-            parseHTML: element => element.style.lineHeight,
+            parseHTML: element => element.style.lineHeight || null,
             renderHTML: attributes => {
               if (!attributes.lineHeight) {
                 return {}
@@ -42,15 +41,11 @@ export const LineHeight = Extension.create({
 
   addCommands() {
     return {
-      setLineHeight: (lineHeight: string) => ({ chain }) => {
-        return chain()
-          .setNodeAttribute('lineHeight', lineHeight)
-          .run()
+      setLineHeight: (lineHeight: string) => ({ commands }) => {
+        return this.options.types.every((type: string) => commands.updateAttributes(type, { lineHeight }))
       },
-      unsetLineHeight: () => ({ chain }) => {
-        return chain()
-          .setNodeAttribute('lineHeight', null)
-          .run()
+      unsetLineHeight: () => ({ commands }) => {
+        return this.options.types.every((type: string) => commands.updateAttributes(type, { lineHeight: null }))
       },
     }
   },
