@@ -1,3 +1,4 @@
+
 "use client";
 
 import { BubbleMenu, Editor } from "@tiptap/react";
@@ -15,7 +16,8 @@ const ACTIONABLE_NODE_TYPES = [
     'todoList', 
     'callout', 
     'horizontalRule', 
-    'table'
+    'table',
+    'embed'
 ];
 
 export const BlockActionsMenu = ({ editor }: Props) => {

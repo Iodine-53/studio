@@ -21,7 +21,7 @@ type Props = {
 };
 
 // List of node types that support these layout controls
-const LAYOUT_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'accordion', 'todoList'];
+const LAYOUT_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'embed'];
 
 export const LayoutBubbleMenu = ({ editor }: Props) => {
   
