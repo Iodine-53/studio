@@ -68,9 +68,13 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       return <>{node.text}</>;
     case 'image': {
       const layout = node.attrs?.layout || {};
+      const align = layout.align || 'center';
+      const width = layout.width || 100;
       return (
-        <div data-align={layout.align || 'center'} data-width={layout.width || 'default'} className="layout-wrapper">
-          <img src={node.attrs?.src} alt={node.attrs?.alt || ''} className="max-w-full my-4 rounded-lg" />
+        <div data-align={align} className="layout-wrapper">
+          <div style={{ maxWidth: `${width}%` }}>
+            <img src={node.attrs?.src} alt={node.attrs?.alt || ''} className="my-4 rounded-lg w-full" />
+          </div>
         </div>
       );
     }
@@ -116,9 +120,13 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         );
     case 'drawing': {
       const layout = node.attrs?.layout || {};
+      const align = layout.align || 'center';
+      const width = layout.width || 100;
       return (
-        <div data-align={layout.align || 'center'} data-width={layout.width || 'default'} className="layout-wrapper">
-          <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground w-full">[Drawing Content]</div>
+        <div data-align={align} className="layout-wrapper">
+          <div style={{ maxWidth: `${width}%` }}>
+            <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground w-full">[Drawing Content]</div>
+          </div>
         </div>
       );
     }
@@ -126,6 +134,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'chartBlock': {
       try {
         const layout = node.attrs?.layout || {};
+        const align = layout.align || 'center';
+        const width = layout.width || 100;
         const chartData = JSON.parse(node.attrs?.chartData || '[]');
         const chartConfig = JSON.parse(node.attrs?.chartConfig || '{}');
         const chartType = node.attrs?.chartType || 'bar';
@@ -135,33 +145,35 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
         
         return (
-          <div data-align={layout.align || 'center'} data-width={layout.width || 'default'} className="layout-wrapper">
-            <div className="my-4 p-4 border rounded-lg not-prose w-full">
-              <h4 className="font-bold text-lg mb-2">{node.attrs?.title}</h4>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  {chartType === 'pie' ? (
-                    <PieChart>
-                      <Pie data={chartData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                        {chartData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip/>
-                      <Legend/>
-                    </PieChart>
-                  ) : (
-                    <ChartComponent data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
-                      <YAxis tick={{fontSize: 12}} />
-                      <Tooltip />
-                      <Legend />
-                      {chartConfig.dataKeys?.map((key: string, index: number) => (
-                        <SeriesComponent key={key} dataKey={key} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
-                      ))}
-                    </ChartComponent>
-                  )}
-                </ResponsiveContainer>
-              </div>
+          <div data-align={align} className="layout-wrapper">
+            <div style={{ maxWidth: `${width}%` }} className="w-full">
+                <div className="my-4 p-4 border rounded-lg not-prose">
+                <h4 className="font-bold text-lg mb-2">{node.attrs?.title}</h4>
+                <div className="h-80 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                    {chartType === 'pie' ? (
+                        <PieChart>
+                        <Pie data={chartData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+                            {chartData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip/>
+                        <Legend/>
+                        </PieChart>
+                    ) : (
+                        <ChartComponent data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
+                        <YAxis tick={{fontSize: 12}} />
+                        <Tooltip />
+                        <Legend />
+                        {chartConfig.dataKeys?.map((key: string, index: number) => (
+                            <SeriesComponent key={key} dataKey={key} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
+                        ))}
+                        </ChartComponent>
+                    )}
+                    </ResponsiveContainer>
+                </div>
+                </div>
             </div>
           </div>
         );
@@ -170,40 +182,56 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       }
     }
     
-    case 'accordion':
+    case 'accordion': {
+        const layout = node.attrs?.layout || {};
+        const align = layout.align || 'center';
+        const width = layout.width || 100;
         return (
-            <div className="my-4 p-4 border rounded-lg not-prose">
-                <h3 className="font-bold text-xl">{node.attrs?.title}</h3>
-                <p className="text-muted-foreground mb-4">{node.attrs?.subtitle}</p>
-                <div className="space-y-3">
-                    {node.attrs?.items.map((item: any) => (
-                        <div key={item.id} className="border-t pt-2">
-                            <h4 className="font-semibold">{item.title}</h4>
-                            <div className="text-sm text-foreground/80 leading-relaxed prose prose-sm max-w-none">
-                                {item.content.split('\n').map((line: string, i: number) => <p key={i}>{line}</p>)}
-                            </div>
+            <div data-align={align} className="layout-wrapper">
+                <div style={{ maxWidth: `${width}%` }} className="w-full">
+                    <div className="my-4 p-4 border rounded-lg not-prose">
+                        <h3 className="font-bold text-xl">{node.attrs?.title}</h3>
+                        <p className="text-muted-foreground mb-4">{node.attrs?.subtitle}</p>
+                        <div className="space-y-3">
+                            {node.attrs?.items.map((item: any) => (
+                                <div key={item.id} className="border-t pt-2">
+                                    <h4 className="font-semibold">{item.title}</h4>
+                                    <div className="text-sm text-foreground/80 leading-relaxed prose prose-sm max-w-none">
+                                        {item.content.split('\n').map((line: string, i: number) => <p key={i}>{line}</p>)}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
             </div>
         )
+    }
 
-    case 'todoList':
+    case 'todoList': {
+        const layout = node.attrs?.layout || {};
+        const align = layout.align || 'center';
+        const width = layout.width || 100;
         return (
-            <div className="my-4 p-4 border rounded-lg not-prose">
-                <h4 className="font-bold text-xl mb-2">{node.attrs?.title}</h4>
-                <ul className="space-y-2 list-none pl-0">
-                    {node.attrs?.tasks.map((task: any) => (
-                        <li key={task.id} className="flex items-center gap-2">
-                            {task.completed ? <CheckSquare className="h-5 w-5 text-primary flex-shrink-0"/> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0"/>}
-                            <span className={cn(task.completed && 'line-through text-muted-foreground')}>
-                                {task.text}
-                            </span>
-                        </li>
-                    ))}
-                </ul>
+            <div data-align={align} className="layout-wrapper">
+                <div style={{ maxWidth: `${width}%` }} className="w-full">
+                    <div className="my-4 p-4 border rounded-lg not-prose">
+                        <h4 className="font-bold text-xl mb-2">{node.attrs?.title}</h4>
+                        <ul className="space-y-2 list-none pl-0">
+                            {node.attrs?.tasks.map((task: any) => (
+                                <li key={task.id} className="flex items-center gap-2">
+                                    {task.completed ? <CheckSquare className="h-5 w-5 text-primary flex-shrink-0"/> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0"/>}
+                                    <span className={cn(task.completed && 'line-through text-muted-foreground')}>
+                                        {task.text}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
             </div>
         );
+    }
 
     default:
       console.warn(`Unsupported node type in PrintPreview: ${node.type}`);
