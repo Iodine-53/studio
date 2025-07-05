@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRef, useEffect, useState } from 'react';
@@ -78,6 +77,7 @@ export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewPr
                     "p-2 border rounded-lg bg-card transition-shadow relative w-full",
                     isEditing && "ring-2 ring-primary shadow-lg",
                 )}
+                data-drag-handle
             >
                 {isEditing && (
                     <div className="flex flex-wrap items-center justify-start gap-4 mb-2 p-2 rounded-md bg-muted/50">
@@ -118,7 +118,7 @@ export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewPr
                 
                 <ReactSketchCanvas
                     ref={canvasRef}
-                    className="w-full h-96 bg-background rounded-md"
+                    className="w-full aspect-[4/3] bg-background rounded-md"
                     strokeWidth={strokeWidth}
                     eraserWidth={eraserWidth}
                     strokeColor={strokeColor}

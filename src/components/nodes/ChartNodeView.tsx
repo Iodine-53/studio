@@ -1,4 +1,3 @@
-
 "use client";
 
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
@@ -272,7 +271,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   if (isEditing) {
       return (
           <NodeViewWrapper 
-            className="my-4 custom-node-wrapper"
+            className="my-4 custom-node-wrapper w-full"
             data-align={textAlign}
             style={{ width: `${width}%` }}
           >
@@ -305,7 +304,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                         {chartType === 'pie' ? (<div className="grid sm:grid-cols-2 gap-4"><div><Label>Name Key</Label><Select value={chartConfig.nameKey} onValueChange={key => setChartConfig({ ...chartConfig, nameKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Value Key</Label><Select value={chartConfig.valueKey} onValueChange={key => setChartConfig({ ...chartConfig, valueKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div></div>) : (<><div><Label>X-Axis</Label><Select value={chartConfig.xAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, xAxisKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Series (Y-Axis)</Label><div className="space-y-2 rounded-md border p-4 max-h-40 overflow-y-auto">{availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (<div key={key} className="flex items-center space-x-2"><Checkbox id={`key-${key}`} checked={chartConfig.dataKeys?.includes(key)} onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)} /><label htmlFor={`key-${key}`} className="text-sm font-medium leading-none">{key}</label></div>))}{availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (<p className="text-sm text-muted-foreground">Select an X-Axis key or add more columns.</p>)}</div></div></>)}
                     </TabsContent>
                   </Tabs>
-                  <div className="h-80 w-full mt-6 bg-muted/30 rounded-lg p-2"><ResponsiveContainer width="100%" height="100%">{renderChart(chartData, chartType, chartConfig, viewConfig)}</ResponsiveContainer></div>
+                  <div className="w-full aspect-video mt-6 bg-muted/30 rounded-lg p-2"><ResponsiveContainer width="100%" height="100%">{renderChart(chartData, chartType, chartConfig, viewConfig)}</ResponsiveContainer></div>
               </CardContent>
             </Card>
           </NodeViewWrapper>
@@ -319,15 +318,16 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
 
   return (
     <NodeViewWrapper 
-        className="my-4 custom-node-wrapper"
+        className="my-4 custom-node-wrapper w-full"
         data-align={textAlign}
         style={{ width: `${width}%` }}
     >
       <div 
         className={cn("relative group/chart-view w-full p-4 border rounded-lg not-prose", selected && 'ring-2 ring-primary')}
+        data-drag-handle
       >
          <h4 className="font-bold text-lg mb-2 text-center">{node.attrs.title}</h4>
-         <div className="h-80 w-full">
+         <div className="w-full aspect-video">
             <ResponsiveContainer width="100%" height="100%">
               {renderChart(savedChartData, node.attrs.chartType, savedChartConfig, savedViewConfig)}
             </ResponsiveContainer>
