@@ -38,7 +38,7 @@ import { FontSize } from '@/lib/tiptap/extensions/FontSize';
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, Printer, FileText } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
@@ -150,18 +150,6 @@ export default function EditorPage() {
     setIsPreviewOpen(true);
   };
 
-  const handlePrint = () => {
-    if (!currentContent) {
-        alert("Cannot print an empty document.");
-        return;
-    }
-    localStorage.setItem('documentToPrint', JSON.stringify(currentContent));
-    const printWindow = window.open('/print', '_blank');
-    if (!printWindow) {
-        alert("Please allow popups to print the document.");
-    }
-  };
-
   const handleDocxExport = async () => {
     if (!currentContent) {
         alert("Cannot export an empty document.");
@@ -208,10 +196,6 @@ export default function EditorPage() {
               <Button variant="outline" onClick={handleOpenPreview}>
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
-              </Button>
-               <Button variant="outline" onClick={handlePrint}>
-                <Printer className="h-4 w-4 mr-2" />
-                Print
               </Button>
               <Button variant="outline" onClick={handleDocxExport} disabled={isExportingDocx}>
                 {isExportingDocx ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
