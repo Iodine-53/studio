@@ -27,11 +27,12 @@ const ACTIONABLE_NODE_TYPES = [
     'callout', 
     'horizontalRule', 
     'interactiveTable',
-    'embed'
+    'embed',
+    'progressBarBlock',
 ];
 
 // List of node types that support resizing controls
-const RESIZABLE_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'embed'];
+const RESIZABLE_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'embed', 'interactiveTable', 'progressBarBlock'];
 
 export const LayoutBubbleMenu = ({ editor }: Props) => {
   

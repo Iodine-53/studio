@@ -16,7 +16,8 @@ const trailingNodeTypes: string[] = [
     'callout', 
     'horizontalRule', 
     'interactiveTable',
-    'embed'
+    'embed',
+    'progressBarBlock'
 ];
 
 export const TrailingNode = Extension.create({

@@ -359,6 +359,33 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       );
     }
 
+    case 'progressBarBlock': {
+      const { blockTitle, progressBars } = node.attrs;
+      return (
+        <div style={wrapperStyle}>
+          <div className="my-4 p-4 border rounded-lg not-prose">
+            <h4 className="font-bold text-lg mb-4">{blockTitle}</h4>
+            <div className="space-y-4">
+              {progressBars.map((bar: any) => (
+                <div key={bar.id}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium">{bar.title}</span>
+                    <span className="text-sm font-medium">{bar.progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="h-2.5 rounded-full"
+                      style={{ width: `${bar.progress}%`, backgroundColor: bar.color }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     default:
       console.warn(`Unsupported node type in PrintPreview: ${node.type}`);
       return <div className="hidden">{children}</div>;

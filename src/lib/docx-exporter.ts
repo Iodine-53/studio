@@ -15,6 +15,7 @@ import {
   BorderStyle,
   TextWrappingType,
   IParagraphOptions,
+  ITableCellOptions,
 } from 'docx';
 import {
   Chart,
@@ -469,6 +470,56 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           spacing: { after: 200 },
         }),
       ];
+    }
+
+    case 'progressBarBlock': {
+      const { blockTitle, progressBars } = node.attrs;
+      const elements: (Paragraph | Table)[] = [
+        new Paragraph({
+          children: [new TextRun({ text: blockTitle, bold: true })],
+          heading: HeadingLevel.HEADING_3,
+          spacing: { after: 200 }
+        })
+      ];
+
+      const noBorders = {
+        top: { style: BorderStyle.NONE, size: 0, color: "auto" },
+        bottom: { style: BorderStyle.NONE, size: 0, color: "auto" },
+        left: { style: BorderStyle.NONE, size: 0, color: "auto" },
+        right: { style: BorderStyle.NONE, size: 0, color: "auto" },
+      };
+
+      for (const bar of progressBars) {
+        elements.push(new Paragraph({
+          children: [new TextRun(bar.title)],
+          spacing: { after: 50 }
+        }));
+
+        const progressCell: ITableCellOptions = {
+          children: [new Paragraph({ text: `${bar.progress}%`, alignment: AlignmentType.CENTER })],
+          shading: { fill: bar.color.substring(1), type: ShadingType.CLEAR },
+          borders: noBorders
+        };
+        const remainingCell: ITableCellOptions = {
+          children: [new Paragraph('')],
+          shading: { fill: 'E5E7EB', type: ShadingType.CLEAR },
+          borders: noBorders
+        };
+
+        const table = new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          columnWidths: [bar.progress, 100 - bar.progress],
+          rows: [
+            new TableRow({
+              children: bar.progress > 0 
+                ? [new TableCell(progressCell), new TableCell(remainingCell)]
+                : [new TableCell(remainingCell)]
+            })
+          ],
+        });
+        elements.push(table);
+      }
+      return elements;
     }
 
     default:

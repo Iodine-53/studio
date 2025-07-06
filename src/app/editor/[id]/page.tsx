@@ -33,6 +33,7 @@ import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
 import { Embed } from '@/lib/tiptap/extensions/Embed';
 import { Callout } from '@/lib/tiptap/extensions/Callout';
 import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
+import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, getAllDocuments, type Document } from "@/lib/db";
@@ -100,7 +101,8 @@ export default function EditorPage() {
           'accordion',
           'todoList',
           'embed',
-          'interactiveTable'
+          'interactiveTable',
+          'progressBarBlock'
         ] 
       }),
       SlashCommand,
@@ -123,6 +125,7 @@ export default function EditorPage() {
       Embed,
       Callout,
       PasteHandler,
+      ProgressBarBlock,
     ],
     editorProps: {
       attributes: {
