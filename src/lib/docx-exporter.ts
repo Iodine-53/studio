@@ -154,6 +154,79 @@ export const renderChartToImage = (chartConfig: any): Promise<string> => {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF5733', '#C70039', '#900C3F', '#581845'];
 
+// New helper function to render a progress bar block to a Base64 image
+const renderProgressBarToImage = (blockTitle: string, progressBars: any[]): Promise<string> => {
+  return new Promise((resolve) => {
+    const BAR_HEIGHT = 24;
+    const PADDING = 20;
+    const BAR_SPACING_TOTAL = 45; // Vertical space for one bar and its title
+    const BLOCK_TITLE_HEIGHT = 40;
+    const CANVAS_WIDTH = 700;
+
+    const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + (progressBars.length * BAR_SPACING_TOTAL) + PADDING;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = canvasHeight;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      resolve('');
+      return;
+    }
+
+    // White background
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Block Title
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(blockTitle, PADDING, PADDING + 22);
+
+    let currentY = PADDING + BLOCK_TITLE_HEIGHT;
+
+    progressBars.forEach(bar => {
+      currentY += 20; // Space before bar title
+      // Bar Title
+      ctx.fillStyle = '#1F2937';
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(bar.title, PADDING, currentY);
+
+      // Percentage Text
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${bar.progress}%`, canvas.width - PADDING, currentY);
+
+      currentY += 5; // Space after bar title
+      
+      const barYPosition = currentY;
+      const barCanvasWidth = canvas.width - (PADDING * 2);
+
+      // Bar Background
+      ctx.fillStyle = '#E5E7EB'; // gray-200
+      ctx.beginPath();
+      ctx.roundRect(PADDING, barYPosition, barCanvasWidth, BAR_HEIGHT, 12);
+      ctx.fill();
+
+      // Bar Foreground
+      if (bar.progress > 0) {
+        const barWidth = barCanvasWidth * (bar.progress / 100);
+        ctx.fillStyle = bar.color;
+        ctx.beginPath();
+        ctx.roundRect(PADDING, barYPosition, barWidth > 0 ? Math.max(barWidth, BAR_HEIGHT) : 0, BAR_HEIGHT, 12);
+        ctx.fill();
+      }
+
+      currentY += BAR_HEIGHT;
+    });
+    
+    resolve(canvas.toDataURL('image/png'));
+  });
+};
+
 function createTextRuns(node: TiptapNode): TextRun[] {
     return node.content?.flatMap(contentNode => {
         const text = contentNode.text || '';
@@ -473,68 +546,54 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
     }
 
     case 'progressBarBlock': {
-      const { blockTitle, progressBars } = node.attrs;
-      const elements: (Paragraph | Table)[] = [
-        new Paragraph({
-          children: [new TextRun({ text: blockTitle, bold: true })],
-          heading: HeadingLevel.HEADING_3,
-          spacing: { after: 200 }
-        })
-      ];
+      try {
+        const { blockTitle, progressBars, layout, textAlign } = node.attrs;
+        
+        const imageBase64 = await renderProgressBarToImage(blockTitle, progressBars);
+        if (!imageBase64) throw new Error("Progress bar rendering returned empty.");
+        
+        const imageBuffer = await getImageBuffer(imageBase64);
+        
+        const width = layout?.width || 100;
+        const align = textAlign || 'center';
+        
+        const imageWidthInPixels = Math.floor(450 * (width / 100));
 
-      const noBorders = {
-        top: { style: BorderStyle.NONE, size: 0, color: "auto" },
-        bottom: { style: BorderStyle.NONE, size: 0, color: "auto" },
-        left: { style: BorderStyle.NONE, size: 0, color: "auto" },
-        right: { style: BorderStyle.NONE, size: 0, color: "auto" },
-      };
+        // Calculate height based on aspect ratio of the generated canvas
+        const BAR_HEIGHT = 24;
+        const PADDING = 20;
+        const BAR_SPACING_TOTAL = 45;
+        const BLOCK_TITLE_HEIGHT = 40;
+        const CANVAS_WIDTH = 700;
+        const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + (progressBars.length * BAR_SPACING_TOTAL) + PADDING;
+        const aspectRatio = canvasHeight / CANVAS_WIDTH;
+        const imageHeightInPixels = Math.floor(imageWidthInPixels * aspectRatio);
 
-      for (const bar of progressBars) {
-        elements.push(new Paragraph({
-          children: [new TextRun(bar.title)],
-          spacing: { after: 50 }
-        }));
-
-        const progressCell = new TableCell({
-            children: [new Paragraph({
-                children: [new TextRun({ text: `${bar.progress}%`, color: "FFFFFF", bold: true, })],
-                alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: bar.color.substring(1), type: ShadingType.CLEAR },
-            borders: noBorders,
+        const imageRun = new ImageRun({
+          data: imageBuffer,
+          transformation: { 
+            width: imageWidthInPixels, 
+            height: imageHeightInPixels 
+          },
         });
-
-        const remainingCell = new TableCell({
-            children: [new Paragraph('')],
-            shading: { fill: 'E5E7EB', type: ShadingType.CLEAR },
-            borders: noBorders,
-        });
-
-        let rowChildren: TableCell[];
-        let columnWidths: number[];
-
-        if (bar.progress <= 0) {
-            rowChildren = [remainingCell];
-            columnWidths = [100];
-        } else if (bar.progress >= 100) {
-            rowChildren = [progressCell];
-            columnWidths = [100];
-        } else {
-            rowChildren = [progressCell, remainingCell];
-            columnWidths = [bar.progress, 100 - bar.progress];
+        
+        let docxAlignment: AlignmentType;
+        switch (align) {
+            case 'center': docxAlignment = AlignmentType.CENTER; break;
+            case 'right': docxAlignment = AlignmentType.RIGHT; break;
+            default: docxAlignment = AlignmentType.LEFT;
         }
 
-        const table = new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          columnWidths: columnWidths,
-          rows: [
-            new TableRow({ children: rowChildren })
-          ],
-          borders: noBorders,
-        });
-        elements.push(table);
+        return [new Paragraph({
+            children: [imageRun],
+            alignment: docxAlignment,
+            spacing: { after: 200 },
+        })];
+
+      } catch (e) {
+        console.error(`Error processing progressBarBlock for DOCX:`, e);
+        return [new Paragraph({ children: [ new TextRun({ text: `[Progress Bar block failed to load]` }) ]})];
       }
-      return elements;
     }
 
     default:
