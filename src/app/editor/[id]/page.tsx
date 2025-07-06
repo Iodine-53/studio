@@ -39,7 +39,7 @@ import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileText } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, FileText, Expand, Shrink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
@@ -60,6 +60,7 @@ export default function EditorPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<'focus' | 'full'>('focus');
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   
@@ -231,6 +232,15 @@ export default function EditorPage() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLayoutMode(layoutMode === 'focus' ? 'full' : 'focus')}
+                title={layoutMode === 'focus' ? 'Enter Full Width Mode' : 'Enter Focus Mode'}
+              >
+                {layoutMode === 'focus' ? <Expand className="h-4 w-4 md:mr-2" /> : <Shrink className="h-4 w-4 md:mr-2" />}
+                <span className="hidden md:inline">{layoutMode === 'focus' ? 'Full Width' : 'Focus View'}</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={handleOpenPreview} className="relative">
                 <Eye className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Preview</span>
@@ -243,7 +253,7 @@ export default function EditorPage() {
           </nav>
         </header>
         <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
-          <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border">
+          <div className={`w-full bg-card rounded-xl shadow-lg overflow-hidden border transition-all duration-300 ${layoutMode === 'focus' ? 'max-w-4xl' : ''}`}>
             <TiptapEditor editor={editor} />
           </div>
         </main>
