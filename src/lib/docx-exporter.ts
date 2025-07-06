@@ -495,26 +495,40 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           spacing: { after: 50 }
         }));
 
-        const progressCell: ITableCellOptions = {
-          children: [new Paragraph({ text: `${bar.progress}%`, alignment: AlignmentType.CENTER })],
-          shading: { fill: bar.color.substring(1), type: ShadingType.CLEAR },
-          borders: noBorders
-        };
-        const remainingCell: ITableCellOptions = {
-          children: [new Paragraph('')],
-          shading: { fill: 'E5E7EB', type: ShadingType.CLEAR },
-          borders: noBorders
-        };
+        const progressCell = new TableCell({
+            children: [new Paragraph({
+                children: [new TextRun({ text: `${bar.progress}%`, color: "FFFFFF", bold: true, })],
+                alignment: AlignmentType.CENTER
+            })],
+            shading: { fill: bar.color.substring(1), type: ShadingType.CLEAR },
+            borders: noBorders,
+        });
+
+        const remainingCell = new TableCell({
+            children: [new Paragraph('')],
+            shading: { fill: 'E5E7EB', type: ShadingType.CLEAR },
+            borders: noBorders,
+        });
+
+        let rowChildren: TableCell[];
+        let columnWidths: number[];
+
+        if (bar.progress <= 0) {
+            rowChildren = [remainingCell];
+            columnWidths = [100];
+        } else if (bar.progress >= 100) {
+            rowChildren = [progressCell];
+            columnWidths = [100];
+        } else {
+            rowChildren = [progressCell, remainingCell];
+            columnWidths = [bar.progress, 100 - bar.progress];
+        }
 
         const table = new Table({
           width: { size: 100, type: WidthType.PERCENTAGE },
-          columnWidths: [bar.progress, 100 - bar.progress],
+          columnWidths: columnWidths,
           rows: [
-            new TableRow({
-              children: bar.progress > 0 
-                ? [new TableCell(progressCell), new TableCell(remainingCell)]
-                : [new TableCell(remainingCell)]
-            })
+            new TableRow({ children: rowChildren })
           ],
         });
         elements.push(table);
@@ -570,3 +584,4 @@ export const exportToDocx = async (docJson: TiptapNode) => {
 
   return Packer.toBlob(doc);
 };
+
