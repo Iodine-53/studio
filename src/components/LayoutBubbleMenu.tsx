@@ -5,6 +5,7 @@ import { NodeSelection } from "@tiptap/pm/state";
 import {
   Scaling,
   MoveVertical,
+  Trash2, // Import Trash2
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -15,25 +16,40 @@ type Props = {
   editor: Editor;
 };
 
-// List of node types that support these layout controls
-const LAYOUT_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'embed'];
+// List of node types that support ANY layout control (including delete)
+const ACTIONABLE_NODE_TYPES = [
+    'image', 
+    'chartBlock', 
+    'drawing', 
+    'accordion', 
+    'todoList', 
+    'callout', 
+    'horizontalRule', 
+    'table',
+    'embed'
+];
+
+// List of node types that support resizing controls
+const RESIZABLE_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'embed'];
 
 export const LayoutBubbleMenu = ({ editor }: Props) => {
   
-  // A helper to get the type and attributes of the currently selected layout node
-  const getSelectedLayoutNode = () => {
+  // A helper to get the type and attributes of the currently selected actionable node
+  const getSelectedActionableNode = () => {
     const { selection } = editor.state;
-    if (selection instanceof NodeSelection && LAYOUT_NODE_TYPES.includes(selection.node.type.name)) {
+    if (selection instanceof NodeSelection && ACTIONABLE_NODE_TYPES.includes(selection.node.type.name)) {
       return {
         type: selection.node.type,
+        node: selection.node,
         layout: selection.node.attrs.layout || {},
       };
     }
     return null;
   };
 
+  const selectedNodeInfo = getSelectedActionableNode();
+
   const updateLayoutAttribute = (key: string, value: string | number) => {
-    const selectedNodeInfo = getSelectedLayoutNode();
     if (!selectedNodeInfo) return;
     
     const { type, layout } = selectedNodeInfo;
@@ -48,64 +64,87 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
   };
   
   const getLayoutAttribute = (key: string) => {
-    const selectedNodeInfo = getSelectedLayoutNode();
     return selectedNodeInfo?.layout[key];
   }
+  
+  const handleDelete = () => {
+    editor.chain().focus().deleteSelection().run();
+  };
 
   const currentWidth = getLayoutAttribute('width') ?? 100;
   const currentHeight = getLayoutAttribute('height') ?? 320;
+
+  const canResize = selectedNodeInfo && RESIZABLE_NODE_TYPES.includes(selectedNodeInfo.type.name);
 
   return (
     <BubbleMenu
       editor={editor}
       tippyOptions={{ duration: 100, placement: "top" }}
       // The menu should only show up if a node from our list is selected.
-      shouldShow={() => !!getSelectedLayoutNode()}
+      shouldShow={() => !!selectedNodeInfo}
       className="flex items-center gap-1 p-1 bg-card border rounded-lg shadow-xl"
     >
-      {/* Width Controls with Slider */}
-      <Popover>
-        <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-                <Scaling size={16} />
-            </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 p-4">
-            <div className="space-y-4">
-                <Label htmlFor="width-slider">Width: {currentWidth}%</Label>
-                <Slider
-                    id="width-slider"
-                    min={20}
-                    max={100}
-                    step={1}
-                    value={[currentWidth]}
-                    onValueChange={(value) => updateLayoutAttribute('width', value[0])}
-                />
-            </div>
-        </PopoverContent>
-      </Popover>
+      {/* Resizing controls - only for resizable nodes */}
+      {canResize && (
+        <>
+          {/* Width Controls with Slider */}
+          <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Scaling size={16} />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-4">
+                <div className="space-y-4">
+                    <Label htmlFor="width-slider">Width: {currentWidth}%</Label>
+                    <Slider
+                        id="width-slider"
+                        min={20}
+                        max={100}
+                        step={1}
+                        value={[currentWidth]}
+                        onValueChange={(value) => updateLayoutAttribute('width', value[0])}
+                    />
+                </div>
+            </PopoverContent>
+          </Popover>
 
-      {/* Height Controls with Slider */}
-      <Popover>
-        <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-                <MoveVertical size={16} />
-            </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 p-4">
-            <div className="space-y-4">
-                <Label htmlFor="height-slider">Height: {currentHeight}px</Label>
-                <Slider
-                    id="height-slider"
-                    min={200}
-                    max={800}
-                    step={10}
-                    value={[currentHeight]}
-                    onValueChange={(value) => updateLayoutAttribute('height', value[0])}
-                />
-            </div>
-        </PopoverContent>
-      </Popover>
+          {/* Height Controls with Slider - ONLY for charts */}
+          {selectedNodeInfo.type.name === 'chartBlock' && (
+            <Popover>
+              <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                      <MoveVertical size={16} />
+                  </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-4">
+                  <div className="space-y-4">
+                      <Label htmlFor="height-slider">Height: {currentHeight}px</Label>
+                      <Slider
+                          id="height-slider"
+                          min={200}
+                          max={800}
+                          step={10}
+                          value={[currentHeight]}
+                          onValueChange={(value) => updateLayoutAttribute('height', value[0])}
+                      />
+                  </div>
+              </PopoverContent>
+            </Popover>
+          )}
+        </>
+      )}
+
+      {/* Delete button for all actionable nodes */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10" 
+        onClick={handleDelete} 
+        title="Delete block"
+      >
+        <Trash2 size={16} />
+      </Button>
     </BubbleMenu>
   );
 };
