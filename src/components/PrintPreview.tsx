@@ -28,7 +28,19 @@ const renderNodes = (nodes: TiptapNode[] | undefined) => nodes?.map(renderNode);
 // New StaticDrawing component to render sketches in the print preview
 const StaticDrawing: FC<{ node: TiptapNode }> = ({ node }) => {
   const canvasRef = useRef<ReactSketchCanvasRef>(null);
-  const { paths } = node.attrs || {};
+  const { paths, layout, textAlign } = node.attrs || {};
+  const width = layout?.width || 100;
+  const align = textAlign || 'left';
+
+  const wrapperStyle: CSSProperties = {
+    width: `${width}%`,
+  };
+
+  if (align === 'center') {
+    wrapperStyle.margin = '0 auto';
+  } else if (align === 'right') {
+    wrapperStyle.marginLeft = 'auto';
+  }
 
   useEffect(() => {
     if (canvasRef.current && paths) {
@@ -44,11 +56,11 @@ const StaticDrawing: FC<{ node: TiptapNode }> = ({ node }) => {
   }, [paths]);
 
   return (
-    <div data-align={node.attrs?.textAlign} className="w-full">
+    <div style={wrapperStyle}>
       <div className="my-4 border rounded-lg overflow-hidden pointer-events-none">
         <ReactSketchCanvas
           ref={canvasRef}
-          className="w-full h-96"
+          className="w-full aspect-[4/3]"
           canvasColor="white"
         />
       </div>
@@ -116,6 +128,26 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
   }
   const hasStyle = Object.keys(style).length > 0;
 
+  // Common wrapper logic for resizable block nodes
+  const { layout, textAlign } = node.attrs || {};
+  const width = layout?.width || 100;
+  const align = textAlign || 'left';
+
+  const wrapperStyle: CSSProperties = {
+      width: `${width}%`,
+  };
+
+  if (align === 'center') {
+      wrapperStyle.marginLeft = 'auto';
+      wrapperStyle.marginRight = 'auto';
+  } else if (align === 'right') {
+      wrapperStyle.marginLeft = 'auto';
+      wrapperStyle.marginRight = '0';
+  } else { // left
+      wrapperStyle.marginLeft = '0';
+      wrapperStyle.marginRight = 'auto';
+  }
+
   switch (node.type) {
     case 'heading':
       const level = node.attrs?.level || 1;
@@ -124,10 +156,9 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'paragraph':
       return <p style={hasStyle ? style : undefined}>{children || <br/>}</p>;
     case 'image': {
-      const align = node.attrs?.textAlign || 'center';
       return (
-        <div data-align={align} className="w-full">
-            <img src={node.attrs?.src} alt={node.attrs?.alt || ''} className="my-4 rounded-lg w-full" />
+        <div style={wrapperStyle}>
+            <img src={node.attrs?.src} alt={node.attrs?.alt || ''} className="my-4 rounded-lg w-full block" />
         </div>
       );
     }
@@ -176,7 +207,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     
     case 'chartBlock': {
       try {
-        const align = node.attrs?.textAlign || 'center';
+        const chartHeight = layout?.height || 320;
         const chartData = JSON.parse(node.attrs?.chartData || '[]');
         const chartConfig = JSON.parse(node.attrs?.chartConfig || '{}');
         const chartType = node.attrs?.chartType || 'bar';
@@ -186,10 +217,10 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
         
         return (
-          <div data-align={align} className="w-full">
+          <div style={wrapperStyle}>
             <div className="my-4 p-4 border rounded-lg not-prose">
             <h4 className="font-bold text-lg mb-2">{node.attrs?.title}</h4>
-            <div className="h-80 w-full">
+            <div style={{ height: `${chartHeight}px` }} className="w-full">
                 <ResponsiveContainer width="100%" height="100%">
                 {chartType === 'pie' ? (
                     <PieChart>
@@ -222,9 +253,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
     
     case 'accordion': {
-        const align = node.attrs?.textAlign || 'center';
         return (
-            <div data-align={align} className="w-full">
+            <div style={wrapperStyle}>
                 <div className="my-4 p-4 border rounded-lg not-prose">
                     <h3 className="font-bold text-xl">{node.attrs?.title}</h3>
                     <p className="text-muted-foreground mb-4">{node.attrs?.subtitle}</p>
@@ -244,9 +274,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
 
     case 'todoList': {
-        const align = node.attrs?.textAlign || 'center';
         return (
-            <div data-align={align} className="w-full">
+            <div style={wrapperStyle}>
                 <div className="my-4 p-4 border rounded-lg not-prose">
                     <h4 className="font-bold text-xl mb-2">{node.attrs?.title}</h4>
                     <ul className="space-y-2 list-none pl-0">
@@ -266,10 +295,9 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
 
     case 'embed': {
       const { src } = node.attrs;
-      const align = node.attrs?.textAlign || 'center';
       
       return (
-        <div data-align={align} className="w-full">
+        <div style={wrapperStyle}>
           <div className="my-4 p-4 border rounded-lg not-prose text-center bg-muted/30">
               <Download className="inline-block h-8 w-8 text-muted-foreground mb-2" />
               <p className="font-semibold">Embedded Content</p>
