@@ -15,11 +15,11 @@ type Props = {
 
 const TiptapEditor = ({ editor }: Props) => {
   return (
-    <div className="flex flex-col justify-stretch min-h-[500px] relative">
+    <div className="flex h-full flex-col justify-stretch relative">
       {editor && <BlockActionsMenu editor={editor} />}
       {editor && <LayoutBubbleMenu editor={editor} />}
       <Toolbar editor={editor} />
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="flex-1 overflow-y-auto" />
     </div>
   )
 }
