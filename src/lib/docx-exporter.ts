@@ -154,16 +154,40 @@ export const renderChartToImage = (chartConfig: any): Promise<string> => {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF5733', '#C70039', '#900C3F', '#581845'];
 
-// New helper function to render a progress bar block to a Base64 image
+// A helper to draw a rounded rectangle, as ctx.roundRect is not universally supported.
+const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+    if (width < 0) width = 0;
+    if (height < 0) height = 0;
+    if (width < 2 * radius) radius = width / 2;
+    if (height < 2 * radius) radius = height / 2;
+    if (radius < 0) radius = 0;
+    
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + width, y, x + width, y + height, radius);
+    ctx.arcTo(x + width, y + height, x, y + height, radius);
+    ctx.arcTo(x, y + height, x, y, radius);
+    ctx.arcTo(x, y, x + width, y, radius);
+    ctx.closePath();
+    ctx.fill();
+};
+
 const renderProgressBarToImage = (blockTitle: string, progressBars: any[]): Promise<string> => {
   return new Promise((resolve) => {
-    const BAR_HEIGHT = 24;
+    const BAR_HEIGHT = 28;
     const PADDING = 20;
-    const BAR_SPACING_TOTAL = 45; // Vertical space for one bar and its title
+    const BAR_SPACING = 20; // Vertical space between each full bar component
+    const TITLE_SPACING = 10; // Space between bar title and the bar itself
     const BLOCK_TITLE_HEIGHT = 40;
     const CANVAS_WIDTH = 700;
+    
+    // Recalculate total height
+    const totalBarsHeight = progressBars.reduce((acc) => {
+      // For each bar: title height (assume 20px) + title spacing + bar height + bar spacing
+      return acc + 20 + TITLE_SPACING + BAR_HEIGHT + BAR_SPACING;
+    }, 0);
 
-    const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + (progressBars.length * BAR_SPACING_TOTAL) + PADDING;
+    const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + totalBarsHeight;
     
     const canvas = document.createElement('canvas');
     canvas.width = CANVAS_WIDTH;
@@ -181,49 +205,46 @@ const renderProgressBarToImage = (blockTitle: string, progressBars: any[]): Prom
 
     // Block Title
     ctx.fillStyle = '#111827';
-    ctx.font = 'bold 22px sans-serif';
+    ctx.font = 'bold 24px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(blockTitle, PADDING, PADDING + 22);
+    ctx.textBaseline = 'top';
+    ctx.fillText(blockTitle, PADDING, PADDING);
 
     let currentY = PADDING + BLOCK_TITLE_HEIGHT;
 
     progressBars.forEach(bar => {
-      currentY += 20; // Space before bar title
-      // Bar Title
+      // Bar Title & Percentage
       ctx.fillStyle = '#1F2937';
       ctx.font = '16px sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(bar.title, PADDING, currentY);
 
-      // Percentage Text
-      ctx.font = '16px sans-serif';
       ctx.textAlign = 'right';
       ctx.fillText(`${bar.progress}%`, canvas.width - PADDING, currentY);
 
-      currentY += 5; // Space after bar title
+      currentY += 20 + TITLE_SPACING; // Move down past title
       
       const barYPosition = currentY;
       const barCanvasWidth = canvas.width - (PADDING * 2);
 
       // Bar Background
       ctx.fillStyle = '#E5E7EB'; // gray-200
-      ctx.beginPath();
-      ctx.roundRect(PADDING, barYPosition, barCanvasWidth, BAR_HEIGHT, 12);
-      ctx.fill();
+      drawRoundedRect(ctx, PADDING, barYPosition, barCanvasWidth, BAR_HEIGHT, BAR_HEIGHT / 2);
 
       // Bar Foreground
       if (bar.progress > 0) {
         const barWidth = barCanvasWidth * (bar.progress / 100);
         ctx.fillStyle = bar.color;
-        ctx.beginPath();
-        ctx.roundRect(PADDING, barYPosition, barWidth > 0 ? Math.max(barWidth, BAR_HEIGHT) : 0, BAR_HEIGHT, 12);
-        ctx.fill();
+        drawRoundedRect(ctx, PADDING, barYPosition, barWidth, BAR_HEIGHT, BAR_HEIGHT / 2);
       }
-
-      currentY += BAR_HEIGHT;
+      
+      currentY += BAR_HEIGHT + BAR_SPACING;
     });
     
-    resolve(canvas.toDataURL('image/png'));
+    // Add a small delay to ensure rendering completes before creating the data URL
+    setTimeout(() => {
+        resolve(canvas.toDataURL('image/png'));
+    }, 100);
   });
 };
 
@@ -239,7 +260,7 @@ function createTextRuns(node: TiptapNode): TextRun[] {
         if (href) {
             // Note: The 'Hyperlink' style in docx will typically define the color and underline.
             return [new TextRun({
-                text: text,
+                children: [text],
                 style: 'Hyperlink',
             })];
         }
@@ -557,15 +578,20 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
         const width = layout?.width || 100;
         const align = textAlign || 'center';
         
-        const imageWidthInPixels = Math.floor(450 * (width / 100));
+        const imageWidthInPixels = Math.floor(600 * (width / 100));
 
         // Calculate height based on aspect ratio of the generated canvas
-        const BAR_HEIGHT = 24;
+        const BAR_HEIGHT = 28;
         const PADDING = 20;
-        const BAR_SPACING_TOTAL = 45;
+        const BAR_SPACING = 20;
+        const TITLE_SPACING = 10;
         const BLOCK_TITLE_HEIGHT = 40;
         const CANVAS_WIDTH = 700;
-        const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + (progressBars.length * BAR_SPACING_TOTAL) + PADDING;
+        
+        const totalBarsHeight = progressBars.reduce((acc: number) => {
+            return acc + 20 + TITLE_SPACING + BAR_HEIGHT + BAR_SPACING;
+        }, 0);
+        const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + totalBarsHeight;
         const aspectRatio = canvasHeight / CANVAS_WIDTH;
         const imageHeightInPixels = Math.floor(imageWidthInPixels * aspectRatio);
 
