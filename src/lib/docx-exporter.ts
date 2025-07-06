@@ -13,8 +13,6 @@ import {
   WidthType,
   ShadingType,
   BorderStyle,
-  HorizontalPositionAlign,
-  VerticalPositionAlign,
   TextWrappingType,
   IParagraphOptions,
 } from 'docx';
@@ -222,8 +220,9 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           let imageBuffer: Buffer;
           let nodeTitle = 'Image';
           const { layout, textAlign } = node.attrs;
-          const { width = 75 } = layout || {};
-          const align = textAlign || 'center';
+          
+          const width = layout?.width || (node.type === 'chartBlock' ? 75 : 100);
+          const align = textAlign || (node.type === 'chartBlock' ? 'left' : 'center');
 
           if (node.type === 'image') {
               if (!node.attrs?.src) {
@@ -237,7 +236,15 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           } else { // chartBlock
               const { chartData, chartConfig, chartType, title, viewConfig } = node.attrs;
               nodeTitle = title;
-              const parsedData = JSON.parse(chartData || '[]');
+              const parsedData = JSON.parse(chartData || '[]').map((d: any) => {
+                  const dataPoint = {...d};
+                  Object.keys(dataPoint).forEach(key => {
+                      const num = parseFloat(dataPoint[key]);
+                      if (!isNaN(num)) dataPoint[key] = num;
+                  });
+                  return dataPoint;
+              });
+
               const parsedConfig = JSON.parse(chartConfig || '{}');
               const parsedViewConfig = JSON.parse(viewConfig || '{}');
       
@@ -255,7 +262,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
                   finalData = {
                       labels: parsedData.map((d: any) => d[parsedConfig.xAxisKey]),
                       datasets: (parsedConfig.dataKeys || []).map((key: string, i: number) => ({
-                          label: key, data: parsedData.map((d: any) => parseFloat(d[key]) || 0),
+                          label: key, data: parsedData.map((d: any) => d[key] || 0),
                           backgroundColor: COLORS[i % COLORS.length] + '80', borderColor: COLORS[i % COLORS.length],
                           borderWidth: 1, fill: chartType === 'area',
                       })),
@@ -267,7 +274,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
                   data: finalData,
                   options: {
                       plugins: { title: { display: !!nodeTitle, text: nodeTitle, font: { size: 16 } }, legend: { display: parsedViewConfig.legend }, tooltip: { enabled: parsedViewConfig.tooltip } },
-                      scales: chartType === 'pie' ? {} : { x: { grid: { display: parsedViewConfig.grid } }, y: { grid: { display: parsedViewConfig.grid } } }
+                      scales: chartType === 'pie' ? {} : { x: { grid: { display: parsedViewConfig.grid } }, y: { grid: { display: parsedViewConfig.grid }, beginAtZero: true } }
                   },
               };
               const chartImageBase64 = await renderChartToImage(finalChartConfig);
@@ -276,21 +283,26 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           }
           
           const imageWidthInPixels = Math.floor(450 * (width / 100));
-          const imageHeightInPixels = Math.floor(300 * (width / 100));
+          const imageHeightInPixels = node.type === 'chartBlock'
+            ? layout?.height || 320
+            : Math.floor(300 * (width / 100)); // Rough aspect ratio for images/drawings
 
           const imageRun = new ImageRun({
             data: imageBuffer,
             transformation: { width: imageWidthInPixels, height: imageHeightInPixels },
-            floating: (align === 'left' || align === 'right') ? {
-                horizontalPosition: { align: align.toUpperCase() as HorizontalPositionAlign },
-                verticalPosition: { align: VerticalPositionAlign.TOP },
-                wrap: { type: TextWrappingType.SQUARE },
-            } : undefined
           });
+
+          let docxAlignment: AlignmentType;
+          switch (align) {
+              case 'center': docxAlignment = AlignmentType.CENTER; break;
+              case 'right': docxAlignment = AlignmentType.RIGHT; break;
+              default: docxAlignment = AlignmentType.LEFT;
+          }
 
           return [new Paragraph({
               children: [imageRun],
-              alignment: align === 'center' ? AlignmentType.CENTER : undefined,
+              alignment: docxAlignment,
+              spacing: { after: 200 },
           })];
 
       } catch (e) {
@@ -341,12 +353,14 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
                 const itemParagraphs = (await Promise.all((listItemNode.content || []).map(convertNodeToDocx))).flat();
                 
                 itemParagraphs.forEach(p => {
-                    (p as Paragraph).properties.numbering = node.type === 'orderedList' 
-                        ? { reference: 'default-numbering', level: 0 } 
-                        : undefined;
-                    (p as Paragraph).properties.bullet = node.type === 'bulletList' 
-                        ? { level: 0 } 
-                        : undefined;
+                    if (p instanceof Paragraph) {
+                        p.properties.numbering = node.type === 'orderedList' 
+                            ? { reference: 'default-numbering', level: 0 } 
+                            : undefined;
+                        p.properties.bullet = node.type === 'bulletList' 
+                            ? { level: 0 } 
+                            : undefined;
+                    }
                 });
                 return itemParagraphs;
             })
