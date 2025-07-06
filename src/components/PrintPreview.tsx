@@ -223,7 +223,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
             <div style={{ height: `${chartHeight}px` }} className="w-full">
                 <ResponsiveContainer width="100%" height="100%">
                 {chartType === 'pie' ? (
-                    <PieChart>
+                    <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                     <Pie data={chartData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
                         {chartData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
@@ -231,7 +231,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                     <Legend/>
                     </PieChart>
                 ) : (
-                    <ChartComponent data={chartData}>
+                    <ChartComponent data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
                     <YAxis tick={{fontSize: 12}} />
