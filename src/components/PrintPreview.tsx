@@ -231,7 +231,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                     <Legend/>
                     </PieChart>
                 ) : (
-                    <ChartComponent data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 20 }}>
+                    <ChartComponent data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
                     <YAxis tick={{fontSize: 12}} />
