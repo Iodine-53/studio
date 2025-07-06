@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Printer } from "lucide-react";
 
 export default function PrintPage() {
-  const [document, setDocument] = useState<TiptapNode | null>(null);
+  const [docContent, setDocContent] = useState<TiptapNode | null>(null);
 
   useEffect(() => {
     // This code runs only on the client side
@@ -15,7 +15,7 @@ export default function PrintPage() {
     if (jsonString) {
       try {
         const parsedDocument = JSON.parse(jsonString);
-        setDocument(parsedDocument);
+        setDocContent(parsedDocument);
         // Clean up localStorage for privacy
         localStorage.removeItem('documentToPrint');
       } catch (error) {
@@ -26,7 +26,7 @@ export default function PrintPage() {
 
   // New effect to scale down wide tables to fit the page
   useEffect(() => {
-    if (!document) return;
+    if (!docContent) return;
 
     // This needs to run after the content has been rendered to the DOM
     const timeoutId = setTimeout(() => {
@@ -47,10 +47,10 @@ export default function PrintPage() {
 
     return () => clearTimeout(timeoutId);
 
-  }, [document]);
+  }, [docContent]);
 
 
-  if (!document) {
+  if (!docContent) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -186,7 +186,7 @@ export default function PrintPage() {
       {/* A4 Page Simulation */}
       <div id="printable-area" className="mx-auto w-[210mm] min-h-[297mm] bg-white p-[1in] shadow-2xl">
         <div className="prose prose-sm sm:prose-base max-w-none">
-          {document.content && <DocumentRenderer content={document.content} />}
+          {docContent.content && <DocumentRenderer content={docContent.content} />}
         </div>
       </div>
     </main>
