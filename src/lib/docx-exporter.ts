@@ -347,7 +347,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
         });
         
         const dataRows = data.map((row: string[]) => new TableRow({
-            children: row.map(cell => new TableCell({
+            children: row.map((cell: string) => new TableCell({
                 children: [new Paragraph(cell || '')],
             })),
         }));
