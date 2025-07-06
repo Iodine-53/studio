@@ -216,6 +216,26 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         const ChartComponent = chartType === 'bar' ? BarChart : chartType === 'line' ? LineChart : chartType === 'area' ? AreaChart : PieChart;
         const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
         
+        let processedData = chartData;
+        if (chartType !== 'pie') {
+            const { dataKeys = [] } = chartConfig;
+            processedData = chartData.map((row: any) => {
+                const newRow: {[key:string]: any} = { ...row };
+                dataKeys.forEach((key: string) => {
+                    const value = parseFloat(row[key]);
+                    if (!isNaN(value)) {
+                        newRow[key] = value;
+                    }
+                });
+                return newRow;
+            });
+        } else {
+            const { valueKey } = chartConfig;
+            if (valueKey) {
+                processedData = chartData.map((d: any) => ({ ...d, [valueKey]: Number(d[valueKey]) })).filter((d: any) => !isNaN(d[valueKey]) && d[valueKey] > 0);
+            }
+        }
+        
         return (
           <div style={wrapperStyle}>
             <div className="my-4 p-4 border rounded-lg not-prose">
@@ -224,14 +244,14 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                 <ResponsiveContainer width="100%" height="100%">
                 {chartType === 'pie' ? (
                     <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                    <Pie data={chartData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                        {chartData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    <Pie data={processedData} dataKey={chartConfig.valueKey} nameKey={chartConfig.nameKey} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+                        {processedData.map((_entry: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
                     <Tooltip/>
                     <Legend/>
                     </PieChart>
                 ) : (
-                    <ChartComponent data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <ChartComponent data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey={chartConfig.xAxisKey} tick={{fontSize: 12}}/>
                     <YAxis tick={{fontSize: 12}} />
