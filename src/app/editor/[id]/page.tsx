@@ -35,12 +35,14 @@ import { Callout } from '@/lib/tiptap/extensions/Callout';
 import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 
 import TiptapEditor from "@/components/tiptap-editor";
-import { getDocument, saveDocument, type Document } from "@/lib/db";
+import { getDocument, saveDocument, getAllDocuments, type Document } from "@/lib/db";
 import { ArrowLeft, Loader2, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { format } from 'date-fns';
 
 // Register languages for code block syntax highlighting
 lowlight.registerLanguage('html', html);
@@ -53,6 +55,7 @@ export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
   const [doc, setDoc] = useState<Document | null>(null);
+  const [recentDocuments, setRecentDocuments] = useState<Document[]>([]);
   const [currentContent, setCurrentContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingDocx, setIsExportingDocx] = useState(false);
@@ -96,7 +99,8 @@ export default function EditorPage() {
           'drawing',
           'accordion',
           'todoList',
-          'embed'
+          'embed',
+          'interactiveTable'
         ] 
       }),
       SlashCommand,
@@ -146,9 +150,13 @@ export default function EditorPage() {
       return;
     }
 
-    const fetchDocument = async () => {
+    const fetchDocuments = async () => {
       setIsLoading(true);
-      const loadedDoc = await getDocument(docId);
+      const [loadedDoc, allDocs] = await Promise.all([
+        getDocument(docId),
+        getAllDocuments()
+      ]);
+
       if (loadedDoc) {
         setDoc(loadedDoc);
         setCurrentContent(loadedDoc.content);
@@ -156,11 +164,17 @@ export default function EditorPage() {
         console.error("Document not found");
         router.push("/");
       }
+
+      const filteredDocs = allDocs
+        .filter(d => d.id !== docId)
+        .slice(0, 5);
+      setRecentDocuments(filteredDocs);
+      
       setIsLoading(false);
     };
     
     if (docId) {
-        fetchDocument();
+        fetchDocuments();
     }
     
     return () => {
@@ -225,7 +239,7 @@ export default function EditorPage() {
                     </Link>
                 </Button>
                 <div className="flex-1">
-                    {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
+                    {doc && <h1 className="text-xl font-bold font-headline text-primary truncate max-w-xs sm:max-w-sm md:max-w-md">{doc.title}</h1>}
                 </div>
             </div>
             <div className="flex items-center gap-2">
@@ -240,10 +254,38 @@ export default function EditorPage() {
             </div>
           </nav>
         </header>
-        <main className="flex-1 flex flex-col items-center justify-start p-2 sm:p-4 md:p-8">
-          <div className="flex flex-col w-full bg-card rounded-lg shadow-2xl max-w-[210mm] border min-h-[85vh]">
-            <TiptapEditor editor={editor} />
-          </div>
+        <main className="flex-1 flex w-full justify-center gap-8 px-4 py-8">
+            {/* Editor Column */}
+            <div className="flex-shrink-0 w-full max-w-[210mm]">
+                <div className="flex flex-col bg-card rounded-lg shadow-2xl border min-h-[85vh]">
+                    <TiptapEditor editor={editor} />
+                </div>
+            </div>
+
+            {/* Recent Documents Sidebar (Right Column) */}
+            <aside className="hidden xl:block w-72 flex-shrink-0">
+                <div className="sticky top-24 space-y-6">
+                    <h2 className="text-xl font-bold font-headline text-primary">Recent Documents</h2>
+                    {recentDocuments.length > 0 ? (
+                        <div className="space-y-4">
+                            {recentDocuments.map((recentDoc) => (
+                                <Link href={`/editor/${recentDoc.id}`} key={recentDoc.id} className="block">
+                                    <Card className="transition-all duration-300 hover:border-primary hover:shadow-lg hover:-translate-y-0.5">
+                                        <CardHeader>
+                                            <CardTitle className="text-lg truncate">{recentDoc.title}</CardTitle>
+                                            <CardDescription>
+                                                Updated: {format(new Date(recentDoc.updatedAt), 'PP')}
+                                            </CardDescription>
+                                        </CardHeader>
+                                    </Card>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground italic">No other documents found.</p>
+                    )}
+                </div>
+            </aside>
         </main>
       </div>
       <PrintPreview
