@@ -242,7 +242,7 @@ export default function EditorPage() {
             </div>
           </nav>
         </header>
-        <main className="flex-1 flex items-center justify-center p-2 sm:p-4 md:p-8">
+        <main className="flex-1 flex items-start justify-center p-2 sm:p-4 md:p-8">
           <div className="flex flex-col w-full bg-card rounded-lg shadow-2xl aspect-[1/1.414] max-w-[210mm] max-h-[85vh] border overflow-hidden">
             <TiptapEditor editor={editor} />
           </div>
