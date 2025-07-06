@@ -530,6 +530,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           rows: [
             new TableRow({ children: rowChildren })
           ],
+          borders: noBorders,
         });
         elements.push(table);
       }
@@ -584,4 +585,3 @@ export const exportToDocx = async (docJson: TiptapNode) => {
 
   return Packer.toBlob(doc);
 };
-
