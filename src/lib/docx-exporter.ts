@@ -326,25 +326,44 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           spacing: { after: 200 }
       })];
     
-    case 'table':
-        const tableRows = await Promise.all(
-            (node.content || []).map(async (rowNode) => {
-                const cells = await Promise.all(
-                    (rowNode.content || []).map(async (cellNode) => {
-                        const cellContent = (await Promise.all((cellNode.content || []).map(convertNodeToDocx))).flat();
-                        return new TableCell({
-                            children: cellContent.length > 0 ? cellContent : [new Paragraph('')],
-                            shading: cellNode.type === 'tableHeader' ? { fill: 'EFEFEF', type: ShadingType.CLEAR } : undefined,
-                        });
-                    })
-                );
-                return new TableRow({ children: cells });
-            })
-        );
-        return [new Table({
-            rows: tableRows,
+    case 'interactiveTable': {
+      try {
+        const { title, headers: headersJson, data: dataJson } = node.attrs;
+        const headers = JSON.parse(headersJson);
+        const data = JSON.parse(dataJson);
+    
+        const titlePara = new Paragraph({
+            children: [new TextRun({ text: title, bold: true })],
+            heading: HeadingLevel.HEADING_3,
+            spacing: { after: 200 }
+        });
+    
+        const headerRow = new TableRow({
+            children: headers.map((header: string) => new TableCell({
+                children: [new Paragraph(header)],
+                shading: { fill: 'EFEFEF', type: ShadingType.CLEAR },
+            })),
+            tableHeader: true,
+        });
+        
+        const dataRows = data.map((row: string[]) => new TableRow({
+            children: row.map(cell => new TableCell({
+                children: [new Paragraph(cell || '')],
+            })),
+        }));
+    
+        const table = new Table({
+            rows: [headerRow, ...dataRows],
             width: { size: 100, type: WidthType.PERCENTAGE },
-        })];
+        });
+    
+        return [titlePara, table];
+    
+      } catch(e) {
+          console.error('Error exporting interactive table to DOCX', e);
+          return [new Paragraph({ text: '[Error rendering table]' })];
+      }
+    }
 
     case 'bulletList':
     case 'orderedList':

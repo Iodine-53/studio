@@ -172,10 +172,6 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         return <pre className="bg-muted text-muted-foreground p-4 rounded-md overflow-x-auto"><code>{children}</code></pre>
     case 'horizontalRule':
         return <hr className="my-4"/>
-    case 'table':
-        return <table className="w-full my-4 border-collapse"><tbody>{children}</tbody></table>;
-    case 'tableRow':
-        return <tr className="border-b">{children}</tr>;
     case 'tableHeader':
         return <th className="border p-2 font-bold text-left bg-muted">{children}</th>;
     case 'tableCell':
@@ -208,7 +204,14 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'chartBlock': {
       try {
         const chartHeight = layout?.height || 320;
-        const chartData = JSON.parse(node.attrs?.chartData || '[]');
+        const chartData = JSON.parse(node.attrs?.chartData || '[]').map((d: any) => {
+            const dataPoint = {...d};
+            Object.keys(dataPoint).forEach(key => {
+                const num = parseFloat(dataPoint[key]);
+                if (!isNaN(num)) dataPoint[key] = num;
+            });
+            return dataPoint;
+        });
         const chartConfig = JSON.parse(node.attrs?.chartConfig || '{}');
         const chartType = node.attrs?.chartType || 'bar';
         const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -217,19 +220,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         const SeriesComponent = chartType === 'bar' ? Bar : chartType === 'line' ? Line : Area;
         
         let processedData = chartData;
-        if (chartType !== 'pie') {
-            const { dataKeys = [] } = chartConfig;
-            processedData = chartData.map((row: any) => {
-                const newRow: {[key:string]: any} = { ...row };
-                dataKeys.forEach((key: string) => {
-                    const value = parseFloat(row[key]);
-                    if (!isNaN(value)) {
-                        newRow[key] = value;
-                    }
-                });
-                return newRow;
-            });
-        } else {
+        if (chartType === 'pie') {
             const { valueKey } = chartConfig;
             if (valueKey) {
                 processedData = chartData.map((d: any) => ({ ...d, [valueKey]: Number(d[valueKey]) })).filter((d: any) => !isNaN(d[valueKey]) && d[valueKey] > 0);
@@ -311,6 +302,44 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                 </div>
             </div>
         );
+    }
+    
+    case 'interactiveTable': {
+      try {
+        const { title, headers: headersJson, data: dataJson } = node.attrs;
+        const headers = JSON.parse(headersJson);
+        const data = JSON.parse(dataJson);
+    
+        return (
+          <div style={wrapperStyle}>
+            <div className="my-4 not-prose">
+              <h4 className="font-bold text-lg mb-2">{title}</h4>
+              <div className="overflow-x-auto border rounded-lg">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted">
+                    <tr>
+                      {headers.map((header: string, i: number) => (
+                        <th key={i} className="p-2 font-semibold border-b">{header}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.map((row: string[], i: number) => (
+                      <tr key={i} className="border-b">
+                        {row.map((cell: string, j: number) => (
+                          <td key={j} className="p-2">{cell}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      } catch (e) {
+        return <div className="my-4 p-4 border rounded-lg text-center text-destructive">[Invalid Table Data]</div>;
+      }
     }
 
     case 'embed': {

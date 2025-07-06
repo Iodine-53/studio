@@ -15,7 +15,7 @@ const trailingNodeTypes: string[] = [
     'todoList', 
     'callout', 
     'horizontalRule', 
-    'table',
+    'interactiveTable',
     'embed'
 ];
 

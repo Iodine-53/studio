@@ -34,7 +34,7 @@ const getCommandItems = (): CommandItem[] => [
 
   // Block Elements
   { title: "Image", icon: Image, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setImage({ src: null }).run(); } },
-  { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } },
+  { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertInteractiveTable().run(); } },
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCodeBlock().run(); } },
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   

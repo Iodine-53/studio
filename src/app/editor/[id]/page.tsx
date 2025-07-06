@@ -16,10 +16,7 @@ import { Color } from '@tiptap/extension-color';
 import FontFamily from '@tiptap/extension-font-family';
 import { FontSize } from '@/lib/tiptap/extensions/FontSize';
 import { CustomImage } from '@/lib/tiptap/extensions/Image';
-import { Table } from '@tiptap/extension-table';
-import { TableRow } from '@tiptap/extension-table-row';
-import { TableHeader } from '@tiptap/extension-table-header';
-import { TableCell } from '@tiptap/extension-table-cell';
+import { InteractiveTable } from '@/lib/tiptap/extensions/InteractiveTable';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { lowlight } from 'lowlight/lib/core';
@@ -79,6 +76,10 @@ export default function EditorPage() {
         taskList: false,
         image: false,
         blockquote: false,
+        table: false,
+        tableRow: false,
+        tableHeader: false,
+        tableCell: false,
         // from original config
         link: {
             linkOnPaste: false,
@@ -106,10 +107,7 @@ export default function EditorPage() {
       FontFamily, 
       FontSize,
       CustomImage,
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableHeader,
-      TableCell,
+      InteractiveTable,
       TaskList,
       TaskItem.configure({ nested: true }),
       CodeBlockLowlight.configure({ lowlight }),
@@ -242,8 +240,8 @@ export default function EditorPage() {
             </div>
           </nav>
         </header>
-        <main className="flex-1 flex items-start justify-center p-2 sm:p-4 md:p-8">
-          <div className="flex flex-col w-full bg-card rounded-lg shadow-2xl max-w-[210mm] min-h-[85vh] border">
+        <main className="flex-1 flex flex-col items-center justify-start p-2 sm:p-4 md:p-8">
+          <div className="flex flex-col w-full bg-card rounded-lg shadow-2xl max-w-[210mm] border min-h-[85vh]">
             <TiptapEditor editor={editor} />
           </div>
         </main>
