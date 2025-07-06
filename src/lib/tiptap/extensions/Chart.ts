@@ -37,13 +37,13 @@ export const Chart = Node.create({
         }
       },
       layout: {
-        default: { width: 75 },
+        default: { width: 75, height: 320 },
         parseHTML: (element) => {
           const layoutAttr = element.getAttribute('data-layout');
           try {
-            return layoutAttr ? JSON.parse(layoutAttr) : { width: 75 };
+            return layoutAttr ? JSON.parse(layoutAttr) : { width: 75, height: 320 };
           } catch {
-            return { width: 75 };
+            return { width: 75, height: 320 };
           }
         },
         renderHTML: (attributes) => ({

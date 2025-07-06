@@ -4,6 +4,7 @@ import { BubbleMenu, Editor } from "@tiptap/react";
 import { NodeSelection } from "@tiptap/pm/state";
 import {
   Scaling,
+  MoveVertical,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
   }
 
   const currentWidth = getLayoutAttribute('width') ?? 100;
+  const currentHeight = getLayoutAttribute('height') ?? 320;
 
   return (
     <BubbleMenu
@@ -78,6 +80,28 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
                     step={1}
                     value={[currentWidth]}
                     onValueChange={(value) => updateLayoutAttribute('width', value[0])}
+                />
+            </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Height Controls with Slider */}
+      <Popover>
+        <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9">
+                <MoveVertical size={16} />
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-4">
+            <div className="space-y-4">
+                <Label htmlFor="height-slider">Height: {currentHeight}px</Label>
+                <Slider
+                    id="height-slider"
+                    min={200}
+                    max={800}
+                    step={10}
+                    value={[currentHeight]}
+                    onValueChange={(value) => updateLayoutAttribute('height', value[0])}
                 />
             </div>
         </PopoverContent>
