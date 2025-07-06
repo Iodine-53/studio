@@ -27,7 +27,7 @@ export const Chart = Node.create({
         default: '{"legend":true,"tooltip":true,"grid":true}',
       },
       textAlign: {
-        default: 'center',
+        default: 'left',
         parseHTML: element => element.getAttribute('data-text-align'),
         renderHTML: attributes => {
           if (attributes.textAlign) {
@@ -37,13 +37,13 @@ export const Chart = Node.create({
         }
       },
       layout: {
-        default: { width: 100 },
+        default: { width: 75 },
         parseHTML: (element) => {
           const layoutAttr = element.getAttribute('data-layout');
           try {
-            return layoutAttr ? JSON.parse(layoutAttr) : { width: 100 };
+            return layoutAttr ? JSON.parse(layoutAttr) : { width: 75 };
           } catch {
-            return { width: 100 };
+            return { width: 75 };
           }
         },
         renderHTML: (attributes) => ({
