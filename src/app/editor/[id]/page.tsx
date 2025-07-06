@@ -252,8 +252,8 @@ export default function EditorPage() {
             </div>
           </nav>
         </header>
-        <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
-          <div className={`w-full bg-card rounded-xl shadow-lg overflow-hidden border transition-all duration-300 ${layoutMode === 'focus' ? 'max-w-4xl' : ''}`}>
+        <main className="flex-1 flex flex-col justify-start p-4 sm:p-6 md:p-8">
+          <div className={`w-full bg-card rounded-xl shadow-lg overflow-hidden border transition-all duration-300 ${layoutMode === 'focus' ? 'max-w-4xl mx-auto' : ''}`}>
             <TiptapEditor editor={editor} />
           </div>
         </main>
