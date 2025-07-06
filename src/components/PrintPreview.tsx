@@ -314,8 +314,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
           <div style={wrapperStyle}>
             <div className="my-4 not-prose">
               <h4 className="font-bold text-lg mb-2">{title}</h4>
-              <div className="overflow-x-auto border rounded-lg">
-                <table className="w-full text-sm text-left">
+              <div className="overflow-x-auto border rounded-lg printable-table-container">
+                <table className="min-w-full text-sm text-left">
                   <thead className="bg-muted">
                     <tr>
                       {headers.map((header: string, i: number) => (

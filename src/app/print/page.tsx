@@ -24,6 +24,32 @@ export default function PrintPage() {
     }
   }, []); // The empty dependency array ensures this runs only once on mount
 
+  // New effect to scale down wide tables to fit the page
+  useEffect(() => {
+    if (!document) return;
+
+    // This needs to run after the content has been rendered to the DOM
+    const timeoutId = setTimeout(() => {
+        const tableContainers = document.querySelectorAll('.printable-table-container');
+
+        tableContainers.forEach(container => {
+            const el = container as HTMLElement;
+            const table = el.querySelector('table');
+            // If the table's actual width is greater than the container's width, scale it down.
+            if (table && el.clientWidth > 0 && table.offsetWidth > el.clientWidth) {
+                const scale = el.clientWidth / table.offsetWidth;
+                // Apply scale and set origin to top-left to keep it aligned correctly.
+                el.style.transform = `scale(${scale})`;
+                el.style.transformOrigin = 'top left';
+            }
+        });
+    }, 100); // Small delay to ensure DOM is ready for measurement
+
+    return () => clearTimeout(timeoutId);
+
+  }, [document]);
+
+
   if (!document) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -112,7 +138,8 @@ export default function PrintPage() {
               table {
                 page-break-inside: auto !important;
                 border-collapse: collapse !important;
-                width: 100% !important;
+                /* Let table take its natural width, don't force 100% */
+                width: auto;
                 margin: 15px 0 !important;
               }
               
