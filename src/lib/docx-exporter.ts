@@ -318,7 +318,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
       try {
           let imageBuffer: Buffer;
           let nodeTitle = 'Image';
-          const { layout, textAlign } = node.attrs;
+          const { layout, textAlign, caption } = node.attrs;
           
           const width = layout?.width || (node.type === 'chartBlock' ? 75 : 100);
           const align = textAlign || (node.type === 'chartBlock' ? 'left' : 'center');
@@ -398,11 +398,24 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
               default: docxAlignment = AlignmentType.LEFT;
           }
 
-          return [new Paragraph({
+          const imageParagraph = new Paragraph({
               children: [imageRun],
               alignment: docxAlignment,
-              spacing: { after: 200 },
-          })];
+              spacing: { after: (caption && node.type === 'image') ? 50 : 200 },
+          });
+          
+          const elements = [imageParagraph];
+
+          if (caption && node.type === 'image') {
+              const captionParagraph = new Paragraph({
+                  children: [new TextRun({ text: caption, italics: true, size: 18 })],
+                  alignment: docxAlignment,
+                  spacing: { after: 200 },
+              });
+              elements.push(captionParagraph);
+          }
+
+          return elements;
 
       } catch (e) {
         console.error(`Error processing ${node.type} for DOCX:`, e);
@@ -425,6 +438,16 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           spacing: { after: 200 }
       })];
     
+    case 'blockquote':
+      const blockquoteContent = (await Promise.all((node.content || []).map(convertNodeToDocx))).flat();
+        blockquoteContent.forEach(p => {
+          if (p instanceof Paragraph) {
+            p.properties.indent = { left: 400 };
+            p.properties.border = { left: { color: "auto", space: 4, style: BorderStyle.SINGLE, size: 4 } };
+          }
+        });
+        return blockquoteContent;
+
     case 'interactiveTable': {
       try {
         const { title, headers: headersJson, data: dataJson } = node.attrs;

@@ -8,9 +8,10 @@ import { Loader2, UploadCloud, Wand2 } from 'lucide-react';
 import { processImage } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { GenerateImageDialog } from '../GenerateImageDialog';
+import { Input } from '@/components/ui/input';
 
 export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
-  const { src, textAlign, layout } = node.attrs;
+  const { src, caption, textAlign, layout } = node.attrs;
   const width = layout?.width || 100;
 
   const [isLoading, setIsLoading] = useState(false);
@@ -51,14 +52,17 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
         data-align={textAlign}
         style={{ width: `${width}%` }}
       >
-        <div
-          className={cn('relative w-full group', selected && 'ring-2 ring-primary ring-offset-2 rounded-lg')}
+        <figure
+          className={cn(
+            'relative w-full group border rounded-lg overflow-hidden transition-shadow bg-card',
+            selected && 'ring-2 ring-primary ring-offset-2'
+          )}
         >
           {src ? (
-            <img src={src} alt={node.attrs.alt || ''} className="rounded-lg w-full block" />
+            <img src={src} alt={node.attrs.alt || caption || ''} className="w-full block" />
           ) : (
             <div
-              className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed rounded-lg bg-muted/50"
+              className="flex flex-col items-center justify-center w-full aspect-video"
             >
               {isLoading ? (
                 <>
@@ -83,7 +87,24 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
               )}
             </div>
           )}
-        </div>
+
+          {/* Caption Logic */}
+          {(src && (selected || caption)) && (
+            <figcaption className="p-2 border-t bg-card">
+              {selected ? (
+                <Input
+                  className="w-full text-center text-sm border-0 bg-transparent focus-visible:ring-0 p-1"
+                  placeholder="Add caption..."
+                  value={caption || ''}
+                  onChange={e => updateAttributes({ caption: e.target.value })}
+                  onClick={e => e.stopPropagation()} // Prevent editor from losing focus
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center px-2 py-1">{caption}</p>
+              )}
+            </figcaption>
+          )}
+        </figure>
       </NodeViewWrapper>
       <GenerateImageDialog
         open={isGenerateDialogOpen}

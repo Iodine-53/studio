@@ -13,7 +13,7 @@ declare module '@tiptap/core' {
       /**
        * Add an image
        */
-      setImage: (options: { src: string | null; alt?: string; title?: string }) => ReturnType;
+      setImage: (options: { src: string | null; alt?: string; title?: string; caption?: string }) => ReturnType;
     };
   }
 }
@@ -40,6 +40,9 @@ export const CustomImage = Node.create<ImageOptions>({
         default: null,
       },
       title: {
+        default: null,
+      },
+      caption: {
         default: null,
       },
       textAlign: {

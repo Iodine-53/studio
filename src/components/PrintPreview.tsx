@@ -161,7 +161,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         [
           'image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'callout',
           'horizontalRule', 'interactiveTable', 'embed', 'progressBarBlock',
-          'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock'
+          'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote'
         ].includes(childNode.type)
       );
 
@@ -172,9 +172,17 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       return <ParagraphTag style={hasStyle ? style : undefined}>{content}</ParagraphTag>;
     }
     case 'image': {
+      const { caption } = node.attrs;
       return (
         <div style={wrapperStyle}>
-            <img src={node.attrs?.src} alt={node.attrs?.alt || ''} className="my-4 rounded-lg w-full block" />
+          <figure className="my-4">
+            <img src={node.attrs?.src} alt={node.attrs?.alt || caption || ''} className="rounded-lg w-full block" />
+            {caption && (
+              <figcaption className="mt-2 text-center text-sm text-gray-600 italic">
+                {caption}
+              </figcaption>
+            )}
+          </figure>
         </div>
       );
     }
@@ -186,6 +194,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         return <li style={hasStyle ? style : undefined}>{children}</li>;
     case 'codeBlock':
         return <pre className="bg-muted text-muted-foreground p-4 rounded-md overflow-x-auto"><code>{children}</code></pre>
+    case 'blockquote':
+        return <blockquote className="border-l-4 border-muted-foreground pl-4 italic my-4">{children}</blockquote>;
     case 'horizontalRule':
         return <hr className="my-4"/>
     case 'hardBreak':
