@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Wand2
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -20,17 +20,7 @@ export interface CommandItem {
 // Type for the props of the CommandList component
 type CommandListProps = ComponentProps<typeof CommandList>;
 
-const getCommandItems = ({ onAiWriterClick }: { onAiWriterClick: () => void }): CommandItem[] => [
-  // AI Writer Command
-  { 
-    title: "AI Writer", 
-    icon: Wand2, 
-    command: ({ editor, range }) => { 
-      onAiWriterClick();
-      editor.chain().focus().deleteRange(range).run();
-    } 
-  },
-  
+const getCommandItems = (): CommandItem[] => [
   // Basic Text Formatting
   { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
   { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
@@ -138,8 +128,13 @@ export const SlashCommand = Extension.create({
                 command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
                     props.command({ editor, range });
                 },
+                items: ({ query }: { query: string }) => {
+                    return getCommandItems()
+                        .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
+                        .slice(0, 10);
+                },
+                render: renderItems,
             },
-            onAiWriterClick: () => {},
         }
     },
 
@@ -147,19 +142,7 @@ export const SlashCommand = Extension.create({
         return [
             Suggestion({
                 editor: this.editor,
-                ...this.options.suggestion,
-                items: ({ query, editor }) => {
-                    // Get the `onAiWriterClick` function directly from the configured extension on the editor instance.
-                    // This is a more robust way to access extension options from within a plugin.
-                    const onAiWriterClick = (editor.extensionManager.extensions.find(
-                        (e) => e.name === 'slash-command'
-                    ) as any)?.options.onAiWriterClick || (() => {});
-
-                    return getCommandItems({ onAiWriterClick })
-                        .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
-                        .slice(0, 10);
-                },
-                render: renderItems,
+                ...this.options.suggestion
             })
         ]
     }

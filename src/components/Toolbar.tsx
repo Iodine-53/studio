@@ -75,7 +75,7 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
 
   return (
     <TooltipProvider>
-      <div className="flex w-full flex-wrap items-center gap-1 rounded-t-xl border-b bg-muted/50 p-2">
+      <div className="sticky top-16 z-20 flex w-full flex-wrap items-center gap-1 rounded-t-xl border-b bg-card p-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Toggle
