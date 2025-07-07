@@ -1,3 +1,4 @@
+
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
@@ -77,7 +78,7 @@ const renderItems = () => {
       onUpdate(props: any) {
         component?.updateProps(props);
 
-        // If the position becomes invalid during an update, hide the popup to prevent crashes.
+        // If the position becomes invalid during an update, destroy the popup to prevent crashes.
         if (typeof props.clientRect !== 'function' || !props.clientRect()) {
           if (popup && popup[0]) {
             popup[0].destroy();

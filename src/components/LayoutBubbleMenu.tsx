@@ -44,12 +44,12 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
     const { node } = selection;
     const oldLayout = node.attrs.layout || {};
     const oldWidth = oldLayout.width ?? 100;
-    const oldHeight = oldLayout.height ?? 320; // Default chart height
 
     const newLayout: { width: number, height?: number } = { ...oldLayout, width: newWidth };
 
-    // If it's a chart, scale the height proportionally
-    if (node.type.name === 'chartBlock') {
+    // For nodes with an explicit height attribute (like charts), scale height proportionally
+    if (node.type.name === 'chartBlock' && oldLayout.height) {
+        const oldHeight = oldLayout.height;
         const scaleFactor = oldWidth > 0 ? newWidth / oldWidth : 1;
         newLayout.height = Math.round(oldHeight * scaleFactor);
     }
