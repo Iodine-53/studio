@@ -14,10 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
-import { AreaChart as AreaChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon, PieChart as PieChartIcon, Upload, X, Plus, Trash2, Settings, Check as CheckIcon, Settings2, GripVertical } from 'lucide-react';
+import { AreaChart as AreaChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon, PieChart as PieChartIcon, Upload, X, Plus, Trash2, Settings, Check as CheckIcon, Settings2, GripVertical, Wand2 } from 'lucide-react';
 import { useState, useMemo, useRef, ChangeEvent, useCallback, useEffect } from 'react';
 import Papa from 'papaparse';
 import { cn } from '@/lib/utils';
+import { GenerateChartDataDialog } from '../GenerateChartDataDialog';
+import { useToast } from '@/hooks/use-toast';
 
 type ChartType = 'bar' | 'line' | 'area' | 'pie';
 
@@ -58,6 +60,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
 
   // State for the component's own editing mode
   const [isEditing, setIsEditing] = useState(false);
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   
   // States for edit mode content
   const [title, setTitle] = useState(node.attrs.title);
@@ -68,6 +71,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
+  const { toast } = useToast();
   
   // When Tiptap selection changes, close the editor if the node is no longer selected
   useEffect(() => {
@@ -117,6 +121,41 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       viewConfig: JSON.stringify(viewConfig),
     });
     setIsEditing(false); // Close the editor UI
+  };
+
+  const handleAiGenerate = (generatedData: any[]) => {
+    if (!generatedData || generatedData.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'AI Generation Failed',
+        description: 'The AI did not return any data. Please try a different prompt.',
+      });
+      return;
+    }
+    
+    setChartData(generatedData);
+    
+    const keys = Object.keys(generatedData[0]);
+    if (keys.length > 0) {
+      const newConfig: ChartConfig = {};
+      newConfig.xAxisKey = keys[0];
+      newConfig.nameKey = keys[0];
+      
+      const numericKey = keys.find(key => typeof generatedData[0][key] === 'number');
+      if (numericKey) {
+        newConfig.dataKeys = [numericKey];
+        newConfig.valueKey = numericKey;
+      } else if (keys.length > 1) {
+        newConfig.dataKeys = [keys[1]];
+        newConfig.valueKey = keys[1];
+      }
+      setChartConfig(newConfig);
+    }
+    
+    toast({
+      title: 'AI Data Generated',
+      description: 'The chart data has been populated. Configure the appearance as needed.',
+    });
   };
 
   const onFileComplete = (data: any[], fields?: string[]) => {
@@ -271,48 +310,59 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
 
   if (isEditing) {
       return (
-          <NodeViewWrapper 
-            className="my-4 custom-node-wrapper"
-            data-align={textAlign}
-            style={{ width: `${width}%` }}
-          >
-            <Card 
-              className="overflow-hidden relative w-full ring-2 ring-primary"
+          <>
+            <NodeViewWrapper 
+              className="my-4 custom-node-wrapper"
+              data-align={textAlign}
+              style={{ width: `${width}%` }}
             >
-              <CardHeader className="flex-row items-center justify-between bg-muted/50 p-3">
-                  <Input className="text-lg font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Chart Title"/>
-                  <div className="flex gap-2">
-                    <Button onClick={handleSaveAndClose} size="sm"><CheckIcon className="mr-2 h-4 w-4" /> Save & Close</Button>
-                    <Button onClick={() => setIsEditing(false)} size="sm" variant="ghost">Cancel</Button>
-                  </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                  <Tabs defaultValue="data" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="data">Data</TabsTrigger>
-                      <TabsTrigger value="appearance">Appearance</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="data" className="mt-4 space-y-4">
-                      <div className="flex gap-2"><input type="file" accept=".csv, .json" ref={fileInputRef} onChange={handleFileChange} className="hidden" /><Button variant="secondary" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4"/>Upload</Button></div>
-                      {chartData.length > 0 && <div className="max-h-60 overflow-auto border rounded-lg"><Table><TableHeader className="sticky top-0 bg-muted"><TableRow>{availableKeys.map(key => (<TableHead key={key}><div className="flex items-center gap-1"><span>{key}</span><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveColumn(key)}><Trash2 className="h-3 w-3" /></Button></div></TableHead>))}<TableHead className="w-[50px]"></TableHead></TableRow></TableHeader><TableBody>{chartData.map((row, rowIndex) => (<TableRow key={rowIndex}>{availableKeys.map(key => (<TableCell key={key}><Input type="text" value={row[key] || ''} onChange={(e) => handleTableChange(rowIndex, key, e.target.value)} className="h-8" /></TableCell>))}<TableCell><Button variant="ghost" size="icon" onClick={() => handleRemoveRow(rowIndex)}><Trash2 className="h-4 w-4" /></Button></TableCell></TableRow>))}</TableBody></Table></div>}
-                      <div className="flex gap-2"><Button onClick={handleAddRow} size="sm"><Plus className="mr-2 h-4 w-4"/>Add Row</Button><Button onClick={handleAddColumn} size="sm" variant="outline"><Plus className="mr-2 h-4 w-4"/>Add Column</Button></div>
-                    </TabsContent>
-                    <TabsContent value="appearance" className="mt-4 space-y-4">
-                        <div className="flex items-end gap-4">
-                            <div className="flex-grow"><Label>Chart Type</Label><div className="flex items-center gap-2 mt-1">{CHART_TYPES.map(type => (<Button key={type.name} variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => setChartType(type.name)}><type.icon className="h-4 w-4"/><span className="sr-only">{type.name} chart</span></Button>))}</div></div>
-                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline"><Settings2 className="mr-2 h-4 w-4" /> View Options</Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuLabel>Display Elements</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuCheckboxItem checked={viewConfig.legend} onCheckedChange={(checked) => setViewConfig(v => ({...v, legend: checked}))}>Show Legend</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.tooltip} onCheckedChange={(checked) => setViewConfig(v => ({...v, tooltip: checked}))}>Show Tooltip</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.grid} onCheckedChange={(checked) => setViewConfig(v => ({...v, grid: checked}))}>Show Grid</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>
+              <Card 
+                className="overflow-hidden relative w-full ring-2 ring-primary"
+              >
+                <CardHeader className="flex-row items-center justify-between bg-muted/50 p-3">
+                    <Input className="text-lg font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Chart Title"/>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveAndClose} size="sm"><CheckIcon className="mr-2 h-4 w-4" /> Save & Close</Button>
+                      <Button onClick={() => setIsEditing(false)} size="sm" variant="ghost">Cancel</Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                    <Tabs defaultValue="data" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="data">Data</TabsTrigger>
+                        <TabsTrigger value="appearance">Appearance</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="data" className="mt-4 space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                          <input type="file" accept=".csv, .json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                          <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4"/>Upload</Button>
+                          <Button variant="secondary" size="sm" onClick={() => setIsAiDialogOpen(true)}><Wand2 className="mr-2 h-4 w-4"/>AI Generate</Button>
                         </div>
-                        {chartType === 'pie' ? (<div className="grid sm:grid-cols-2 gap-4"><div><Label>Name Key</Label><Select value={chartConfig.nameKey} onValueChange={key => setChartConfig({ ...chartConfig, nameKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Value Key</Label><Select value={chartConfig.valueKey} onValueChange={key => setChartConfig({ ...chartConfig, valueKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div></div>) : (<><div><Label>X-Axis</Label><Select value={chartConfig.xAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, xAxisKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Series (Y-Axis)</Label><div className="space-y-2 rounded-md border p-4 max-h-40 overflow-y-auto">{availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (<div key={key} className="flex items-center space-x-2"><Checkbox id={`key-${key}`} checked={chartConfig.dataKeys?.includes(key)} onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)} /><label htmlFor={`key-${key}`} className="text-sm font-medium leading-none">{key}</label></div>))}{availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (<p className="text-sm text-muted-foreground">Select an X-Axis key or add more columns.</p>)}</div></div></>)}
-                    </TabsContent>
-                  </Tabs>
-                  <div style={{ height: `${height}px` }} className="w-full mt-6 bg-muted/30 rounded-lg p-2">
-                    <ResponsiveContainer width="100%" height="100%">
-                      {renderChart(chartData, chartType, chartConfig, viewConfig)}
-                    </ResponsiveContainer>
-                  </div>
-              </CardContent>
-            </Card>
-          </NodeViewWrapper>
+                        {chartData.length > 0 && <div className="max-h-60 overflow-auto border rounded-lg"><Table><TableHeader className="sticky top-0 bg-muted"><TableRow>{availableKeys.map(key => (<TableHead key={key}><div className="flex items-center gap-1"><span>{key}</span><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveColumn(key)}><Trash2 className="h-3 w-3" /></Button></div></TableHead>))}<TableHead className="w-[50px]"></TableHead></TableRow></TableHeader><TableBody>{chartData.map((row, rowIndex) => (<TableRow key={rowIndex}>{availableKeys.map(key => (<TableCell key={key}><Input type="text" value={row[key] || ''} onChange={(e) => handleTableChange(rowIndex, key, e.target.value)} className="h-8" /></TableCell>))}<TableCell><Button variant="ghost" size="icon" onClick={() => handleRemoveRow(rowIndex)}><Trash2 className="h-4 w-4" /></Button></TableCell></TableRow>))}</TableBody></Table></div>}
+                        <div className="flex gap-2"><Button onClick={handleAddRow} size="sm"><Plus className="mr-2 h-4 w-4"/>Add Row</Button><Button onClick={handleAddColumn} size="sm" variant="outline"><Plus className="mr-2 h-4 w-4"/>Add Column</Button></div>
+                      </TabsContent>
+                      <TabsContent value="appearance" className="mt-4 space-y-4">
+                          <div className="flex items-end gap-4">
+                              <div className="flex-grow"><Label>Chart Type</Label><div className="flex items-center gap-2 mt-1">{CHART_TYPES.map(type => (<Button key={type.name} variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => setChartType(type.name)}><type.icon className="h-4 w-4"/><span className="sr-only">{type.name} chart</span></Button>))}</div></div>
+                              <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline"><Settings2 className="mr-2 h-4 w-4" /> View Options</Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuLabel>Display Elements</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuCheckboxItem checked={viewConfig.legend} onCheckedChange={(checked) => setViewConfig(v => ({...v, legend: checked}))}>Show Legend</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.tooltip} onCheckedChange={(checked) => setViewConfig(v => ({...v, tooltip: checked}))}>Show Tooltip</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.grid} onCheckedChange={(checked) => setViewConfig(v => ({...v, grid: checked}))}>Show Grid</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>
+                          </div>
+                          {chartType === 'pie' ? (<div className="grid sm:grid-cols-2 gap-4"><div><Label>Name Key</Label><Select value={chartConfig.nameKey} onValueChange={key => setChartConfig({ ...chartConfig, nameKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Value Key</Label><Select value={chartConfig.valueKey} onValueChange={key => setChartConfig({ ...chartConfig, valueKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div></div>) : (<><div><Label>X-Axis</Label><Select value={chartConfig.xAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, xAxisKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Series (Y-Axis)</Label><div className="space-y-2 rounded-md border p-4 max-h-40 overflow-y-auto">{availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (<div key={key} className="flex items-center space-x-2"><Checkbox id={`key-${key}`} checked={chartConfig.dataKeys?.includes(key)} onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)} /><label htmlFor={`key-${key}`} className="text-sm font-medium leading-none">{key}</label></div>))}{availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (<p className="text-sm text-muted-foreground">Select an X-Axis key or add more columns.</p>)}</div></div></>)}
+                      </TabsContent>
+                    </Tabs>
+                    <div style={{ height: `${height}px` }} className="w-full mt-6 bg-muted/30 rounded-lg p-2">
+                      <ResponsiveContainer width="100%" height="100%">
+                        {renderChart(chartData, chartType, chartConfig, viewConfig)}
+                      </ResponsiveContainer>
+                    </div>
+                </CardContent>
+              </Card>
+            </NodeViewWrapper>
+            <GenerateChartDataDialog
+              open={isAiDialogOpen}
+              onOpenChange={setIsAiDialogOpen}
+              onGenerate={handleAiGenerate}
+            />
+          </>
       );
   }
 
