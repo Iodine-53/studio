@@ -4,6 +4,7 @@
  * @fileOverview A Genkit flow for generating structured table data from a single prompt.
  *
  * - generateTableData - A function that takes a prompt and returns table headers and rows.
+ * - GenerateTableDataInput - The input type for the generateTableData function.
  * - GenerateTableDataOutput - The return type for the generateTableData function.
  */
 
@@ -11,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateTableDataInputSchema = z.object({
-  prompt: z.string().describe('The user\'s request for table content.'),
+  prompt: z.string().describe("The user's request for table content."),
 });
 export type GenerateTableDataInput = z.infer<typeof GenerateTableDataInputSchema>;
 
@@ -26,31 +27,63 @@ export async function generateTableData(input: GenerateTableDataInput): Promise<
   return generateTableDataFlow(input);
 }
 
-const generateTableDataPrompt = ai.definePrompt({
-    name: 'generateTableDataPrompt',
-    input: { schema: GenerateTableDataInputSchema },
-    output: { schema: GenerateTableDataOutputSchema },
-    prompt: `You are an expert data assistant. Based on the user's prompt, generate a set of table headers and data rows.
-
-You must generate headers and rows that are appropriate for the user's request. The number of items in each data row MUST match the number of items in the headers array.
-
-For example, if the user asks for "a 3-column table comparing fruits", you should generate appropriate headers and rows.
-
-Prompt: {{{prompt}}}
-`,
-});
 
 const generateTableDataFlow = ai.defineFlow(
   {
     name: 'generateTableDataFlow',
     inputSchema: GenerateTableDataInputSchema,
-    outputSchema: GenerateTableDataOutputSchema,
+    outputSchema: GenerateTableDataOutputSchema, // The final output should still match this schema
   },
   async (input) => {
-    const { output } = await generateTableDataPrompt(input);
-    if (!output || !output.headers || output.headers.length === 0 || !output.data) {
-      throw new Error('AI generation failed. The model returned no content or an invalid format. Please try rephrasing your prompt.');
+    const finalPrompt = `You are an expert data assistant. Based on the user's prompt, generate a JSON object representing table data.
+
+The JSON object MUST have two keys:
+1. "headers": an array of strings for the column headers.
+2. "data": an array of arrays, where each inner array is a row of string values.
+
+The number of items in each data row MUST EXACTLY match the number of items in the "headers" array.
+
+Do NOT include any markdown formatting like \`\`\`json. Return ONLY the raw JSON object string.
+
+Example prompt: "a 3-column table comparing fruits"
+Example output:
+{
+  "headers": ["Fruit", "Color", "Taste"],
+  "data": [
+    ["Apple", "Red", "Sweet"],
+    ["Banana", "Yellow", "Sweet"],
+    ["Lemon", "Yellow", "Sour"]
+  ]
+}
+
+User Prompt: "${input.prompt}"
+`;
+
+    // Ask the AI for a text response, which should be our JSON string
+    const response = await ai.generate({
+        prompt: finalPrompt,
+    });
+    
+    const jsonString = response.text?.trim();
+
+    if (!jsonString) {
+      throw new Error('AI generation failed. The model returned no content. Please try rephrasing your prompt.');
     }
-    return output;
+    
+    try {
+      // Attempt to parse the string into a JSON object
+      const parsedOutput = JSON.parse(jsonString);
+      
+      // Validate the parsed object against our desired schema
+      // This ensures the AI followed instructions correctly
+      const validatedOutput = GenerateTableDataOutputSchema.parse(parsedOutput);
+      
+      return validatedOutput;
+      
+    } catch (e) {
+      console.error("Failed to parse or validate AI's JSON output:", e);
+      console.error("AI returned string:", jsonString);
+      throw new Error("AI returned data in an invalid format. Please try again.");
+    }
   }
 );
