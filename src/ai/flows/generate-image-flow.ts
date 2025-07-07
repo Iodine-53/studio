@@ -48,14 +48,19 @@ const generateImageFlow = ai.defineFlow(
     });
 
     // Check if the generation was blocked by safety filters.
-    if (response.candidates[0]?.finishReason === 'SAFETY') {
+    if (response.candidates && response.candidates.length > 0 && response.candidates[0].finishReason === 'SAFETY') {
       throw new Error('This image could not be generated due to content safety policies. Please change your prompt and try again.');
     }
 
     const { media } = response;
 
     if (!media) {
-      throw new Error('Image generation failed. Please try again with a different prompt.');
+      // This case handles other failures, including when no candidates are returned.
+      const finishReason = response.candidates?.[0]?.finishReason;
+      if (finishReason === 'SAFETY') {
+         throw new Error('This image could not be generated due to content safety policies. Please change your prompt and try again.');
+      }
+      throw new Error('Image generation failed. The prompt may have been blocked or the service is unavailable. Please try again.');
     }
 
     // The media.url is already a data URI string, e.g., "data:image/png;base64,..."
