@@ -74,7 +74,7 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
   return (
     <TooltipProvider>
       <div className="sticky top-16 z-20 flex w-full flex-col gap-2 rounded-t-xl border-b bg-card p-2">
-        {/* First Row: Text formatting */}
+        {/* First Row: Text formatting, history, and AI */}
         <div className="flex flex-wrap items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -233,9 +233,57 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
                 </div>
             </PopoverContent>
           </Popover>
+          
+          <Separator orientation="vertical" className="h-8 mx-1" />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                size="sm"
+                onPressedChange={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                aria-label="Undo"
+              >
+                <Undo className="h-4 w-4" />
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent><p>Undo</p></TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                size="sm"
+                onPressedChange={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                aria-label="Redo"
+              >
+                <Redo className="h-4 w-4" />
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent><p>Redo</p></TooltipContent>
+          </Tooltip>
 
           <Separator orientation="vertical" className="h-8 mx-1" />
           
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onAiWriterClick}
+                className="h-9 w-9 text-accent-foreground"
+                aria-label="AI Writer"
+              >
+                <Wand2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>AI Writer</p></TooltipContent>
+          </Tooltip>
+        </div>
+        
+        {/* Second Row: Alignment and Block Types */}
+        <div className="flex flex-wrap items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
@@ -291,57 +339,9 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
             </TooltipTrigger>
             <TooltipContent><p>Justify</p></TooltipContent>
           </Tooltip>
-        </div>
-        
-        {/* Second Row: History, AI, Block Types */}
-        <div className="flex flex-wrap items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size="sm"
-                onPressedChange={() => editor.chain().focus().undo().run()}
-                disabled={!editor.can().undo()}
-                aria-label="Undo"
-              >
-                <Undo className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Undo</p></TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size="sm"
-                onPressedChange={() => editor.chain().focus().redo().run()}
-                disabled={!editor.can().redo()}
-                aria-label="Redo"
-              >
-                <Redo className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Redo</p></TooltipContent>
-          </Tooltip>
 
           <Separator orientation="vertical" className="h-8 mx-1" />
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onAiWriterClick}
-                className="h-9 w-9 text-accent-foreground"
-                aria-label="AI Writer"
-              >
-                <Wand2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>AI Writer</p></TooltipContent>
-          </Tooltip>
-
-          <Separator orientation="vertical" className="h-8 mx-1" />
-
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
