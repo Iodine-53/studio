@@ -1,0 +1,89 @@
+'use server';
+/**
+ * @fileOverview A Genkit flow for generating structured document content from a single prompt.
+ *
+ * - generateDocument - A function that takes a prompt and returns an array of structured blocks.
+ * - GenerateDocumentInput - The input type for the generateDocument function.
+ * - GenerateDocumentOutput - The return type for the generateDocument function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+// Schemas for individual block types
+const HeadingBlockSchema = z.object({
+  type: z.literal('heading'),
+  level: z.number().min(1).max(3).describe('The heading level, from 1 to 3.'),
+  content: z.string().describe('The text content of the heading.'),
+});
+
+const ParagraphBlockSchema = z.object({
+  type: z.literal('paragraph'),
+  content: z.string().describe('The text content of the paragraph. Can include multiple sentences.'),
+});
+
+const ListBlockSchema = z.object({
+  type: z.union([z.literal('bulletList'), z.literal('orderedList')]),
+  items: z.array(z.string()).describe('An array of strings, where each string is an item in the list.'),
+});
+
+const TableBlockSchema = z.object({
+    type: z.literal('interactiveTable'),
+    title: z.string().describe('A descriptive title for the table.'),
+    headers: z.array(z.string()).describe('An array of strings for the table column headers.'),
+    data: z.array(z.array(z.string())).describe('A 2D array of strings representing the table rows and cells.'),
+});
+
+// Union of all possible blocks
+const DocumentBlockSchema = z.union([
+  HeadingBlockSchema,
+  ParagraphBlockSchema,
+  ListBlockSchema,
+  TableBlockSchema,
+]);
+
+export const GenerateDocumentInputSchema = z.object({
+  prompt: z.string().describe('The user\'s request for document content.'),
+});
+export type GenerateDocumentInput = z.infer<typeof GenerateDocumentInputSchema>;
+
+export const GenerateDocumentOutputSchema = z.object({
+  blocks: z.array(DocumentBlockSchema).describe('An array of content blocks that make up the document.'),
+});
+export type GenerateDocumentOutput = z.infer<typeof GenerateDocumentOutputSchema>;
+
+
+export async function generateDocument(input: GenerateDocumentInput): Promise<GenerateDocumentOutput> {
+  return generateDocumentFlow(input);
+}
+
+
+const generateDocumentPrompt = ai.definePrompt({
+    name: 'generateDocumentPrompt',
+    input: { schema: GenerateDocumentInputSchema },
+    output: { schema: GenerateDocumentOutputSchema },
+    prompt: `You are an expert document creation assistant. Based on the user's prompt, generate a sequence of content blocks to build a document.
+
+You can create headings, paragraphs, bulleted lists, numbered lists, and tables.
+
+Analyze the user's request and structure your response as an array of block objects.
+
+For example, if the user asks for "a title about dogs, a paragraph, and then a list of dog breeds", you should generate a heading, a paragraph, and a list block.
+
+If the user asks for a table, generate a complete table with a title, headers, and data rows.
+
+Prompt: {{{prompt}}}
+`,
+});
+
+const generateDocumentFlow = ai.defineFlow(
+  {
+    name: 'generateDocumentFlow',
+    inputSchema: GenerateDocumentInputSchema,
+    outputSchema: GenerateDocumentOutputSchema,
+  },
+  async (input) => {
+    const { output } = await generateDocumentPrompt(input);
+    return output!;
+  }
+);

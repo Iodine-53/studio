@@ -15,7 +15,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { Loader2, Wand2, Sparkles, Send } from 'lucide-react';
-import { generateText } from '@/ai/flows/generate-text-flow';
+import { generateDocument, type GenerateDocumentOutput } from '@/ai/flows/generate-document-flow';
 import { brainstormIdeas } from '@/ai/flows/brainstorm-ideas';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +33,51 @@ type BrainstormMessage = {
     content: string | string[]; // AI can return a list of ideas
 }
 
+// Helper to convert AI output to Tiptap nodes
+const convertToTiptap = (aiOutput: GenerateDocumentOutput) => {
+    if (!aiOutput || !aiOutput.blocks) return [];
+
+    return aiOutput.blocks.map(block => {
+        switch (block.type) {
+            case 'heading':
+                return {
+                    type: 'heading',
+                    attrs: { level: block.level },
+                    content: [{ type: 'text', text: block.content }],
+                };
+            case 'paragraph':
+                return {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: block.content }],
+                };
+            case 'bulletList':
+            case 'orderedList':
+                return {
+                    type: block.type,
+                    content: block.items.map(item => ({
+                        type: 'listItem',
+                        content: [{
+                            type: 'paragraph',
+                            content: [{ type: 'text', text: item }],
+                        }],
+                    })),
+                };
+            case 'interactiveTable':
+                return {
+                    type: 'interactiveTable',
+                    attrs: {
+                        title: block.title,
+                        headers: JSON.stringify(block.headers),
+                        data: JSON.stringify(block.data),
+                    }
+                }
+            default:
+                return null;
+        }
+    }).filter(Boolean); // Filter out any null values from unknown block types
+};
+
+
 // Write Tab Component
 const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'>) => {
     const [prompt, setPrompt] = useState('');
@@ -44,17 +89,21 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
 
         setIsLoading(true);
         try {
-            const result = await generateText(prompt);
-            const formattedResult = result.replace(/\n/g, '<br>');
-            editor.chain().focus().insertContent(formattedResult).run();
+            const result = await generateDocument({ prompt });
+            const tiptapNodes = convertToTiptap(result);
+
+            if (tiptapNodes.length > 0) {
+                editor.chain().focus().insertContent(tiptapNodes).run();
+            }
+            
             onOpenChange(false);
             setPrompt('');
         } catch (error) {
-            console.error('AI text generation failed:', error);
+            console.error('AI document generation failed:', error);
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'Failed to generate text. Please try again.',
+                description: 'Failed to generate content. The AI may have returned an unexpected format. Please try again.',
             });
         } finally {
             setIsLoading(false);
@@ -67,7 +116,7 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
                 <Label htmlFor="ai-prompt">Your Prompt</Label>
                 <Textarea
                     id="ai-prompt"
-                    placeholder="e.g., 'Write a short poem about the moon' or 'Create a three-column table of pros and cons for remote work'"
+                    placeholder="e.g., 'Write a blog post about the benefits of hydration, including a list of tips and a table comparing water to other drinks.'"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     rows={8}
