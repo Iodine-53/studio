@@ -15,7 +15,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { Loader2, Wand2, Sparkles, Send } from 'lucide-react';
-import { generateDocument, type GenerateDocumentOutput } from '@/ai/flows/generate-document-flow';
+import { generateText } from '@/ai/flows/generate-text-flow';
 import { brainstormIdeas } from '@/ai/flows/brainstorm-ideas';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,42 +33,6 @@ type BrainstormMessage = {
     content: string | string[]; // AI can return a list of ideas
 }
 
-// Helper to convert AI output to Tiptap nodes
-const convertToTiptap = (aiOutput: GenerateDocumentOutput) => {
-    if (!aiOutput || !aiOutput.blocks) return [];
-
-    return aiOutput.blocks.map(block => {
-        switch (block.type) {
-            case 'heading':
-                return {
-                    type: 'heading',
-                    attrs: { level: block.level },
-                    content: [{ type: 'text', text: block.content }],
-                };
-            case 'paragraph':
-                return {
-                    type: 'paragraph',
-                    content: [{ type: 'text', text: block.content }],
-                };
-            case 'bulletList':
-            case 'orderedList':
-                return {
-                    type: block.type,
-                    content: block.items.map(item => ({
-                        type: 'listItem',
-                        content: [{
-                            type: 'paragraph',
-                            content: [{ type: 'text', text: item }],
-                        }],
-                    })),
-                };
-            default:
-                return null;
-        }
-    }).filter(Boolean); // Filter out any null values from unknown block types
-};
-
-
 // Write Tab Component
 const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'>) => {
     const [prompt, setPrompt] = useState('');
@@ -80,17 +44,18 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
 
         setIsLoading(true);
         try {
-            const result = await generateDocument({ prompt });
-            const tiptapNodes = convertToTiptap(result);
+            const result = await generateText(prompt);
 
-            if (tiptapNodes.length > 0) {
-                editor.chain().focus().insertContent(tiptapNodes).run();
+            if (result) {
+                editor.chain().focus().insertContent(result).run();
+            } else {
+                 throw new Error('AI generation failed. The model returned no content. Please try rephrasing your prompt.');
             }
             
             onOpenChange(false);
             setPrompt('');
         } catch (error) {
-            console.error('AI document generation failed:', error);
+            console.error('AI text generation failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
             toast({
                 variant: 'destructive',
@@ -108,7 +73,7 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
                 <Label htmlFor="ai-prompt">Your Prompt</Label>
                 <Textarea
                     id="ai-prompt"
-                    placeholder="e.g., 'Write a blog post about the benefits of hydration, including a list of tips.'"
+                    placeholder="e.g., 'Write a paragraph about the benefits of hydration.'"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     rows={8}
