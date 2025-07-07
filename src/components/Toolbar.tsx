@@ -19,7 +19,8 @@ import {
   Undo,
   Redo,
   Type,
-  Plus
+  Plus,
+  Wand2
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -34,9 +35,10 @@ import { Input } from "@/components/ui/input";
 
 type Props = {
   editor: Editor | null;
+  onAiWriterClick: () => void;
 };
 
-const Toolbar = ({ editor }: Props) => {
+const Toolbar = ({ editor, onAiWriterClick }: Props) => {
 
   if (!editor) {
     return null;
@@ -100,6 +102,23 @@ const Toolbar = ({ editor }: Props) => {
             </Toggle>
           </TooltipTrigger>
           <TooltipContent><p>Redo</p></TooltipContent>
+        </Tooltip>
+
+        <Separator orientation="vertical" className="h-8 mx-1" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onAiWriterClick}
+              className="text-accent-foreground"
+            >
+              <Wand2 className="h-4 w-4 mr-2" />
+              AI Writer
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p>Generate text with AI</p></TooltipContent>
         </Tooltip>
 
         <Separator orientation="vertical" className="h-8 mx-1" />

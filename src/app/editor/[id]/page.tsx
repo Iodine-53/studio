@@ -44,6 +44,7 @@ import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { format } from 'date-fns';
+import { AiWriterDialog } from "@/components/AiWriterDialog";
 
 // Register languages for code block syntax highlighting
 lowlight.registerLanguage('html', html);
@@ -61,6 +62,7 @@ export default function EditorPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isAiWriterOpen, setIsAiWriterOpen] = useState(false);
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   
@@ -261,7 +263,7 @@ export default function EditorPage() {
             {/* Editor Column */}
             <div className="flex-shrink-0 w-full max-w-[210mm]">
                 <div className="flex flex-col bg-card rounded-lg shadow-2xl border min-h-[85vh]">
-                    <TiptapEditor editor={editor} />
+                    <TiptapEditor editor={editor} onAiWriterClick={() => setIsAiWriterOpen(true)} />
                 </div>
             </div>
 
@@ -295,6 +297,11 @@ export default function EditorPage() {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         content={currentContent}
+      />
+      <AiWriterDialog 
+        open={isAiWriterOpen} 
+        onOpenChange={setIsAiWriterOpen} 
+        editor={editor}
       />
     </>
   );

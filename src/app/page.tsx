@@ -127,6 +127,16 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <header className="absolute top-0 left-0 right-0 p-4">
+        <div className="container mx-auto flex justify-end">
+          <div className="flex gap-2 items-center">
+              <ThemeToggle />
+              <Button variant="ghost" size="icon" asChild><a href="https://twitter.com" aria-label="Twitter"><Twitter className="h-5 w-5"/></a></Button>
+              <Button variant="ghost" size="icon" asChild><a href="https://github.com" aria-label="GitHub"><Github className="h-5 w-5"/></a></Button>
+          </div>
+        </div>
+      </header>
+      
       <main className="flex-1">
         <section className="py-20 md:py-32">
           <div className="container mx-auto px-4 md:px-6 text-center">
@@ -259,13 +269,8 @@ export default function Home() {
       </main>
 
       <footer className="py-8 bg-background border-t">
-        <div className="container mx-auto px-4 md:px-6 flex flex-col sm:flex-row items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 flex items-center justify-center">
           <p className="text-muted-foreground text-sm">&copy; {new Date().getFullYear()} ToolboxAI. All rights reserved.</p>
-          <div className="flex gap-2 mt-4 sm:mt-0 items-center">
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" asChild><a href="https://twitter.com" aria-label="Twitter"><Twitter className="h-5 w-5"/></a></Button>
-            <Button variant="ghost" size="icon" asChild><a href="https://github.com" aria-label="GitHub"><Github className="h-5 w-5"/></a></Button>
-          </div>
         </div>
       </footer>
 
