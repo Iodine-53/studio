@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Quote
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -20,7 +20,9 @@ export interface CommandItem {
 // Type for the props of the CommandList component
 type CommandListProps = ComponentProps<typeof CommandList>;
 
-const getCommandItems = (): CommandItem[] => [
+const getCommandItems = (
+  { onAiWriterClick }: { onAiWriterClick: () => void }
+): CommandItem[] => [
   // Basic Text Formatting
   { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
   { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
@@ -33,6 +35,7 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Check List", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleTaskList().run(); } },
 
   // Block Elements
+  { title: "Blockquote", icon: Quote, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleBlockquote().run(); } },
   { title: "Image", icon: Image, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setImage({ src: null }).run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertInteractiveTable().run(); } },
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCodeBlock().run(); } },
@@ -49,7 +52,7 @@ const getCommandItems = (): CommandItem[] => [
 ];
 
 const renderItems = () => {
-    let component: ReactRenderer<unknown, CommandListProps>;
+    let component: ReactRenderer<unknown, CommandListProps> | undefined;
     let popup: any;
 
     return {
@@ -75,7 +78,7 @@ const renderItems = () => {
         });
       },
       onUpdate(props: any) {
-        component.updateProps(props);
+        component?.updateProps(props);
 
         // If the position becomes invalid during an update, hide the popup to prevent crashes.
         if (typeof props.clientRect !== 'function' || !props.clientRect()) {
@@ -98,7 +101,11 @@ const renderItems = () => {
           }
           return true;
         }
-        if (!component?.ref) return false;
+        
+        // Add a guard to ensure component and its ref exist before calling onKeyDown
+        if (!component?.ref) {
+            return false;
+        }
         return (component.ref as any)?.onKeyDown(props);
       },
       onExit() {
@@ -108,6 +115,8 @@ const renderItems = () => {
         if (component) {
             component.destroy();
         }
+        // Reset component to avoid stale references
+        component = undefined;
       },
     };
   }
@@ -123,12 +132,25 @@ export const SlashCommand = Extension.create({
                     props.command({ editor, range });
                 },
                 items: ({ query }: { query: string }) => {
-                    return getCommandItems()
-                      .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
-                      .slice(0, 10);
+                    // Access the editor options from the editor instance itself
+                    const extensionOptions = this.editor.extensionManager.extensions.find(
+                        (ext) => ext.name === 'slash-command'
+                    )?.options;
+
+                    if (!extensionOptions || typeof extensionOptions.onAiWriterClick !== 'function') {
+                        // Fallback or handle error if the function isn't available
+                        return getCommandItems({ onAiWriterClick: () => console.error("AI Writer not configured")})
+                            .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
+                            .slice(0, 10);
+                    }
+                    
+                    return getCommandItems({ onAiWriterClick: extensionOptions.onAiWriterClick })
+                        .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
+                        .slice(0, 10);
                 },
                 render: renderItems,
             },
+            onAiWriterClick: () => {}, // Provide a default no-op function
         }
     },
 

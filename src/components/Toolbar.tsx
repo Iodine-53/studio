@@ -20,7 +20,8 @@ import {
   Redo,
   Type,
   Plus,
-  Wand2
+  Wand2,
+  Quote
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -110,15 +111,15 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={onAiWriterClick}
-              className="text-accent-foreground"
+              className="h-9 w-9 text-accent-foreground"
+              aria-label="AI Writer"
             >
-              <Wand2 className="h-4 w-4 mr-2" />
-              AI Writer
+              <Wand2 className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent><p>Generate text with AI</p></TooltipContent>
+          <TooltipContent><p>AI Writer</p></TooltipContent>
         </Tooltip>
 
         <Separator orientation="vertical" className="h-8 mx-1" />
@@ -343,6 +344,23 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
             </Toggle>
           </TooltipTrigger>
           <TooltipContent><p>Heading 3</p></TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Toggle
+              size="sm"
+              pressed={editor.isActive("blockquote")}
+              onPressedChange={() =>
+                editor.chain().focus().toggleBlockquote().run()
+              }
+              disabled={!editor.can().toggleBlockquote()}
+              aria-label="Toggle blockquote"
+            >
+              <Quote className="h-4 w-4" />
+            </Toggle>
+          </TooltipTrigger>
+          <TooltipContent><p>Blockquote</p></TooltipContent>
         </Tooltip>
         
         <Separator orientation="vertical" className="h-8 mx-1" />

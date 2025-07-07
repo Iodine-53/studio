@@ -81,7 +81,6 @@ export default function EditorPage() {
         taskItem: false,
         taskList: false,
         image: false,
-        blockquote: false,
         table: false,
         tableRow: false,
         tableHeader: false,
