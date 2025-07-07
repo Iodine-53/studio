@@ -9,15 +9,15 @@ import 'highlight.js/styles/atom-one-dark.css'
 // Define the component's props
 type Props = {
   editor: Editor | null;
-  onAiWriterClick: () => void;
+  onAiAssistantClick: () => void;
 };
 
 
-const TiptapEditor = ({ editor, onAiWriterClick }: Props) => {
+const TiptapEditor = ({ editor, onAiAssistantClick }: Props) => {
   return (
     <div className="relative">
       {editor && <LayoutBubbleMenu editor={editor} />}
-      <Toolbar editor={editor} onAiWriterClick={onAiWriterClick} />
+      <Toolbar editor={editor} onAiAssistantClick={onAiAssistantClick} />
       <EditorContent editor={editor} />
     </div>
   )

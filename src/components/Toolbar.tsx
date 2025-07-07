@@ -34,10 +34,10 @@ import { Input } from "@/components/ui/input";
 
 type Props = {
   editor: Editor | null;
-  onAiWriterClick: () => void;
+  onAiAssistantClick: () => void;
 };
 
-const Toolbar = ({ editor, onAiWriterClick }: Props) => {
+const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
 
   if (!editor) {
     return null;
@@ -237,7 +237,6 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
           
           <Separator orientation="vertical" className="h-8 mx-1" />
 
-          {/* History and AI Tools */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
@@ -268,33 +267,32 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
 
           <Separator orientation="vertical" className="h-8 mx-1" />
           
-          {/* AI Writer Button (Responsive) */}
           <Tooltip>
             <TooltipTrigger asChild>
               {/* This button is for mobile - icon only */}
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onAiWriterClick}
+                onClick={onAiAssistantClick}
                 className="h-9 w-9 text-accent-foreground md:hidden"
-                aria-label="AI Writer"
+                aria-label="AI Assistant"
               >
                 <Wand2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent><p>AI Writer</p></TooltipContent>
+            <TooltipContent><p>AI Assistant</p></TooltipContent>
           </Tooltip>
           
           {/* This button is for desktop - icon and text */}
           <Button
             variant="ghost"
             size="sm"
-            onClick={onAiWriterClick}
+            onClick={onAiAssistantClick}
             className="h-9 text-accent-foreground hidden md:inline-flex"
-            aria-label="AI Writer"
+            aria-label="AI Assistant"
           >
             <Wand2 className="h-4 w-4 mr-2" />
-            AI Writer
+            AI Assistant
           </Button>
 
           <Separator orientation="vertical" className="h-8 mx-1" />
