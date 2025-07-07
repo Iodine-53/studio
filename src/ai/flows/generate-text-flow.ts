@@ -19,13 +19,13 @@ const generateTextFlow = ai.defineFlow(
   },
   async (prompt) => {
     const response = await ai.generate({
-      prompt: `You are an AI writing assistant integrated into a document editor.
-      The user has provided the following prompt.
-      Fulfill their request concisely and directly, returning only the requested text.
-      Do not include any preamble, introduction, or extra formatting unless specifically asked for.
-      The generated text should be ready to be inserted directly into their document.
-      
-      Prompt: "${prompt}"`,
+      prompt: `You are a helpful AI writing assistant integrated into a document editor.
+The user has provided the following prompt. Please provide a thorough and well-structured response.
+Fulfill their request, returning only the requested text.
+Do not include any preamble, introduction, or extra formatting like Markdown unless specifically asked for.
+The generated text should be ready to be inserted directly into their document.
+
+Prompt: "${prompt}"`,
     });
     return response.text ?? '';
   }

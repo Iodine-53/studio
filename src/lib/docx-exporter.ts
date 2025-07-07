@@ -250,6 +250,10 @@ const renderProgressBarToImage = (blockTitle: string, progressBars: any[]): Prom
 
 function createTextRuns(node: TiptapNode): TextRun[] {
     return node.content?.flatMap(contentNode => {
+        if (contentNode.type === 'hardBreak') {
+            return new TextRun({ break: 1 });
+        }
+
         const text = contentNode.text || '';
         if (!text) return [];
 
