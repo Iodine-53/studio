@@ -1,0 +1,164 @@
+
+import type { Editor, Range } from "@tiptap/core";
+import { Extension } from "@tiptap/core";
+import {
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Wand2
+} from "lucide-react";
+import { ReactRenderer } from "@tiptap/react";
+import tippy from "tippy.js";
+import { CommandList } from "./CommandList";
+import type { ComponentProps } from 'react';
+import Suggestion from '@tiptap/suggestion';
+
+// Define a type for our command items
+export interface CommandItem {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  command: ({ editor, range }: { editor: Editor; range: Range }) => void;
+}
+
+// Type for the props of the CommandList component
+type CommandListProps = ComponentProps<typeof CommandList>;
+
+const getCommandItems = ({ onAiWriterClick }: { onAiWriterClick: () => void }): CommandItem[] => [
+  // AI Writer Command
+  { 
+    title: "AI Writer", 
+    icon: Wand2, 
+    command: ({ editor, range }) => { 
+      onAiWriterClick();
+      editor.chain().focus().deleteRange(range).run();
+    } 
+  },
+  
+  // Basic Text Formatting
+  { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
+  { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
+  { title: "Heading 2", icon: Heading2, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run(); } },
+  { title: "Heading 3", icon: Heading3, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run(); } },
+  
+  // Lists
+  { title: "Bullet List", icon: List, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleBulletList().run(); } },
+  { title: "Numbered List", icon: ListOrdered, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleOrderedList().run(); } },
+  { title: "Check List", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleTaskList().run(); } },
+
+  // Block Elements
+  { title: "Image", icon: Image, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setImage({ src: null }).run(); } },
+  { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertInteractiveTable().run(); } },
+  { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCodeBlock().run(); } },
+  { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
+  
+  // Custom Node Blocks
+  { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCallout().run(); } },
+  { title: "Chart", icon: AreaChart, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'chartBlock' }).run(); } },
+  { title: "Drawing", icon: PenSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'drawing' }).run(); } },
+  { title: "Accordion", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertAccordion().run(); } },
+  { title: "Todo List", icon: ListTodo, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTodoList().run(); } },
+  { title: "Embed", icon: Film, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setEmbed({ src: '' }).run(); } },
+  { title: "Progress Bars", icon: SlidersHorizontal, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertProgressBarBlock().run(); } },
+];
+
+const renderItems = () => {
+    let component: ReactRenderer<unknown, CommandListProps> | undefined;
+    let popup: any;
+
+    return {
+      onStart: (props: any) => {
+        // Guard against race-conditions: only render the popup if we have a valid clientRect
+        if (typeof props.clientRect !== 'function' || !props.clientRect()) {
+          return;
+        }
+
+        component = new ReactRenderer(CommandList, {
+          props,
+          editor: props.editor,
+        });
+
+        popup = tippy("body", {
+          getReferenceClientRect: props.clientRect,
+          appendTo: () => document.body,
+          content: component.element,
+          showOnCreate: true,
+          interactive: true,
+          trigger: "manual",
+          placement: "bottom-start",
+        });
+      },
+      onUpdate(props: any) {
+        component?.updateProps(props);
+
+        // If the position becomes invalid during an update, hide the popup to prevent crashes.
+        if (typeof props.clientRect !== 'function' || !props.clientRect()) {
+          if (popup && popup[0]) {
+            popup[0].hide();
+          }
+          return;
+        }
+
+        if (popup && popup[0]) {
+            popup[0].setProps({
+              getReferenceClientRect: props.clientRect,
+            });
+        }
+      },
+      onKeyDown(props: any) {
+        if (props.event.key === "Escape") {
+          if (popup && popup[0]) {
+            popup[0].hide();
+          }
+          return true;
+        }
+        // Fix: Check if component and its ref exist before calling onKeyDown
+        if (!component?.ref) {
+            return false;
+        }
+        return (component.ref as any)?.onKeyDown(props);
+      },
+      onExit() {
+        if (popup && popup[0]) {
+          popup[0].destroy();
+        }
+        if (component) {
+            component.destroy();
+        }
+      },
+    };
+  }
+
+export const SlashCommand = Extension.create({
+    name: 'slash-command',
+
+    addOptions() {
+        return {
+            suggestion: {
+                char: '/',
+                command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
+                    props.command({ editor, range });
+                },
+                // This is a fallback and will be overridden in addProseMirrorPlugins
+                items: ({ query }: { query: string }) => {
+                    return getCommandItems({ onAiWriterClick: () => console.error("onAiWriterClick not configured!") })
+                      .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
+                      .slice(0, 10);
+                },
+                render: renderItems,
+            },
+            onAiWriterClick: () => {},
+        }
+    },
+
+    addProseMirrorPlugins() {
+        return [
+            Suggestion({
+                editor: this.editor,
+                ...this.options.suggestion,
+                // Fix: Override `items` here to correctly bind `this.options`
+                items: ({ query }) => {
+                    return getCommandItems({ onAiWriterClick: this.options.onAiWriterClick })
+                        .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
+                        .slice(0, 10);
+                },
+            })
+        ]
+    }
+});
