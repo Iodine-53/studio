@@ -107,9 +107,7 @@ export default function EditorPage() {
           'progressBarBlock'
         ] 
       }),
-      SlashCommand.configure({
-        onAiWriterClick: () => setIsAiWriterOpen(true),
-      }),
+      SlashCommand,
       TrailingNode,
       LineHeight,
       TextStyle, 
@@ -264,7 +262,7 @@ export default function EditorPage() {
         <main className="flex-1 flex w-full justify-center gap-8 px-4 py-8">
             {/* Editor Column */}
             <div className="flex-shrink-0 w-full max-w-[210mm]">
-                <div className="flex flex-col bg-card rounded-lg shadow-2xl border min-h-[85vh]">
+                <div className="bg-card rounded-lg shadow-2xl border min-h-[85vh]">
                     <TiptapEditor editor={editor} onAiWriterClick={() => setIsAiWriterOpen(true)} />
                 </div>
             </div>

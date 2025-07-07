@@ -15,10 +15,10 @@ type Props = {
 
 const TiptapEditor = ({ editor, onAiWriterClick }: Props) => {
   return (
-    <div className="flex flex-1 flex-col justify-stretch relative">
+    <div className="relative">
       {editor && <LayoutBubbleMenu editor={editor} />}
       <Toolbar editor={editor} onAiWriterClick={onAiWriterClick} />
-      <EditorContent editor={editor} className="flex-1" />
+      <EditorContent editor={editor} />
     </div>
   )
 }
