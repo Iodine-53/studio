@@ -42,12 +42,12 @@ const DocumentBlockSchema = z.union([
   TableBlockSchema,
 ]);
 
-export const GenerateDocumentInputSchema = z.object({
+const GenerateDocumentInputSchema = z.object({
   prompt: z.string().describe('The user\'s request for document content.'),
 });
 export type GenerateDocumentInput = z.infer<typeof GenerateDocumentInputSchema>;
 
-export const GenerateDocumentOutputSchema = z.object({
+const GenerateDocumentOutputSchema = z.object({
   blocks: z.array(DocumentBlockSchema).describe('An array of content blocks that make up the document.'),
 });
 export type GenerateDocumentOutput = z.infer<typeof GenerateDocumentOutputSchema>;
