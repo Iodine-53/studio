@@ -32,7 +32,8 @@ export function GenerateImageDialog({ open, onOpenChange, onGenerate }: Props) {
     if (!prompt) return;
     setIsLoading(true);
     try {
-      const result = await generateImage(prompt);
+      const fullPrompt = `An image of ${prompt}`;
+      const result = await generateImage(fullPrompt);
       onGenerate(result);
       onOpenChange(false);
       setPrompt('');
@@ -61,17 +62,21 @@ export function GenerateImageDialog({ open, onOpenChange, onGenerate }: Props) {
         <div className="grid gap-4 py-4">
           <div className="grid w-full items-center gap-1.5">
             <Label htmlFor="image-prompt">Image Prompt</Label>
-            <Input
-              id="image-prompt"
-              placeholder="e.g., 'A photorealistic cat wearing sunglasses'"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleGenerate();
-                }
-              }}
-            />
+            <div className="flex items-center rounded-md border border-input focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+              <span className="pl-3 text-sm text-muted-foreground">An image of</span>
+              <Input
+                id="image-prompt"
+                placeholder="a cat wearing sunglasses"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleGenerate();
+                  }
+                }}
+                className="border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
