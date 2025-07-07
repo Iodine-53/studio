@@ -1,15 +1,36 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from 'date-fns';
 import { BrainstormForm } from "@/components/brainstorm-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BrainCircuit, Github, Twitter, PlusCircle } from "lucide-react";
-import { type Document, getAllDocuments, saveDocument } from "@/lib/db";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BrainCircuit, Github, Twitter, PlusCircle, MoreVertical, FileEdit, Trash2, Search } from "lucide-react";
+import { type Document, getAllDocuments, saveDocument, deleteDocument } from "@/lib/db";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { useToast } from "@/hooks/use-toast";
 
 
 const Logo = () => (
@@ -24,18 +45,27 @@ export default function Home() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
+
+  // State for document management
+  const [searchTerm, setSearchTerm] = useState("");
+  const [docToRename, setDocToRename] = useState<Document | null>(null);
+  const [newTitle, setNewTitle] = useState("");
+  const [docToDelete, setDocToDelete] = useState<Document | null>(null);
+
+  const fetchDocuments = async () => {
+    setIsLoading(true);
+    try {
+      const docs = await getAllDocuments();
+      setDocuments(docs);
+    } catch (error) {
+      console.error("Failed to fetch documents:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const docs = await getAllDocuments();
-        setDocuments(docs);
-      } catch (error) {
-        console.error("Failed to fetch documents:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchDocuments();
   }, []);
 
@@ -45,12 +75,55 @@ export default function Home() {
         title: "Untitled Document",
         content: { type: 'doc', content: [{ type: 'paragraph' }] },
       });
-      // This will navigate to a route that we will create in a future step.
       router.push(`/editor/${newDocId}`);
     } catch (error) {
       console.error("Failed to create new document:", error);
+      toast({ variant: 'destructive', title: "Error", description: "Failed to create new document." });
     }
   };
+
+  // --- Document Management Handlers ---
+
+  const handleRenameInitiate = (doc: Document) => {
+    setDocToRename(doc);
+    setNewTitle(doc.title);
+  };
+
+  const handleRenameConfirm = async () => {
+    if (!docToRename || !newTitle.trim()) return;
+    try {
+      await saveDocument({ ...docToRename, title: newTitle.trim() });
+      toast({ title: "Success", description: `Renamed to "${newTitle.trim()}"` });
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Failed to rename document:", error);
+      toast({ variant: 'destructive', title: "Error", description: "Failed to rename document." });
+    } finally {
+        setDocToRename(null);
+    }
+  };
+
+  const handleDeleteInitiate = (doc: Document) => {
+    setDocToDelete(doc);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!docToDelete?.id) return;
+    try {
+      await deleteDocument(docToDelete.id);
+      toast({ title: "Document Deleted", description: `"${docToDelete.title}" has been moved to trash.` });
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Failed to delete document:", error);
+      toast({ variant: 'destructive', title: "Error", description: "Failed to delete document." });
+    } finally {
+        setDocToDelete(null);
+    }
+  };
+
+  const filteredDocuments = documents.filter(doc => 
+    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -74,8 +147,8 @@ export default function Home() {
 
         <section id="documents" className="pb-20 md:pb-32">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="mb-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
+            <div className="mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex-grow">
                     <h3 className="text-3xl md:text-4xl font-bold font-headline">My Documents</h3>
                     <p className="text-lg text-muted-foreground mt-2">Create, edit, and manage your work.</p>
                 </div>
@@ -83,6 +156,17 @@ export default function Home() {
                     <PlusCircle className="mr-2 h-5 w-5" />
                     Create New Document
                 </Button>
+            </div>
+            
+            <div className="relative mb-8 max-w-lg">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search documents by title..."
+                    className="w-full pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
             
             {isLoading ? (
@@ -100,25 +184,51 @@ export default function Home() {
                 </div>
             ) : documents.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {documents.map((doc) => (
+                {filteredDocuments.map((doc) => (
                   doc.id && (
-                    <Link href={`/editor/${doc.id}`} key={doc.id} className="block h-full">
-                        <Card className="h-full flex flex-col transition-all duration-300 hover:border-primary hover:shadow-xl hover:-translate-y-1 bg-card">
-                          <CardHeader className="flex-grow">
-                              <CardTitle className="truncate text-2xl font-headline">{doc.title}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                              <CardDescription>
-                                Updated: {format(new Date(doc.updatedAt), 'PP')}
-                              </CardDescription>
-                          </CardContent>
-                        </Card>
-                    </Link>
+                    <Card 
+                        key={doc.id} 
+                        className="flex flex-col bg-card relative group transition-all duration-300 hover:border-primary hover:shadow-xl hover:-translate-y-1"
+                    >
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenuItem onClick={() => handleRenameInitiate(doc)}>
+                                    <FileEdit className="mr-2 h-4 w-4" />
+                                    <span>Rename</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDeleteInitiate(doc)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Delete</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        
+                        <div onClick={() => router.push(`/editor/${doc.id}`)} className="flex flex-col flex-grow h-full cursor-pointer">
+                            <CardHeader className="flex-grow">
+                                <CardTitle className="truncate text-2xl font-headline group-hover:underline">{doc.title}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>
+                                    Updated: {format(new Date(doc.updatedAt), 'PP')}
+                                </CardDescription>
+                            </CardContent>
+                        </div>
+                    </Card>
                   )
                 ))}
               </div>
             ) : (
-                <div className="text-center py-16 px-6 rounded-2xl border-2 border-dashed bg-primary/5">
+                <div className="text-center py-16 px-6 rounded-2xl border-2 border-dashed bg-card/50">
                     <h4 className="text-2xl font-bold font-headline">Your workspace is empty</h4>
                     <p className="text-muted-foreground mt-2 mb-6">Click the button to create your first document.</p>
                     <Button onClick={handleCreateNew}>
@@ -151,12 +261,62 @@ export default function Home() {
       <footer className="py-8 bg-background border-t">
         <div className="container mx-auto px-4 md:px-6 flex flex-col sm:flex-row items-center justify-between">
           <p className="text-muted-foreground text-sm">&copy; {new Date().getFullYear()} ToolboxAI. All rights reserved.</p>
-          <div className="flex gap-2 mt-4 sm:mt-0">
-             <Button variant="ghost" size="icon" asChild><a href="#" aria-label="Twitter"><Twitter className="h-5 w-5"/></a></Button>
-             <Button variant="ghost" size="icon" asChild><a href="#" aria-label="GitHub"><Github className="h-5 w-5"/></a></Button>
+          <div className="flex gap-2 mt-4 sm:mt-0 items-center">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" asChild><a href="https://twitter.com" aria-label="Twitter"><Twitter className="h-5 w-5"/></a></Button>
+            <Button variant="ghost" size="icon" asChild><a href="https://github.com" aria-label="GitHub"><Github className="h-5 w-5"/></a></Button>
           </div>
         </div>
       </footer>
+
+      {/* Dialog for Renaming Document */}
+      <Dialog open={!!docToRename} onOpenChange={() => setDocToRename(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Document</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="doc-title" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="doc-title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="col-span-3"
+                onKeyDown={(e) => e.key === 'Enter' && handleRenameConfirm()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDocToRename(null)}>Cancel</Button>
+            <Button onClick={handleRenameConfirm}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alert Dialog for Deleting Document */}
+      <AlertDialog open={!!docToDelete} onOpenChange={() => setDocToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              document titled "{docToDelete?.title}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
