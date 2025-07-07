@@ -12,23 +12,23 @@ import {z} from 'genkit';
 
 // Schemas for individual block types
 const HeadingBlockSchema = z.object({
-  type: z.literal('heading'),
+  type: z.string().describe("The type of content block. For a heading, this MUST be the exact string 'heading'."),
   level: z.number().min(1).max(3).describe('The heading level, from 1 to 3.'),
   content: z.string().describe('The text content of the heading.'),
 });
 
 const ParagraphBlockSchema = z.object({
-  type: z.literal('paragraph'),
+  type: z.string().describe("The type of content block. For a paragraph, this MUST be the exact string 'paragraph'."),
   content: z.string().describe('The text content of the paragraph. Can include multiple sentences.'),
 });
 
 const ListBlockSchema = z.object({
-  type: z.union([z.literal('bulletList'), z.literal('orderedList')]),
+  type: z.enum(['bulletList', 'orderedList']).describe("The type of list. Can be 'bulletList' or 'orderedList'."),
   items: z.array(z.string()).describe('An array of strings, where each string is an item in the list.'),
 });
 
 const TableBlockSchema = z.object({
-    type: z.literal('interactiveTable'),
+    type: z.string().describe("The type of content block. For a table, this MUST be the exact string 'interactiveTable'."),
     title: z.string().describe('A descriptive title for the table.'),
     headers: z.array(z.string()).describe('An array of strings for the table column headers.'),
     data: z.array(z.array(z.string())).describe('A 2D array of strings representing the table rows and cells.'),
