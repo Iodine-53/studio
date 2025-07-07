@@ -54,14 +54,15 @@ const renderItems = () => {
 
     return {
       onStart: (props: any) => {
+        // Guard against race-conditions: only render the popup if we have a valid clientRect
+        if (typeof props.clientRect !== 'function' || !props.clientRect()) {
+          return;
+        }
+
         component = new ReactRenderer(CommandList, {
           props,
           editor: props.editor,
         });
-
-        if (!props.clientRect) {
-          return;
-        }
 
         popup = tippy("body", {
           getReferenceClientRect: props.clientRect,
@@ -76,11 +77,15 @@ const renderItems = () => {
       onUpdate(props: any) {
         component.updateProps(props);
 
-        if (!props.clientRect) {
+        // If the position becomes invalid during an update, hide the popup to prevent crashes.
+        if (typeof props.clientRect !== 'function' || !props.clientRect()) {
+          if (popup && popup[0]) {
+            popup[0].hide();
+          }
           return;
         }
 
-        if (popup) {
+        if (popup && popup[0]) {
             popup[0].setProps({
               getReferenceClientRect: props.clientRect,
             });
@@ -88,7 +93,7 @@ const renderItems = () => {
       },
       onKeyDown(props: any) {
         if (props.event.key === "Escape") {
-          if (popup) {
+          if (popup && popup[0]) {
             popup[0].hide();
           }
           return true;
