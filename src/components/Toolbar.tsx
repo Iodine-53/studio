@@ -268,13 +268,15 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
 
           <Separator orientation="vertical" className="h-8 mx-1" />
           
+          {/* AI Writer Button (Responsive) */}
           <Tooltip>
             <TooltipTrigger asChild>
+              {/* This button is for mobile - icon only */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onAiWriterClick}
-                className="h-9 w-9 text-accent-foreground"
+                className="h-9 w-9 text-accent-foreground md:hidden"
                 aria-label="AI Writer"
               >
                 <Wand2 className="h-4 w-4" />
@@ -282,9 +284,20 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
             </TooltipTrigger>
             <TooltipContent><p>AI Writer</p></TooltipContent>
           </Tooltip>
+          
+          {/* This button is for desktop - icon and text */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onAiWriterClick}
+            className="h-9 text-accent-foreground hidden md:inline-flex"
+            aria-label="AI Writer"
+          >
+            <Wand2 className="h-4 w-4 mr-2" />
+            AI Writer
+          </Button>
 
-          {/* Vertical separator for larger screens */}
-          <Separator orientation="vertical" className="h-8 mx-1 hidden md:flex" />
+          <Separator orientation="vertical" className="h-8 mx-1" />
 
           {/* Alignment and Block Tools */}
           <Tooltip>
