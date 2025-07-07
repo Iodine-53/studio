@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for generating structured document content from a single prompt.
@@ -84,6 +85,10 @@ const generateDocumentFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await generateDocumentPrompt(input);
-    return output!;
+    if (!output || !output.blocks || output.blocks.length === 0) {
+      // This allows the frontend to catch the error and display a message.
+      throw new Error('AI generation failed. The model returned no content. Please try rephrasing your prompt.');
+    }
+    return output;
   }
 );

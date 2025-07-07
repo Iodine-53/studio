@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,10 +39,11 @@ export function BrainstormForm() {
       setResult(response);
     } catch (error) {
       console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       toast({
         variant: 'destructive',
         title: 'An error occurred.',
-        description: 'Failed to brainstorm ideas. Please try again.',
+        description: errorMessage,
       });
     } finally {
       setLoading(false);

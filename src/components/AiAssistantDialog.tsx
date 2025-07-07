@@ -100,10 +100,11 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
             setPrompt('');
         } catch (error) {
             console.error('AI document generation failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'Failed to generate content. The AI may have returned an unexpected format. Please try again.',
+                description: errorMessage,
             });
         } finally {
             setIsLoading(false);
@@ -153,10 +154,11 @@ const BrainstormTab = () => {
             setMessages([...newMessages, { role: 'ai', content: response.ideas }]);
         } catch (error) {
             console.error('AI brainstorming failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'Failed to get ideas. Please try again.',
+                description: errorMessage,
             });
             // remove the user message if it fails
             setMessages(messages);
