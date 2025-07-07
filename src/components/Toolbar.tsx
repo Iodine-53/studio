@@ -74,9 +74,8 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
 
   return (
     <TooltipProvider>
-      <div className="sticky top-16 z-20 flex w-full flex-col gap-2 rounded-t-xl border-b bg-card p-2">
-        {/* First Row: Text formatting, history, and AI */}
-        <div className="flex flex-wrap items-center gap-1">
+      <div className="sticky top-16 z-20 flex w-full flex-wrap items-center gap-1 rounded-t-xl border-b bg-card p-2">
+          {/* Text Formatting Tools */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
@@ -138,7 +137,8 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
           </Tooltip>
           
           <Separator orientation="vertical" className="h-8 mx-1" />
-
+          
+          {/* Font and Text Style Popovers */}
           <Popover>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -237,6 +237,7 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
           
           <Separator orientation="vertical" className="h-8 mx-1" />
 
+          {/* History and AI Tools */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
@@ -281,10 +282,11 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
             </TooltipTrigger>
             <TooltipContent><p>AI Writer</p></TooltipContent>
           </Tooltip>
-        </div>
-        
-        {/* Second Row: Alignment and Block Types */}
-        <div className="flex flex-wrap items-center gap-1">
+
+          {/* Vertical separator for larger screens */}
+          <Separator orientation="vertical" className="h-8 mx-1 hidden md:flex" />
+
+          {/* Alignment and Block Tools */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
@@ -406,7 +408,6 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
             </TooltipTrigger>
             <TooltipContent><p>Insert a block (triggers /)</p></TooltipContent>
           </Tooltip>
-        </div>
       </div>
     </TooltipProvider>
   );

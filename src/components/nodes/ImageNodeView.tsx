@@ -90,7 +90,7 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
 
           {/* Caption Logic */}
           {(src && (selected || caption)) && (
-            <figcaption className="p-2 border-t bg-card">
+            <figcaption className="px-2 pt-1.5 pb-2 border-t bg-card">
               {selected ? (
                 <Input
                   className="w-full text-center text-sm border-0 bg-transparent focus-visible:ring-0 p-1"
