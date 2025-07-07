@@ -20,9 +20,7 @@ export interface CommandItem {
 // Type for the props of the CommandList component
 type CommandListProps = ComponentProps<typeof CommandList>;
 
-const getCommandItems = (
-  { onAiWriterClick }: { onAiWriterClick: () => void }
-): CommandItem[] => [
+const getCommandItems = (): CommandItem[] => [
   // Basic Text Formatting
   { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
   { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
@@ -132,25 +130,12 @@ export const SlashCommand = Extension.create({
                     props.command({ editor, range });
                 },
                 items: ({ query }: { query: string }) => {
-                    // Access the editor options from the editor instance itself
-                    const extensionOptions = this.editor.extensionManager.extensions.find(
-                        (ext) => ext.name === 'slash-command'
-                    )?.options;
-
-                    if (!extensionOptions || typeof extensionOptions.onAiWriterClick !== 'function') {
-                        // Fallback or handle error if the function isn't available
-                        return getCommandItems({ onAiWriterClick: () => console.error("AI Writer not configured")})
-                            .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
-                            .slice(0, 10);
-                    }
-                    
-                    return getCommandItems({ onAiWriterClick: extensionOptions.onAiWriterClick })
+                    return getCommandItems()
                         .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
                         .slice(0, 10);
                 },
                 render: renderItems,
             },
-            onAiWriterClick: () => {}, // Provide a default no-op function
         }
     },
 
