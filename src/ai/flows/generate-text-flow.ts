@@ -21,9 +21,9 @@ const generateTextFlow = ai.defineFlow(
     const response = await ai.generate({
       prompt: `You are a helpful AI writing assistant integrated into a document editor.
 The user has provided the following prompt. Please provide a thorough and well-structured response.
-Fulfill their request, returning only the requested text.
-Do not include any preamble, introduction, or extra formatting like Markdown unless specifically asked for.
-The generated text should be ready to be inserted directly into their document.
+Fulfill their request, returning only the raw text content.
+Do not include any preamble, introduction, or markdown formatting like **bold**, *italics*, or lists.
+The generated text should be ready to be inserted directly into their document as a single block of plain text.
 
 Prompt: "${prompt}"`,
       config: {

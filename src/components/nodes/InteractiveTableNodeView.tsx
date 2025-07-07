@@ -8,16 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit, Upload, Download, Plus, Trash2, Check } from 'lucide-react';
+import { Edit, Upload, Download, Plus, Trash2, Check, Wand2 } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse';
 import { cn } from '@/lib/utils';
+import { GenerateTableDataDialog } from '../GenerateTableDataDialog';
+import { useToast } from '@/hooks/use-toast';
 
 export const InteractiveTableNodeView: React.FC<NodeViewProps> = ({ node, updateAttributes, selected }) => {
   const { textAlign, layout } = node.attrs;
   const width = layout?.width || 100;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   
   // Local state for editing
   const [title, setTitle] = useState(node.attrs.title);
@@ -26,6 +29,7 @@ export const InteractiveTableNodeView: React.FC<NodeViewProps> = ({ node, update
   const [newColumnName, setNewColumnName] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const parseJsonOrReturn = (jsonString: string, defaultValue: any) => {
     try {
@@ -57,6 +61,15 @@ export const InteractiveTableNodeView: React.FC<NodeViewProps> = ({ node, update
   const handleEditClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       setIsEditing(true);
+  };
+  
+  const handleAiGenerate = (generated: { headers: string[], data: string[][] }) => {
+    setHeaders(generated.headers);
+    setData(generated.data);
+    toast({
+        title: "AI Data Generated",
+        description: "The table has been populated with the generated data.",
+    });
   };
 
   const handleHeaderChange = (index: number, value: string) => {
@@ -126,71 +139,79 @@ export const InteractiveTableNodeView: React.FC<NodeViewProps> = ({ node, update
 
   if (isEditing) {
     return (
-      <NodeViewWrapper
-        className="my-4 custom-node-wrapper"
-        data-align={textAlign}
-        style={{ width: `${width}%` }}
-      >
-        <Card className="overflow-hidden w-full ring-2 ring-primary">
-          <CardHeader className="bg-muted/50 p-3 space-y-2">
-            <div className="flex justify-between items-center">
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="text-lg font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
-                  placeholder="Table Title"
-                />
-                <div className="flex gap-2">
-                    <Button onClick={handleSave} size="sm"><Check className="mr-2 h-4 w-4" /> Save</Button>
-                    <Button onClick={() => setIsEditing(false)} size="sm" variant="ghost">Cancel</Button>
-                </div>
-            </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline"><Upload className="mr-2 h-4 w-4" /> Import CSV</Button>
-              <input type="file" ref={fileInputRef} onChange={handleImport} accept=".csv" className="hidden" />
-              <Button onClick={handleExport} size="sm" variant="outline"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-              <Button onClick={addRow} size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" /> Add Row</Button>
-              <div className="flex gap-1">
-                <Input placeholder="New Column..." value={newColumnName} onChange={(e) => setNewColumnName(e.target.value)} className="h-9 w-32" />
-                <Button onClick={addColumn} size="sm"><Plus className="mr-2 h-4 w-4" /> Add Col</Button>
+      <>
+        <NodeViewWrapper
+          className="my-4 custom-node-wrapper"
+          data-align={textAlign}
+          style={{ width: `${width}%` }}
+        >
+          <Card className="overflow-hidden w-full ring-2 ring-primary">
+            <CardHeader className="bg-muted/50 p-3 space-y-2">
+              <div className="flex justify-between items-center">
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="text-lg font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
+                    placeholder="Table Title"
+                  />
+                  <div className="flex gap-2">
+                      <Button onClick={handleSave} size="sm"><Check className="mr-2 h-4 w-4" /> Save</Button>
+                      <Button onClick={() => setIsEditing(false)} size="sm" variant="ghost">Cancel</Button>
+                  </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {headers.map((header, colIndex) => (
-                      <TableHead key={colIndex}>
-                        <div className="flex items-center gap-1">
-                           <Input value={header} onChange={e => handleHeaderChange(colIndex, e.target.value)} className="font-bold"/>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive" onClick={() => deleteColumn(colIndex)}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </TableHead>
-                    ))}
-                    <TableHead className="w-[50px] sticky right-0 bg-muted/95"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((row, rowIndex) => (
-                    <TableRow key={rowIndex}>
-                      {row.map((cell, colIndex) => (
-                        <TableCell key={colIndex}>
-                          <Input value={cell} onChange={e => handleCellChange(rowIndex, colIndex, e.target.value)} />
-                        </TableCell>
+              <div className="flex flex-wrap gap-2 items-center">
+                <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline"><Upload className="mr-2 h-4 w-4" /> Import CSV</Button>
+                <input type="file" ref={fileInputRef} onChange={handleImport} accept=".csv" className="hidden" />
+                <Button onClick={handleExport} size="sm" variant="outline"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                <Button onClick={() => setIsAiDialogOpen(true)} size="sm" variant="outline"><Wand2 className="mr-2 h-4 w-4"/> Generate Data</Button>
+                <Button onClick={addRow} size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" /> Add Row</Button>
+                <div className="flex gap-1">
+                  <Input placeholder="New Column..." value={newColumnName} onChange={(e) => setNewColumnName(e.target.value)} className="h-9 w-32" />
+                  <Button onClick={addColumn} size="sm"><Plus className="mr-2 h-4 w-4" /> Add Col</Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {headers.map((header, colIndex) => (
+                        <TableHead key={colIndex}>
+                          <div className="flex items-center gap-1">
+                             <Input value={header} onChange={e => handleHeaderChange(colIndex, e.target.value)} className="font-bold"/>
+                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive" onClick={() => deleteColumn(colIndex)}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </TableHead>
                       ))}
-                      <TableCell className="sticky right-0 bg-card">
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive" onClick={() => deleteRow(rowIndex)}><Trash2 className="h-4 w-4" /></Button>
-                      </TableCell>
+                      <TableHead className="w-[50px] sticky right-0 bg-muted/95"></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </NodeViewWrapper>
+                  </TableHeader>
+                  <TableBody>
+                    {data.map((row, rowIndex) => (
+                      <TableRow key={rowIndex}>
+                        {row.map((cell, colIndex) => (
+                          <TableCell key={colIndex}>
+                            <Input value={cell} onChange={e => handleCellChange(rowIndex, colIndex, e.target.value)} />
+                          </TableCell>
+                        ))}
+                        <TableCell className="sticky right-0 bg-card">
+                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive" onClick={() => deleteRow(rowIndex)}><Trash2 className="h-4 w-4" /></Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </NodeViewWrapper>
+        <GenerateTableDataDialog
+            open={isAiDialogOpen}
+            onOpenChange={setIsAiDialogOpen}
+            onGenerate={handleAiGenerate}
+        />
+      </>
     );
   }
 
