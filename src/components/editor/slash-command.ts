@@ -1,4 +1,3 @@
-
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
@@ -81,7 +80,8 @@ const renderItems = () => {
         // If the position becomes invalid during an update, hide the popup to prevent crashes.
         if (typeof props.clientRect !== 'function' || !props.clientRect()) {
           if (popup && popup[0]) {
-            popup[0].hide();
+            popup[0].destroy();
+            popup = undefined;
           }
           return;
         }
@@ -115,6 +115,7 @@ const renderItems = () => {
         }
         // Reset component to avoid stale references
         component = undefined;
+        popup = undefined;
       },
     };
   }
