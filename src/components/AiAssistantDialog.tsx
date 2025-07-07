@@ -62,15 +62,6 @@ const convertToTiptap = (aiOutput: GenerateDocumentOutput) => {
                         }],
                     })),
                 };
-            case 'interactiveTable':
-                return {
-                    type: 'interactiveTable',
-                    attrs: {
-                        title: block.title,
-                        headers: JSON.stringify(block.headers),
-                        data: JSON.stringify(block.data),
-                    }
-                }
             default:
                 return null;
         }
@@ -117,7 +108,7 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
                 <Label htmlFor="ai-prompt">Your Prompt</Label>
                 <Textarea
                     id="ai-prompt"
-                    placeholder="e.g., 'Write a blog post about the benefits of hydration, including a list of tips and a table comparing water to other drinks.'"
+                    placeholder="e.g., 'Write a blog post about the benefits of hydration, including a list of tips.'"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     rows={8}

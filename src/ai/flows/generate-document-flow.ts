@@ -28,19 +28,11 @@ const ListBlockSchema = z.object({
   items: z.array(z.string()).describe('An array of strings, where each string is an item in the list.'),
 });
 
-const TableBlockSchema = z.object({
-    type: z.string().describe("The type of content block. For a table, this MUST be the exact string 'interactiveTable'."),
-    title: z.string().describe('A descriptive title for the table.'),
-    headers: z.array(z.string()).describe('An array of strings for the table column headers.'),
-    data: z.array(z.array(z.string())).describe('A 2D array of strings representing the table rows and cells.'),
-});
-
 // Union of all possible blocks
 const DocumentBlockSchema = z.union([
   HeadingBlockSchema,
   ParagraphBlockSchema,
   ListBlockSchema,
-  TableBlockSchema,
 ]);
 
 const GenerateDocumentInputSchema = z.object({
@@ -65,13 +57,11 @@ const generateDocumentPrompt = ai.definePrompt({
     output: { schema: GenerateDocumentOutputSchema },
     prompt: `You are an expert document creation assistant. Based on the user's prompt, generate a sequence of content blocks to build a document.
 
-You can create headings, paragraphs, bulleted lists, numbered lists, and tables.
+You can create headings (levels 1-3), paragraphs, bulleted lists, and ordered lists.
 
 Analyze the user's request and structure your response as an array of block objects.
 
 For example, if the user asks for "a title about dogs, a paragraph, and then a list of dog breeds", you should generate a heading, a paragraph, and a list block.
-
-If the user asks for a table, generate a complete table with a title, headers, and data rows.
 
 Prompt: {{{prompt}}}
 `,
