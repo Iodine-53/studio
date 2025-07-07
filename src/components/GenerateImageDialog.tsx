@@ -38,10 +38,11 @@ export function GenerateImageDialog({ open, onOpenChange, onGenerate }: Props) {
       setPrompt('');
     } catch (error) {
       console.error('AI image generation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred. Please try again.';
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to generate image. Please try again.',
+        title: 'Image Generation Failed',
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);

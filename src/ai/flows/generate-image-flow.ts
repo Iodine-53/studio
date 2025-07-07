@@ -20,7 +20,7 @@ const generateImageFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (prompt) => {
-    const { media } = await ai.generate({
+    const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: prompt,
       config: {
@@ -47,8 +47,15 @@ const generateImageFlow = ai.defineFlow(
       },
     });
 
+    // Check if the generation was blocked by safety filters.
+    if (response.candidates[0]?.finishReason === 'SAFETY') {
+      throw new Error('This image could not be generated due to content safety policies. Please change your prompt and try again.');
+    }
+
+    const { media } = response;
+
     if (!media) {
-      throw new Error('Image generation failed to return media.');
+      throw new Error('Image generation failed. Please try again with a different prompt.');
     }
 
     // The media.url is already a data URI string, e.g., "data:image/png;base64,..."
