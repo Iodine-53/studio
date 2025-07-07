@@ -188,6 +188,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         return <pre className="bg-muted text-muted-foreground p-4 rounded-md overflow-x-auto"><code>{children}</code></pre>
     case 'horizontalRule':
         return <hr className="my-4"/>
+    case 'hardBreak':
+        return <br />;
     case 'tableHeader':
         return <th className="border p-2 font-bold text-left bg-muted">{children}</th>;
     case 'tableCell':
