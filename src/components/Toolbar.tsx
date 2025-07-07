@@ -7,8 +7,6 @@ import {
   Italic,
   Strikethrough,
   Heading1,
-  Heading2,
-  Heading3,
   Pilcrow,
   Underline,
   AlignLeft,
@@ -312,38 +310,6 @@ const Toolbar = ({ editor, onAiWriterClick }: Props) => {
             </Toggle>
           </TooltipTrigger>
           <TooltipContent><p>Heading 1</p></TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Toggle
-              size="sm"
-              pressed={editor.isActive("heading", { level: 2 })}
-              onPressedChange={() =>
-                editor.chain().focus().toggleHeading({ level: 2 }).run()
-              }
-              aria-label="Toggle heading 2"
-            >
-              <Heading2 className="h-4 w-4" />
-            </Toggle>
-          </TooltipTrigger>
-          <TooltipContent><p>Heading 2</p></TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Toggle
-              size="sm"
-              pressed={editor.isActive("heading", { level: 3 })}
-              onPressedChange={() =>
-                editor.chain().focus().toggleHeading({ level: 3 }).run()
-              }
-              aria-label="Toggle heading 3"
-            >
-              <Heading3 className="h-4 w-4" />
-            </Toggle>
-          </TooltipTrigger>
-          <TooltipContent><p>Heading 3</p></TooltipContent>
         </Tooltip>
 
         <Tooltip>
