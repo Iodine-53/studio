@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for generating structured table data from a single prompt.
@@ -14,7 +15,7 @@ const GenerateTableDataInputSchema = z.object({
 });
 export type GenerateTableDataInput = z.infer<typeof GenerateTableDataInputSchema>;
 
-export const GenerateTableDataOutputSchema = z.object({
+const GenerateTableDataOutputSchema = z.object({
   headers: z.array(z.string()).describe('An array of strings representing the table column headers.'),
   data: z.array(z.array(z.string())).describe('An array of arrays, where each inner array represents a row of table data.'),
 });
