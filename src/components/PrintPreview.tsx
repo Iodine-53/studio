@@ -153,8 +153,24 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       const level = node.attrs?.level || 1;
       const Tag = `h${level}` as keyof JSX.IntrinsicElements;
       return <Tag style={hasStyle ? style : undefined}>{children}</Tag>;
-    case 'paragraph':
-      return <p style={hasStyle ? style : undefined}>{children || <br/>}</p>;
+    case 'paragraph': {
+      // A paragraph should not contain block-level children according to the HTML spec.
+      // If the Tiptap JSON has a block node inside a paragraph, we render the paragraph as a <div>
+      // to prevent an invalid HTML structure like <p><div>...</div></p>, which causes hydration errors.
+      const hasBlockChild = node.content?.some(childNode =>
+        [
+          'image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'callout',
+          'horizontalRule', 'interactiveTable', 'embed', 'progressBarBlock',
+          'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock'
+        ].includes(childNode.type)
+      );
+
+      const ParagraphTag = hasBlockChild ? 'div' : 'p';
+      
+      const content = children || (ParagraphTag === 'p' ? <br/> : null);
+
+      return <ParagraphTag style={hasStyle ? style : undefined}>{content}</ParagraphTag>;
+    }
     case 'image': {
       return (
         <div style={wrapperStyle}>
@@ -454,3 +470,5 @@ export const PrintPreview: FC<PrintPreviewProps> = ({ isOpen, onClose, content }
     </div>
   );
 };
+
+    
