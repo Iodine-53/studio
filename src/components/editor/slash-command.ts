@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Wand2
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -20,7 +20,17 @@ export interface CommandItem {
 // Type for the props of the CommandList component
 type CommandListProps = ComponentProps<typeof CommandList>;
 
-const getCommandItems = (): CommandItem[] => [
+const getCommandItems = ({ onAiWriterClick }: { onAiWriterClick: () => void }): CommandItem[] => [
+  // AI Writer Command
+  { 
+    title: "AI Writer", 
+    icon: Wand2, 
+    command: ({ editor, range }) => { 
+      onAiWriterClick();
+      editor.chain().focus().deleteRange(range).run();
+    } 
+  },
+  
   // Basic Text Formatting
   { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
   { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
@@ -122,12 +132,13 @@ export const SlashCommand = Extension.create({
                     props.command({ editor, range });
                 },
                 items: ({ query }: { query: string }) => {
-                    return getCommandItems()
+                    return getCommandItems({ onAiWriterClick: (this.options as any).onAiWriterClick })
                       .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
                       .slice(0, 10);
                 },
                 render: renderItems,
             },
+            onAiWriterClick: () => {},
         }
     },
 

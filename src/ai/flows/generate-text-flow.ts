@@ -26,6 +26,9 @@ Do not include any preamble, introduction, or extra formatting like Markdown unl
 The generated text should be ready to be inserted directly into their document.
 
 Prompt: "${prompt}"`,
+      config: {
+        responseModalities: ['TEXT'], // Ensure only text is returned
+      },
     });
     return response.text ?? '';
   }

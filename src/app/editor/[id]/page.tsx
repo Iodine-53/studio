@@ -107,7 +107,9 @@ export default function EditorPage() {
           'progressBarBlock'
         ] 
       }),
-      SlashCommand,
+      SlashCommand.configure({
+        onAiWriterClick: () => setIsAiWriterOpen(true),
+      }),
       TrailingNode,
       LineHeight,
       TextStyle, 
