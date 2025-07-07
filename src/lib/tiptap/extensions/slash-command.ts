@@ -108,7 +108,8 @@ const renderItems = () => {
           }
           return true;
         }
-        // Fix: Check if component and its ref exist before calling onKeyDown
+        
+        // Add a guard to ensure component and its ref exist before calling onKeyDown
         if (!component?.ref) {
             return false;
         }
@@ -121,6 +122,8 @@ const renderItems = () => {
         if (component) {
             component.destroy();
         }
+        // Reset component to avoid stale references
+        component = undefined;
       },
     };
   }
@@ -135,13 +138,6 @@ export const SlashCommand = Extension.create({
                 command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
                     props.command({ editor, range });
                 },
-                // This is a fallback and will be overridden in addProseMirrorPlugins
-                items: ({ query }: { query: string }) => {
-                    return getCommandItems({ onAiWriterClick: () => console.error("onAiWriterClick not configured!") })
-                      .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
-                      .slice(0, 10);
-                },
-                render: renderItems,
             },
             onAiWriterClick: () => {},
         }
@@ -152,12 +148,18 @@ export const SlashCommand = Extension.create({
             Suggestion({
                 editor: this.editor,
                 ...this.options.suggestion,
-                // Fix: Override `items` here to correctly bind `this.options`
-                items: ({ query }) => {
-                    return getCommandItems({ onAiWriterClick: this.options.onAiWriterClick })
+                items: ({ query, editor }) => {
+                    // Get the `onAiWriterClick` function directly from the configured extension on the editor instance.
+                    // This is a more robust way to access extension options from within a plugin.
+                    const onAiWriterClick = (editor.extensionManager.extensions.find(
+                        (e) => e.name === 'slash-command'
+                    ) as any)?.options.onAiWriterClick || (() => {});
+
+                    return getCommandItems({ onAiWriterClick })
                         .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
                         .slice(0, 10);
                 },
+                render: renderItems,
             })
         ]
     }
