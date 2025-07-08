@@ -11,15 +11,105 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { lamejs } from '@/types/lamejs';
+import wav from 'wav';
 
-// Supported audio formats with MIME types and extensions
+
 const supportedFormats = {
-  'audio/webm;codecs=opus': { label: 'WebM (Opus)', extension: '.webm' },
-  'audio/mp4;codecs=mp4a.40.2': { label: 'MP4 (AAC)', extension: '.m4a' },
-  'audio/ogg;codecs=vorbis': { label: 'OGG (Vorbis)', extension: '.ogg' },
+  'audio/mpeg': { label: 'MP3', extension: '.mp3' },
+  'audio/wav': { label: 'WAV', extension: '.wav' },
+};
+type OutputFormat = keyof typeof supportedFormats;
+
+// Helper to encode AudioBuffer to MP3
+const encodeToMp3 = (audioBuffer: AudioBuffer): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        try {
+            const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
+            const mp3Data = [];
+            const samples = [];
+            for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+                samples.push(audioBuffer.getChannelData(i));
+            }
+
+            let remainingSamples = samples[0].length;
+            const CHUNK_SIZE = 1152;
+
+            for (let i = 0; remainingSamples >= 0; i += CHUNK_SIZE) {
+                const leftChunk = samples[0].subarray(i, i + CHUNK_SIZE);
+                let rightChunk = audioBuffer.numberOfChannels > 1 ? samples[1].subarray(i, i + CHUNK_SIZE) : new Float32Array(0);
+
+                const leftPCM = new Int16Array(leftChunk.length);
+                for (let j = 0; j < leftChunk.length; j++) leftPCM[j] = leftChunk[j] * 32767;
+
+                let rightPCM: Int16Array | undefined;
+                if (rightChunk.length > 0) {
+                    rightPCM = new Int16Array(rightChunk.length);
+                    for (let j = 0; j < rightChunk.length; j++) rightPCM[j] = rightChunk[j] * 32767;
+                }
+
+                const mp3buf = mp3encoder.encodeBuffer(leftPCM, rightPCM);
+                if (mp3buf.length > 0) mp3Data.push(new Int8Array(mp3buf));
+                remainingSamples -= CHUNK_SIZE;
+            }
+
+            const mp3buf = mp3encoder.flush();
+            if (mp3buf.length > 0) mp3Data.push(new Int8Array(mp3buf));
+
+            resolve(new Blob(mp3Data, { type: 'audio/mpeg' }));
+        } catch (error) {
+            reject(error);
+        }
+    });
 };
 
-type OutputFormat = keyof typeof supportedFormats;
+// Helper to encode AudioBuffer to WAV
+const encodeToWav = (audioBuffer: AudioBuffer): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        try {
+            const numChannels = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const format = {
+                audioFormat: 1, // PCM
+                channels: numChannels,
+                sampleRate: sampleRate,
+                byteRate: sampleRate * numChannels * 2,
+                blockAlign: numChannels * 2,
+                bitDepth: 16,
+            };
+
+            const pcmData = [];
+            const channelData = [];
+            for (let i = 0; i < numChannels; i++) {
+                channelData.push(audioBuffer.getChannelData(i));
+            }
+
+            const interleaved = new Float32Array(audioBuffer.length * numChannels);
+            for (let i = 0; i < audioBuffer.length; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    interleaved[i * numChannels + channel] = channelData[channel][i];
+                }
+            }
+            
+            const dataView = new DataView(new ArrayBuffer(interleaved.length * 2));
+            for(let i=0; i < interleaved.length; i++){
+                let val = Math.floor(32767 * interleaved[i]);
+                val = Math.max(-32768, Math.min(32767, val));
+                dataView.setInt16(i * 2, val, true);
+            }
+
+            const wavEncoder = new wav.Encoder(format);
+            const chunks: any[] = [];
+            wavEncoder.on('data', chunk => chunks.push(chunk));
+            wavEncoder.on('end', () => resolve(new Blob(chunks, { type: 'audio/wav' })));
+            wavEncoder.end(Buffer.from(dataView.buffer));
+
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
 
 export default function AudioConverterPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -28,7 +118,7 @@ export default function AudioConverterPage() {
   const [isConverting, setIsConverting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
-  const [outputFormat, setOutputFormat] = useState<OutputFormat>('audio/webm;codecs=opus');
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>('audio/mpeg');
 
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
@@ -95,17 +185,10 @@ export default function AudioConverterPage() {
   const handleConvert = async () => {
     if (!selectedFile) return;
 
-    if (!MediaRecorder.isTypeSupported(outputFormat)) {
-      toast({ variant: 'destructive', title: 'Format Not Supported', description: 'Your browser does not support this audio format. Please try another.' });
-      return;
-    }
-
     setIsConverting(true);
     if (convertedSrcRef.current) URL.revokeObjectURL(convertedSrcRef.current);
     setConvertedSrc(null);
-    setProgress(0);
-    setProgressText('Preparing...');
-
+    
     try {
       setProgress(10);
       setProgressText('Reading file...');
@@ -115,50 +198,32 @@ export default function AudioConverterPage() {
       setProgressText('Decoding audio...');
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const audioBuffer = await audioContext.decodeAudioData(fileBuffer);
-
-      const source = audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-
-      const destination = audioContext.createMediaStreamDestination();
-      source.connect(destination);
-
-      const mediaRecorder = new MediaRecorder(destination.stream, { mimeType: outputFormat });
-      const chunks: Blob[] = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const convertedBlob = new Blob(chunks, { type: outputFormat });
-        const url = URL.createObjectURL(convertedBlob);
-        setConvertedSrc(url);
-        convertedSrcRef.current = url;
-        setProgress(100);
-        setProgressText('Conversion Complete!');
-        toast({ title: "Success!", description: `Audio converted successfully.` });
-        setIsConverting(false);
-        audioContext.close();
-      };
       
-      mediaRecorder.onerror = (event) => {
-        throw new Error(`MediaRecorder error: ${(event as any).error?.name}`);
-      };
-
       setProgress(70);
-      setProgressText(`Encoding to ${supportedFormats[outputFormat].label}...`);
-      mediaRecorder.start();
-      source.start();
+      setProgressText(`Encoding to ${outputFormat.split('/')[1].toUpperCase()}...`);
 
-      source.onended = () => {
-        mediaRecorder.stop();
-      };
+      let convertedBlob: Blob;
+      if (outputFormat === 'audio/mpeg') {
+        convertedBlob = await encodeToMp3(audioBuffer);
+      } else if (outputFormat === 'audio/wav') {
+        convertedBlob = await encodeToWav(audioBuffer);
+      } else {
+        throw new Error('Unsupported format selected');
+      }
+
+      const url = URL.createObjectURL(convertedBlob);
+      setConvertedSrc(url);
+      convertedSrcRef.current = url;
+      setProgress(100);
+      setProgressText('Conversion Complete!');
+      toast({ title: "Success!", description: `Audio converted successfully.` });
 
     } catch (error) {
       console.error("Conversion error:", error);
       toast({ variant: 'destructive', title: 'Conversion Failed', description: error instanceof Error ? error.message : "Could not process this file." });
       resetState();
-      setIsConverting(false);
+    } finally {
+        setIsConverting(false);
     }
   };
 
@@ -187,7 +252,7 @@ export default function AudioConverterPage() {
             <Card className="w-full max-w-2xl shadow-xl">
                 <CardHeader className="text-center">
                     <CardTitle className="text-3xl font-bold font-headline">Convert Audio Files</CardTitle>
-                    <CardDescription>Quickly convert your audio files using browser-native APIs.</CardDescription>
+                    <CardDescription>Convert your audio files to MP3 or WAV right in your browser.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-6 pb-8 space-y-6">
                     <div
@@ -197,7 +262,7 @@ export default function AudioConverterPage() {
                     >
                         <UploadCloud className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                         <p className="font-semibold">Drop your audio file here or click to browse</p>
-                        <p className="text-sm text-muted-foreground">Supports MP3, WAV, OGG, and more</p>
+                        <p className="text-sm text-muted-foreground">Supports MP3, WAV, OGG, FLAC, and more</p>
                         <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
                     </div>
 
@@ -215,7 +280,7 @@ export default function AudioConverterPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {Object.entries(supportedFormats).map(([mime, { label }]) => (
-                                                <SelectItem key={mime} value={mime} disabled={!MediaRecorder.isTypeSupported(mime)}>{label}</SelectItem>
+                                                <SelectItem key={mime} value={mime}>{label}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -253,3 +318,5 @@ export default function AudioConverterPage() {
     </div>
   );
 }
+
+    
