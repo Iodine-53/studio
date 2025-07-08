@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as lamejs from 'lamejs';
-import wav from 'wav';
 
 
 const supportedFormats = {
@@ -27,34 +26,31 @@ const encodeToMp3 = (audioBuffer: AudioBuffer): Promise<Blob> => {
         try {
             const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
             const mp3Data = [];
+            
             const samples = [];
-            for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+            for(let i=0; i < audioBuffer.numberOfChannels; i++) {
                 samples.push(audioBuffer.getChannelData(i));
             }
 
-            let remainingSamples = samples[0].length;
-            const CHUNK_SIZE = 1152;
-
-            for (let i = 0; remainingSamples >= 0; i += CHUNK_SIZE) {
-                const leftChunk = samples[0].subarray(i, i + CHUNK_SIZE);
-                let rightChunk = audioBuffer.numberOfChannels > 1 ? samples[1].subarray(i, i + CHUNK_SIZE) : new Float32Array(0);
-
-                const leftPCM = new Int16Array(leftChunk.length);
-                for (let j = 0; j < leftChunk.length; j++) leftPCM[j] = leftChunk[j] * 32767;
-
-                let rightPCM: Int16Array | undefined;
-                if (rightChunk.length > 0) {
-                    rightPCM = new Int16Array(rightChunk.length);
-                    for (let j = 0; j < rightChunk.length; j++) rightPCM[j] = rightChunk[j] * 32767;
+            const sampleBlockSize = 1152;
+            for (let i = 0; i < samples[0].length; i += sampleBlockSize) {
+                const leftChunk = new Int16Array(sampleBlockSize);
+                const rightChunk = audioBuffer.numberOfChannels > 1 ? new Int16Array(sampleBlockSize) : undefined;
+                
+                for(let j=0; j < sampleBlockSize; j++) {
+                    leftChunk[j] = samples[0][i+j] * 32767;
+                    if(rightChunk) {
+                        rightChunk[j] = samples[1][i+j] * 32767;
+                    }
                 }
-
-                const mp3buf = mp3encoder.encodeBuffer(leftPCM, rightPCM);
-                if (mp3buf.length > 0) mp3Data.push(new Int8Array(mp3buf));
-                remainingSamples -= CHUNK_SIZE;
+                const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+                if (mp3buf.length > 0) {
+                    mp3Data.push(mp3buf);
+                }
             }
 
             const mp3buf = mp3encoder.flush();
-            if (mp3buf.length > 0) mp3Data.push(new Int8Array(mp3buf));
+            if (mp3buf.length > 0) mp3Data.push(mp3buf);
 
             resolve(new Blob(mp3Data, { type: 'audio/mpeg' }));
         } catch (error) {
@@ -63,50 +59,61 @@ const encodeToMp3 = (audioBuffer: AudioBuffer): Promise<Blob> => {
     });
 };
 
-// Helper to encode AudioBuffer to WAV
+// New, browser-native WAV encoding function
 const encodeToWav = (audioBuffer: AudioBuffer): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-        try {
-            const numChannels = audioBuffer.numberOfChannels;
-            const sampleRate = audioBuffer.sampleRate;
-            const format = {
-                audioFormat: 1, // PCM
-                channels: numChannels,
-                sampleRate: sampleRate,
-                byteRate: sampleRate * numChannels * 2,
-                blockAlign: numChannels * 2,
-                bitDepth: 16,
-            };
+    return new Promise((resolve) => {
+        const numOfChan = audioBuffer.numberOfChannels;
+        const length = audioBuffer.length * numOfChan * 2 + 44;
+        const buffer = new ArrayBuffer(length);
+        const view = new DataView(buffer);
+        const channels = [];
+        let i;
+        let sample;
+        let offset = 0;
+        let pos = 0;
 
-            const pcmData = [];
-            const channelData = [];
-            for (let i = 0; i < numChannels; i++) {
-                channelData.push(audioBuffer.getChannelData(i));
+        // Helper function to write strings
+        const writeString = (view: DataView, offset: number, string: string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
             }
+        };
+        
+        // RIFF header
+        writeString(view, pos, 'RIFF'); pos += 4;
+        view.setUint32(pos, 36 + audioBuffer.length * numOfChan * 2, true); pos += 4;
+        writeString(view, pos, 'WAVE'); pos += 4;
 
-            const interleaved = new Float32Array(audioBuffer.length * numChannels);
-            for (let i = 0; i < audioBuffer.length; i++) {
-                for (let channel = 0; channel < numChannels; channel++) {
-                    interleaved[i * numChannels + channel] = channelData[channel][i];
-                }
-            }
-            
-            const dataView = new DataView(new ArrayBuffer(interleaved.length * 2));
-            for(let i=0; i < interleaved.length; i++){
-                let val = Math.floor(32767 * interleaved[i]);
-                val = Math.max(-32768, Math.min(32767, val));
-                dataView.setInt16(i * 2, val, true);
-            }
+        // fmt subchunk
+        writeString(view, pos, 'fmt '); pos += 4;
+        view.setUint32(pos, 16, true); pos += 4; // Subchunk1Size
+        view.setUint16(pos, 1, true); pos += 2; // AudioFormat
+        view.setUint16(pos, numOfChan, true); pos += 2; // NumChannels
+        view.setUint32(pos, audioBuffer.sampleRate, true); pos += 4; // SampleRate
+        view.setUint32(pos, audioBuffer.sampleRate * 2 * numOfChan, true); pos += 4; // ByteRate
+        view.setUint16(pos, numOfChan * 2, true); pos += 2; // BlockAlign
+        view.setUint16(pos, 16, true); pos += 2; // BitsPerSample
 
-            const wavEncoder = new wav.Encoder(format);
-            const chunks: any[] = [];
-            wavEncoder.on('data', chunk => chunks.push(chunk));
-            wavEncoder.on('end', () => resolve(new Blob(chunks, { type: 'audio/wav' })));
-            wavEncoder.end(Buffer.from(dataView.buffer));
+        // data subchunk
+        writeString(view, pos, 'data'); pos += 4;
+        view.setUint32(pos, audioBuffer.length * numOfChan * 2, true); pos += 4;
 
-        } catch (error) {
-            reject(error);
+        // Write the PCM samples
+        for (i = 0; i < audioBuffer.numberOfChannels; i++) {
+            channels.push(audioBuffer.getChannelData(i));
         }
+
+        while (pos < length) {
+            for (i = 0; i < numOfChan; i++) {
+                sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+                sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0; // scale to 16-bit
+                view.setInt16(pos, sample, true); // write the 16-bit sample
+                pos += 2;
+            }
+            offset++;
+        }
+
+        resolve(new Blob([view], { type: 'audio/wav' }));
     });
 };
 

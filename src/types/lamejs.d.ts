@@ -6,20 +6,3 @@ declare module 'lamejs' {
         flush(): Int8Array;
     }
 }
-
-// Since `wav` might not have official types, provide a basic declaration
-declare module 'wav' {
-    export class Encoder {
-        constructor(options: {
-            audioFormat: number,
-            channels: number,
-            sampleRate: number,
-            byteRate: number,
-            blockAlign: number,
-            bitDepth: number,
-        });
-        on(event: 'data', listener: (chunk: Buffer) => void): this;
-        on(event: 'end', listener: () => void): this;
-        end(buffer: Buffer): void;
-    }
-}
