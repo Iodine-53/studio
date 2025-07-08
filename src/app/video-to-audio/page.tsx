@@ -119,21 +119,19 @@ const encodeToWav = (audioBuffer: AudioBuffer): Promise<Blob> => {
 
 const encodeToAac = (audioBuffer: AudioBuffer): Promise<Blob> => {
     return new Promise(async (resolve, reject) => {
-        if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported('audio/mp4')) {
-            return reject(new Error('AAC (M4A) encoding is not supported by your browser.'));
-        }
-
         try {
-            const offlineContext = new OfflineAudioContext(
-                audioBuffer.numberOfChannels,
-                audioBuffer.length,
-                audioBuffer.sampleRate
-            );
+            if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported('audio/mp4')) {
+                return reject(new Error('AAC (M4A) encoding is not supported by your browser.'));
+            }
 
-            const source = offlineContext.createBufferSource();
+            // NOTE: This process runs in real-time, so the conversion will take
+            // as long as the duration of the audio. This is a limitation of
+            // using MediaRecorder for this purpose.
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const source = audioContext.createBufferSource();
             source.buffer = audioBuffer;
 
-            const destination = offlineContext.createMediaStreamDestination();
+            const destination = audioContext.createMediaStreamDestination();
             source.connect(destination);
 
             const chunks: BlobPart[] = [];
@@ -143,17 +141,23 @@ const encodeToAac = (audioBuffer: AudioBuffer): Promise<Blob> => {
                 if (e.data.size > 0) chunks.push(e.data);
             };
 
+            source.onended = () => {
+                recorder.stop();
+            };
+
             recorder.onstop = () => {
                 const blob = new Blob(chunks, { type: 'audio/mp4' });
                 resolve(blob);
+                audioContext.close(); // Clean up
             };
 
-            recorder.onerror = err => reject(err);
-
+            recorder.onerror = err => {
+                reject(err);
+                audioContext.close(); // Clean up
+            };
+            
             recorder.start();
             source.start(0);
-            await offlineContext.startRendering();
-            recorder.stop();
 
         } catch (error) {
             reject(error);
