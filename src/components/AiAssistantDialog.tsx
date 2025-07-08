@@ -31,8 +31,8 @@ type Props = {
 };
 
 type BrainstormMessage = {
-    role: 'user' | 'ai';
-    content: string | string[]; // AI can return a list of ideas
+    role: 'user' | 'model';
+    content: string;
 }
 
 type StoredBrainstormChat = {
@@ -263,8 +263,13 @@ const BrainstormTab = () => {
             if (!apiKey) {
               throw new Error("A Gemini API key is required. Please set it in the settings.");
             }
-            const response = await brainstormIdeas({ topic: inputValue, apiKey });
-            setMessages([...newMessages, { role: 'ai', content: response.response }]);
+            const apiHistory = newMessages.map(msg => ({
+                role: msg.role,
+                content: msg.content,
+            }));
+
+            const response = await brainstormIdeas({ history: apiHistory, apiKey });
+            setMessages([...newMessages, { role: 'model', content: response.response }]);
         } catch (error) {
             console.error('AI brainstorming failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -294,13 +299,7 @@ const BrainstormTab = () => {
                     {messages.map((message, index) => (
                         <div key={index} className={cn("flex", message.role === 'user' ? 'justify-end' : 'justify-start')}>
                              <div className={cn("rounded-lg px-4 py-2 max-w-sm", message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
-                                {Array.isArray(message.content) ? (
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {message.content.map((idea, i) => <li key={i}>{idea}</li>)}
-                                    </ul>
-                                ) : (
-                                    <p>{message.content}</p>
-                                )}
+                                 <p>{message.content}</p>
                             </div>
                         </div>
                     ))}

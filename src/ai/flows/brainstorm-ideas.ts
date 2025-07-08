@@ -2,9 +2,9 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for a general chat interaction.
+ * @fileOverview This file defines a Genkit flow for a general chat interaction with history.
  *
- * - brainstormIdeas - A function that takes a prompt and returns a text response.
+ * - brainstormIdeas - A function that takes a conversation history and returns a text response.
  * - BrainstormIdeasInput - The input type for the function.
  * - BrainstormIdeasOutput - The return type for the function.
  */
@@ -14,8 +14,13 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
+const MessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  content: z.string(),
+});
+
 const BrainstormIdeasInputSchema = z.object({
-  topic: z.string().describe('The user prompt for the chat.'),
+  history: z.array(MessageSchema).describe('The conversation history.'),
   apiKey: z.string().optional().describe('Optional API key for Gemini.'),
 });
 export type BrainstormIdeasInput = z.infer<typeof BrainstormIdeasInputSchema>;
@@ -41,8 +46,19 @@ const brainstormIdeasFlow = ai.defineFlow(
     }
     const runner = genkit({ plugins: [googleAI({ apiKey: input.apiKey })] });
     
+    // The last message is the new prompt
+    const lastMessage = input.history.pop();
+    if (!lastMessage) {
+        throw new Error("Cannot generate response for an empty history.");
+    }
+    const prompt = lastMessage.content;
+    
+    // The rest of the messages are the history
+    const history = input.history;
+
     const response = await runner.generate({
-        prompt: input.topic,
+        prompt: prompt,
+        history: history,
         model: 'googleai/gemini-1.5-flash-latest',
     });
 
