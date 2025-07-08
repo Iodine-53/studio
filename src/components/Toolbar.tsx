@@ -58,7 +58,7 @@ const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
         }
     }
     // A reasonable default if no specific line height is set on the active node.
-    return 1.5; 
+    return 1.2; 
   };
   
   const currentLineHeight = getActiveLineHeight();

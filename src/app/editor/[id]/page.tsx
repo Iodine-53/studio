@@ -78,6 +78,8 @@ export default function EditorPage() {
         tableRow: false,
         tableHeader: false,
         tableCell: false,
+        taskList: false,
+        taskItem: false,
         // from original config
         link: {
             linkOnPaste: false,

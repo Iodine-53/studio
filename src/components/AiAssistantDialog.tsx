@@ -95,14 +95,14 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
     )
 }
 
-// Document Tab Component
-const DocumentTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'>) => {
+// List Tab Component (Formerly DocumentTab)
+const ListTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'>) => {
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     const { getApiKey } = useUserApiKey();
 
-    const handleGenerateDocument = async () => {
+    const handleGenerateList = async () => {
         if (!editor || !prompt) return;
 
         setIsLoading(true);
@@ -150,7 +150,7 @@ const DocumentTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenCha
             onOpenChange(false);
             setPrompt('');
         } catch (error) {
-            console.error('AI document generation failed:', error);
+            console.error('AI list generation failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
             toast({
                 variant: 'destructive',
@@ -165,10 +165,10 @@ const DocumentTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenCha
     return (
         <div className="grid gap-4 py-4">
             <div className="grid w-full gap-1.5">
-                <Label htmlFor="doc-prompt">Document Prompt</Label>
+                <Label htmlFor="doc-prompt">List Prompt</Label>
                 <Textarea
                     id="doc-prompt"
-                    placeholder="e.g., 'a short blog post about the benefits of React, with a title, intro paragraph, and a bulleted list of features.'"
+                    placeholder="e.g., 'a bulleted list of the top 5 benefits of exercise'"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     rows={8}
@@ -176,11 +176,11 @@ const DocumentTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenCha
             </div>
              <Button
                 type="button"
-                onClick={handleGenerateDocument}
+                onClick={handleGenerateList}
                 disabled={isLoading || !prompt}
             >
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                Generate Document
+                Generate List
             </Button>
         </div>
     )
@@ -280,11 +280,11 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
             <DialogHeader className="p-6 pb-0">
                  <DialogTitle>AI Assistant</DialogTitle>
                  <DialogDescription>
-                    Use AI to write new content or brainstorm ideas.
+                    Use AI to write new content, generate lists, or brainstorm ideas.
                  </DialogDescription>
                  <TabsList className="grid w-full grid-cols-3 mt-4">
                     <TabsTrigger value="write">Write</TabsTrigger>
-                    <TabsTrigger value="document">Document</TabsTrigger>
+                    <TabsTrigger value="document">List</TabsTrigger>
                     <TabsTrigger value="brainstorm">Brainstorm</TabsTrigger>
                  </TabsList>
             </DialogHeader>
@@ -294,7 +294,7 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
             </TabsContent>
             
             <TabsContent value="document" className="p-6 pt-0">
-                <DocumentTab editor={editor} onOpenChange={onOpenChange}/>
+                <ListTab editor={editor} onOpenChange={onOpenChange}/>
             </TabsContent>
 
             <TabsContent value="brainstorm" className="m-0 p-0">
