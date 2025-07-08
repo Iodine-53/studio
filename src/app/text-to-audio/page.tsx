@@ -13,10 +13,13 @@ import { generateAudio } from '@/ai/flows/generate-audio-flow';
 import { saveAs } from 'file-saver';
 import { useUserApiKey } from '@/hooks/use-user-api-key';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 const VOICES = [
   'Algenib', 'Achernar', 'Enif', 'Hadar', 'Regulus', 'Spica', 'Sirius', 'Vega'
 ];
+
+const MAX_CHARS = 5000; // Gemini TTS character limit
 
 export default function TextToAudioPage() {
   const [inputText, setInputText] = useState(
@@ -37,15 +40,27 @@ export default function TextToAudioPage() {
       });
       return;
     }
+    
+    if (inputText.length > MAX_CHARS) {
+        toast({
+            variant: 'destructive',
+            title: 'Character limit exceeded',
+            description: `Please reduce the text to below ${MAX_CHARS} characters.`,
+        });
+        return;
+    }
 
     setIsLoading(true);
     setAudioSrc(null);
     try {
       const apiKey = getApiKey() || undefined;
+      if (!apiKey) {
+        throw new Error("A Gemini API key is required. Please set it in the settings.");
+      }
       const isMultiSpeaker = /Speaker\s*\d+:/i.test(inputText);
       
       const result = await generateAudio({
-        query: inputText,
+        query: inputText, // Passing the raw text, normalization now happens on the server.
         apiKey,
         // Only send the voice if it's NOT a multi-speaker script
         voice: isMultiSpeaker ? undefined : selectedVoice,
@@ -76,6 +91,7 @@ export default function TextToAudioPage() {
   };
 
   const isMultiSpeaker = /Speaker\s*\d+:/i.test(inputText);
+  const isOverLimit = inputText.length > MAX_CHARS;
 
   return (
     <div className="flex flex-col min-h-screen bg-primary/5">
@@ -96,7 +112,7 @@ export default function TextToAudioPage() {
             <Voicemail className="w-12 h-12 mx-auto text-primary" />
             <CardTitle className="text-3xl font-bold font-headline mt-4">AI-Powered Text to Speech</CardTitle>
             <CardDescription>
-              Convert text into high-quality, natural-sounding audio. Supports multiple speakers and voices.
+              Convert text into high-quality audio. Very long texts may take a moment to process.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-6 pb-8 space-y-6">
@@ -110,9 +126,12 @@ export default function TextToAudioPage() {
                 placeholder="Type or paste your text here..."
                 className="text-base"
               />
-              <p className="text-xs text-muted-foreground">
-                For multiple speakers, use the format: `Speaker1: ...` and `Speaker2: ...`
-              </p>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>For multiple speakers, use the format: `Speaker1: ...`</span>
+                <span className={cn(isOverLimit && 'font-bold text-destructive')}>
+                    {inputText.length} / {MAX_CHARS}
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -134,7 +153,7 @@ export default function TextToAudioPage() {
                     </Select>
                 </div>
                 <div className="md:col-span-2">
-                    <Button onClick={handleGenerate} disabled={isLoading} className="w-full" size="lg">
+                    <Button onClick={handleGenerate} disabled={isLoading || isOverLimit} className="w-full" size="lg">
                     {isLoading ? (
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     ) : (
