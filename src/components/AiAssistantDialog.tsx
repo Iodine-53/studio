@@ -219,7 +219,12 @@ const BrainstormTab = () => {
 
                 // Check if the stored data is less than 24 hours old
                 if (now - timestamp < twentyFourHours) {
-                    setMessages(storedMessages);
+                    // Sanitize messages to handle legacy data structures
+                    const sanitizedMessages = storedMessages.map((msg: any) => ({
+                        role: msg.role === 'ai' ? 'model' : msg.role,
+                        content: Array.isArray(msg.content) ? msg.content.join('\n\n') : String(msg.content),
+                    }));
+                    setMessages(sanitizedMessages);
                 } else {
                     // If it's expired, remove it from storage
                     localStorage.removeItem(BRAINSTORM_STORAGE_KEY);
