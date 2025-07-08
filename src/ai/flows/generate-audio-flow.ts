@@ -75,6 +75,10 @@ const generateAudioFlow = ai.defineFlow(
     const runner = genkit({ plugins: [googleAI({ apiKey })] });
     const isMultiSpeaker = /Speaker\s*\d+:/i.test(query);
 
+    // Normalize whitespace to prevent TTS issues.
+    // Replaces tabs with spaces, collapses multiple spaces/newlines, and trims.
+    const normalizedQuery = query.replace(/\t/g, ' ').replace(/ +/g, ' ').replace(/\n{2,}/g, '\n').trim();
+
     let speechConfig: any;
     if (isMultiSpeaker) {
       speechConfig = {
@@ -105,7 +109,7 @@ const generateAudioFlow = ai.defineFlow(
         responseModalities: ['AUDIO'],
         speechConfig,
       },
-      prompt: query,
+      prompt: normalizedQuery,
     });
     
     if (!media) {
