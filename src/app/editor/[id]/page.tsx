@@ -17,8 +17,6 @@ import FontFamily from '@tiptap/extension-font-family';
 import { FontSize } from '@/lib/tiptap/extensions/FontSize';
 import { CustomImage } from '@/lib/tiptap/extensions/Image';
 import { InteractiveTable } from '@/lib/tiptap/extensions/InteractiveTable';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
 import { lowlight } from 'lowlight/lib/core';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import css from 'highlight.js/lib/languages/css';
@@ -75,16 +73,15 @@ export default function EditorPage() {
         // Disable Tiptap's default complex blocks to use our own custom versions
         codeBlock: false,
         horizontalRule: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
-        taskItem: false,
-        taskList: false,
         image: false,
         table: false,
         tableRow: false,
         tableHeader: false,
         tableCell: false,
+        // Configure taskItem to allow nesting, which is what we had before
+        taskItem: {
+          nested: true,
+        },
         // from original config
         link: {
             linkOnPaste: false,
@@ -115,8 +112,6 @@ export default function EditorPage() {
       FontSize,
       CustomImage,
       InteractiveTable,
-      TaskList,
-      TaskItem.configure({ nested: true }),
       CodeBlockLowlight.configure({ lowlight }),
       HorizontalRule,
       Chart,
