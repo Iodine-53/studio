@@ -12,15 +12,19 @@ import { useToast } from '@/hooks/use-toast';
 import { generateAudio } from '@/ai/flows/generate-audio-flow';
 import { saveAs } from 'file-saver';
 import { useUserApiKey } from '@/hooks/use-user-api-key';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const VOICES = [
+  'Algenib', 'Achernar', 'Enif', 'Hadar', 'Regulus', 'Spica', 'Sirius', 'Vega'
+];
 
 export default function TextToAudioPage() {
   const [inputText, setInputText] = useState(
-    'Speaker1: Hello, welcome to ToolboxAI. How can I help you today?\n\n' +
-    'Speaker2: I would like to convert this text into natural-sounding speech.\n\n' +
-    'Speaker1: Of course! Just type your script and click generate.'
+    'Hello, welcome to ToolboxAI. I can convert this text into natural-sounding speech with different voices.'
   );
   const [isLoading, setIsLoading] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState('Algenib');
   const { toast } = useToast();
   const { getApiKey } = useUserApiKey();
 
@@ -38,7 +42,15 @@ export default function TextToAudioPage() {
     setAudioSrc(null);
     try {
       const apiKey = getApiKey() || undefined;
-      const result = await generateAudio({ query: inputText, apiKey });
+      const isMultiSpeaker = /Speaker\s*\d+:/i.test(inputText);
+      
+      const result = await generateAudio({
+        query: inputText,
+        apiKey,
+        // Only send the voice if it's NOT a multi-speaker script
+        voice: isMultiSpeaker ? undefined : selectedVoice,
+      });
+
       setAudioSrc(result.media);
       toast({
         title: 'Success!',
@@ -63,6 +75,8 @@ export default function TextToAudioPage() {
     }
   };
 
+  const isMultiSpeaker = /Speaker\s*\d+:/i.test(inputText);
+
   return (
     <div className="flex flex-col min-h-screen bg-primary/5">
       <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
@@ -82,7 +96,7 @@ export default function TextToAudioPage() {
             <Voicemail className="w-12 h-12 mx-auto text-primary" />
             <CardTitle className="text-3xl font-bold font-headline mt-4">AI-Powered Text to Speech</CardTitle>
             <CardDescription>
-              Convert text into high-quality, natural-sounding audio. Supports multiple speakers.
+              Convert text into high-quality, natural-sounding audio. Supports multiple speakers and voices.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-6 pb-8 space-y-6">
@@ -101,14 +115,35 @@ export default function TextToAudioPage() {
               </p>
             </div>
 
-            <Button onClick={handleGenerate} disabled={isLoading} className="w-full" size="lg">
-              {isLoading ? (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              ) : (
-                <Wand2 className="mr-2 h-5 w-5" />
-              )}
-              {isLoading ? 'Generating Audio...' : 'Generate Audio'}
-            </Button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div className="md:col-span-1">
+                    <Label htmlFor="voice-select">Voice (Single Speaker)</Label>
+                    <Select
+                        value={selectedVoice}
+                        onValueChange={setSelectedVoice}
+                        disabled={isMultiSpeaker}
+                    >
+                        <SelectTrigger id="voice-select" className="mt-1">
+                            <SelectValue placeholder="Select voice" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {VOICES.map(voice => (
+                            <SelectItem key={voice} value={voice}>{voice}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="md:col-span-2">
+                    <Button onClick={handleGenerate} disabled={isLoading} className="w-full" size="lg">
+                    {isLoading ? (
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    ) : (
+                        <Wand2 className="mr-2 h-5 w-5" />
+                    )}
+                    {isLoading ? 'Generating Audio...' : 'Generate Audio'}
+                    </Button>
+                </div>
+            </div>
 
             {audioSrc && (
               <Card className="bg-primary/5 border-primary/20">

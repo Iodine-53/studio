@@ -13,10 +13,11 @@ import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 import wav from 'wav';
 
-// The input is now an object to support an optional API key.
+// The input is now an object to support an optional API key and voice selection.
 const GenerateAudioInputSchema = z.object({
   query: z.string().describe('The text to convert to speech.'),
   apiKey: z.string().optional().describe('Optional API key for Gemini.'),
+  voice: z.string().optional().describe('The voice to use for single-speaker generation.'),
 });
 export type GenerateAudioInput = z.infer<typeof GenerateAudioInputSchema>;
 
@@ -67,7 +68,7 @@ const generateAudioFlow = ai.defineFlow(
     inputSchema: GenerateAudioInputSchema,
     outputSchema: GenerateAudioOutputSchema,
   },
-  async ({ query, apiKey }) => {
+  async ({ query, apiKey, voice }) => {
     const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
     const isMultiSpeaker = /Speaker\s*\d+:/i.test(query);
 
@@ -90,7 +91,7 @@ const generateAudioFlow = ai.defineFlow(
     } else {
       speechConfig = {
         voiceConfig: {
-          prebuiltVoiceConfig: { voiceName: 'Algenib' },
+          prebuiltVoiceConfig: { voiceName: voice || 'Algenib' },
         },
       };
     }
