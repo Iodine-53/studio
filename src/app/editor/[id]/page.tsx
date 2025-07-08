@@ -237,9 +237,9 @@ export default function EditorPage() {
           <nav className="flex items-center w-full justify-between gap-4 text-lg font-medium md:gap-2 md:text-sm">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" className="shrink-0" asChild>
-                    <Link href="/">
+                    <Link href="/documents">
                     <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">Back to Dashboard</span>
+                    <span className="sr-only">Back to Document Hub</span>
                     </Link>
                 </Button>
                 <div className="flex-1">
