@@ -36,7 +36,10 @@ const brainstormIdeasFlow = ai.defineFlow(
     outputSchema: BrainstormIdeasOutputSchema,
   },
   async (input) => {
-    const runner = input.apiKey ? genkit({ plugins: [googleAI({ apiKey: input.apiKey })] }) : ai;
+    if (!input.apiKey) {
+      throw new Error("A Gemini API key is required. Please set it in the settings.");
+    }
+    const runner = genkit({ plugins: [googleAI({ apiKey: input.apiKey })] });
     
     const { output } = await runner.generate({
         prompt: `You are a creative brainstorming assistant. Generate a list of creative ideas for the following topic:\n\nTopic: ${input.topic}\n\nIdeas:`,

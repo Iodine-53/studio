@@ -35,7 +35,10 @@ const generateChartDataFlow = ai.defineFlow(
     outputSchema: GenerateChartDataOutputSchema,
   },
   async ({ prompt, apiKey }) => {
-    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
+    if (!apiKey) {
+      throw new Error("A Gemini API key is required. Please set it in the settings.");
+    }
+    const runner = genkit({ plugins: [googleAI({ apiKey })] });
     const finalPrompt = `You are an expert data assistant. Based on the user's prompt, generate a JSON array of objects representing data points for a chart.
 
 Each object in the array is a data point (e.g., a row). Each key-value pair in an object is a data field for that point.

@@ -38,7 +38,10 @@ const generateTableDataFlow = ai.defineFlow(
     outputSchema: GenerateTableDataOutputSchema, // The final output should still match this schema
   },
   async ({ prompt, apiKey }) => {
-    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
+    if (!apiKey) {
+      throw new Error("A Gemini API key is required. Please set it in the settings.");
+    }
+    const runner = genkit({ plugins: [googleAI({ apiKey })] });
     
     const finalPrompt = `You are an expert data assistant. Based on the user's prompt, generate a JSON object representing table data.
 

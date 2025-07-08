@@ -60,7 +60,10 @@ const generateDocumentFlow = ai.defineFlow(
     outputSchema: GenerateDocumentOutputSchema,
   },
   async (input) => {
-    const runner = input.apiKey ? genkit({ plugins: [googleAI({ apiKey: input.apiKey })] }) : ai;
+    if (!input.apiKey) {
+      throw new Error("A Gemini API key is required. Please set it in the settings.");
+    }
+    const runner = genkit({ plugins: [googleAI({ apiKey: input.apiKey })] });
     const { output } = await runner.generate({
         model: 'googleai/gemini-2.0-flash',
         prompt: `You are an expert document creation assistant. Based on the user's prompt, generate a sequence of content blocks to build a document.

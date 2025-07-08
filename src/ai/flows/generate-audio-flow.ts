@@ -69,7 +69,10 @@ const generateAudioFlow = ai.defineFlow(
     outputSchema: GenerateAudioOutputSchema,
   },
   async ({ query, apiKey, voice }) => {
-    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
+    if (!apiKey) {
+      throw new Error("A Gemini API key is required. Please set it in the settings.");
+    }
+    const runner = genkit({ plugins: [googleAI({ apiKey })] });
     const isMultiSpeaker = /Speaker\s*\d+:/i.test(query);
 
     let speechConfig: any;

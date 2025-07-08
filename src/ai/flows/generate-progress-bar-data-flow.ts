@@ -43,7 +43,10 @@ const generateProgressBarDataFlow = ai.defineFlow(
     outputSchema: GenerateProgressBarDataOutputSchema,
   },
   async (input) => {
-    const runner = input.apiKey ? genkit({ plugins: [googleAI({ apiKey: input.apiKey })] }) : ai;
+    if (!input.apiKey) {
+      throw new Error("A Gemini API key is required. Please set it in the settings.");
+    }
+    const runner = genkit({ plugins: [googleAI({ apiKey: input.apiKey })] });
     const { output } = await runner.generate({
         model: 'googleai/gemini-2.0-flash',
         prompt: `You are an expert at creating structured data for UI components. Based on the user's prompt, generate a JSON object for a bar chart or progress display.

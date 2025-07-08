@@ -26,7 +26,10 @@ const generateTextFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async ({ prompt, apiKey }) => {
-    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
+    if (!apiKey) {
+      throw new Error("A Gemini API key is required. Please set it in the settings.");
+    }
+    const runner = genkit({ plugins: [googleAI({ apiKey })] });
     const response = await runner.generate({
       prompt: `You are a helpful AI writing assistant integrated into a document editor.
 The user has provided the following prompt. Please provide a thorough and well-structured response.
