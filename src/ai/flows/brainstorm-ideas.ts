@@ -46,19 +46,20 @@ const brainstormIdeasFlow = ai.defineFlow(
     }
     const runner = genkit({ plugins: [googleAI({ apiKey: input.apiKey })] });
     
-    // The last message is the new prompt
-    const lastMessage = input.history.pop();
-    if (!lastMessage) {
+    const conversationHistory = input.history;
+    if (conversationHistory.length === 0) {
         throw new Error("Cannot generate response for an empty history.");
     }
-    const prompt = lastMessage.content;
+
+    // The prompt is the content of the very last message.
+    const lastMessage = conversationHistory[conversationHistory.length - 1];
     
-    // The rest of the messages are the history
-    const history = input.history;
+    // The history for the model is everything *before* the last message.
+    const historyForModel = conversationHistory.slice(0, -1);
 
     const response = await runner.generate({
-        prompt: prompt,
-        history: history,
+        prompt: lastMessage.content,
+        history: historyForModel,
         model: 'googleai/gemini-1.5-flash-latest',
     });
 
