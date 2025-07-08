@@ -23,5 +23,3 @@ declare module 'wav' {
         end(buffer: Buffer): void;
     }
 }
-
-    

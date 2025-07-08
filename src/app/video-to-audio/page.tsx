@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
-import { lamejs } from '@/types/lamejs';
+import * as lamejs from 'lamejs';
 import wav from 'wav';
 
 const supportedFormats = {
@@ -306,5 +306,3 @@ export default function VideoToAudioPage() {
     </div>
   );
 }
-
-    

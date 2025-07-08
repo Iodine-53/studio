@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { lamejs } from '@/types/lamejs';
+import * as lamejs from 'lamejs';
 import wav from 'wav';
 
 
@@ -318,5 +318,3 @@ export default function AudioConverterPage() {
     </div>
   );
 }
-
-    
