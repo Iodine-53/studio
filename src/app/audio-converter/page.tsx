@@ -3,6 +3,7 @@
 
 import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { ArrowLeft, Download, Music, UploadCloud, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,8 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import * as lamejs from 'lamejs';
-
 
 const supportedFormats = {
   'audio/mpeg': { label: 'MP3', extension: '.mp3' },
@@ -23,37 +22,29 @@ type OutputFormat = keyof typeof supportedFormats;
 // Helper to encode AudioBuffer to MP3
 const encodeToMp3 = (audioBuffer: AudioBuffer): Promise<Blob> => {
     return new Promise((resolve, reject) => {
+        const lamejs = (window as any).lamejs;
+        if (!lamejs) {
+            return reject(new Error('MP3 encoder is not loaded yet. Please wait a moment and try again.'));
+        }
+
         try {
-            // Polyfill MPEGMode if it's not defined on the window object
-            if (typeof (window as any).MPEGMode === 'undefined') {
-              (window as any).MPEGMode = {
-                STEREO: 0,
-                JOINT_STEREO: 1,
-                DUAL_CHANNEL: 2,
-                MONO: 3,
-              };
-            }
             const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
             const mp3Data = [];
 
             const pcmLeft = audioBuffer.getChannelData(0);
             const pcmRight = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : pcmLeft;
-            const sampleBlockSize = 1152; //
+            const sampleBlockSize = 1152;
             
             for (let i = 0; i < pcmLeft.length; i += sampleBlockSize) {
                 const leftChunk = pcmLeft.subarray(i, i + sampleBlockSize);
-                let rightChunk: Float32Array | undefined = undefined;
-                if (audioBuffer.numberOfChannels > 1) {
-                    rightChunk = pcmRight.subarray(i, i + sampleBlockSize);
-                }
+                const rightChunk = audioBuffer.numberOfChannels > 1 ? pcmRight.subarray(i, i + sampleBlockSize) : undefined;
 
-                // lamejs requires Int16, so we convert Float32 to Int16
                 const leftInt16 = new Int16Array(leftChunk.length);
                 for(let j=0; j<leftChunk.length; j++) {
                     leftInt16[j] = leftChunk[j] * 32767;
                 }
 
-                let rightInt16: Int16Array | undefined = undefined;
+                let rightInt16: Int16Array | undefined;
                 if (rightChunk) {
                     rightInt16 = new Int16Array(rightChunk.length);
                     for(let j=0; j<rightChunk.length; j++) {
@@ -77,55 +68,41 @@ const encodeToMp3 = (audioBuffer: AudioBuffer): Promise<Blob> => {
     });
 };
 
-// New, browser-native WAV encoding function
+// Browser-native WAV encoding function
 const encodeToWav = (audioBuffer: AudioBuffer): Promise<Blob> => {
     return new Promise((resolve) => {
         const numOfChan = audioBuffer.numberOfChannels;
         const length = audioBuffer.length * numOfChan * 2 + 44;
         const buffer = new ArrayBuffer(length);
         const view = new DataView(buffer);
-        const channels = [];
-        let i;
-        let sample;
-        let offset = 0;
         let pos = 0;
 
-        // Helper function to write strings
         const writeString = (view: DataView, offset: number, string: string) => {
             for (let i = 0; i < string.length; i++) {
                 view.setUint8(offset + i, string.charCodeAt(i));
             }
         };
         
-        // RIFF header
         writeString(view, pos, 'RIFF'); pos += 4;
         view.setUint32(pos, 36 + audioBuffer.length * numOfChan * 2, true); pos += 4;
         writeString(view, pos, 'WAVE'); pos += 4;
-
-        // fmt subchunk
         writeString(view, pos, 'fmt '); pos += 4;
-        view.setUint32(pos, 16, true); pos += 4; // Subchunk1Size
-        view.setUint16(pos, 1, true); pos += 2; // AudioFormat
-        view.setUint16(pos, numOfChan, true); pos += 2; // NumChannels
-        view.setUint32(pos, audioBuffer.sampleRate, true); pos += 4; // SampleRate
-        view.setUint32(pos, audioBuffer.sampleRate * 2 * numOfChan, true); pos += 4; // ByteRate
-        view.setUint16(pos, numOfChan * 2, true); pos += 2; // BlockAlign
-        view.setUint16(pos, 16, true); pos += 2; // BitsPerSample
-
-        // data subchunk
+        view.setUint32(pos, 16, true); pos += 4;
+        view.setUint16(pos, 1, true); pos += 2;
+        view.setUint16(pos, numOfChan, true); pos += 2;
+        view.setUint32(pos, audioBuffer.sampleRate, true); pos += 4;
+        view.setUint32(pos, audioBuffer.sampleRate * 2 * numOfChan, true); pos += 4;
+        view.setUint16(pos, numOfChan * 2, true); pos += 2;
+        view.setUint16(pos, 16, true); pos += 2;
         writeString(view, pos, 'data'); pos += 4;
         view.setUint32(pos, audioBuffer.length * numOfChan * 2, true); pos += 4;
 
-        // Write the PCM samples
-        for (i = 0; i < audioBuffer.numberOfChannels; i++) {
-            channels.push(audioBuffer.getChannelData(i));
-        }
-
+        const channels = Array.from({ length: numOfChan }, (_, i) => audioBuffer.getChannelData(i));
+        let offset = 0;
         while (pos < length) {
-            for (i = 0; i < numOfChan; i++) {
-                sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
-                sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0; // scale to 16-bit
-                view.setInt16(pos, sample, true); // write the 16-bit sample
+            for (let i = 0; i < numOfChan; i++) {
+                const sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                view.setInt16(pos, (sample < 0 ? sample * 32768 : sample * 32767), true);
                 pos += 2;
             }
             offset++;
@@ -246,7 +223,7 @@ export default function AudioConverterPage() {
     } catch (error) {
       console.error("Conversion error:", error);
       toast({ variant: 'destructive', title: 'Conversion Failed', description: error instanceof Error ? error.message : "Could not process this file." });
-      resetState();
+      // Do not reset state on failure, so user can try another format
     } finally {
         setIsConverting(false);
     }
@@ -261,87 +238,88 @@ export default function AudioConverterPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-primary/5">
-        <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
-            <nav className="flex items-center gap-4 text-lg font-medium md:gap-2 md:text-sm">
-                <Button variant="outline" size="icon" className="shrink-0" asChild>
-                    <Link href="/">
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="sr-only">Back to Home</span>
-                    </Link>
-                </Button>
-                <h1 className="text-xl font-bold font-headline text-primary">Audio Converter</h1>
-            </nav>
-        </header>
-        <main className="flex-1 p-4 sm:p-6 md:p-8 flex items-center justify-center">
-            <Card className="w-full max-w-2xl shadow-xl">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-3xl font-bold font-headline">Convert Audio Files</CardTitle>
-                    <CardDescription>Convert your audio files to MP3 or WAV right in your browser.</CardDescription>
-                </CardHeader>
-                <CardContent className="px-6 pb-8 space-y-6">
-                    <div
-                        className={cn('p-8 text-center border-2 border-dashed rounded-lg cursor-pointer transition-colors', isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50')}
-                        onClick={() => fileInputRef.current?.click()}
-                        onDrop={handleDrop} onDragOver={handleDragEvents} onDragEnter={handleDragEvents} onDragLeave={handleDragEvents}
-                    >
-                        <UploadCloud className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                        <p className="font-semibold">Drop your audio file here or click to browse</p>
-                        <p className="text-sm text-muted-foreground">Supports MP3, WAV, OGG, FLAC, and more</p>
-                        <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
-                    </div>
+    <>
+        <Script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js" strategy="lazyOnload" />
+        <div className="flex flex-col min-h-screen bg-primary/5">
+            <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
+                <nav className="flex items-center gap-4 text-lg font-medium md:gap-2 md:text-sm">
+                    <Button variant="outline" size="icon" className="shrink-0" asChild>
+                        <Link href="/">
+                            <ArrowLeft className="h-4 w-4" />
+                            <span className="sr-only">Back to Home</span>
+                        </Link>
+                    </Button>
+                    <h1 className="text-xl font-bold font-headline text-primary">Audio Converter</h1>
+                </nav>
+            </header>
+            <main className="flex-1 p-4 sm:p-6 md:p-8 flex items-center justify-center">
+                <Card className="w-full max-w-2xl shadow-xl">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold font-headline">Convert Audio Files</CardTitle>
+                        <CardDescription>Convert your audio files to MP3 or WAV right in your browser.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="px-6 pb-8 space-y-6">
+                        <div
+                            className={cn('p-8 text-center border-2 border-dashed rounded-lg cursor-pointer transition-colors', isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50')}
+                            onClick={() => fileInputRef.current?.click()}
+                            onDrop={handleDrop} onDragOver={handleDragEvents} onDragEnter={handleDragEvents} onDragLeave={handleDragEvents}
+                        >
+                            <UploadCloud className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="font-semibold">Drop your audio file here or click to browse</p>
+                            <p className="text-sm text-muted-foreground">Supports MP3, WAV, OGG, FLAC, and more</p>
+                            <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
+                        </div>
 
-                    {selectedFile && (
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-center">Your Audio</h3>
-                            <audio src={audioSrc ?? ''} controls className="w-full"></audio>
+                        {selectedFile && (
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-center">Your Audio</h3>
+                                <audio src={audioSrc ?? ''} controls className="w-full"></audio>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                                <div>
-                                    <label htmlFor="output-format" className="text-sm font-medium">Output Format</label>
-                                     <Select value={outputFormat} onValueChange={(v: OutputFormat) => setOutputFormat(v)}>
-                                        <SelectTrigger id="output-format" className="mt-1">
-                                            <SelectValue placeholder="Select format" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Object.entries(supportedFormats).map(([mime, { label }]) => (
-                                                <SelectItem key={mime} value={mime}>{label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                    <div>
+                                        <label htmlFor="output-format" className="text-sm font-medium">Output Format</label>
+                                        <Select value={outputFormat} onValueChange={(v: OutputFormat) => setOutputFormat(v)}>
+                                            <SelectTrigger id="output-format" className="mt-1">
+                                                <SelectValue placeholder="Select format" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(supportedFormats).map(([mime, { label }]) => (
+                                                    <SelectItem key={mime} value={mime}>{label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button onClick={handleConvert} disabled={isConverting} size="lg" className="w-full">
+                                        {isConverting ? <Loader2 className="mr-2 animate-spin"/> : <Music className="mr-2" />}
+                                        {isConverting ? progressText : 'Convert Audio'}
+                                    </Button>
                                 </div>
-                                <Button onClick={handleConvert} disabled={isConverting} size="lg" className="w-full">
-                                    {isConverting ? <Loader2 className="mr-2 animate-spin"/> : <Music className="mr-2" />}
-                                    {isConverting ? progressText : 'Convert Audio'}
-                                </Button>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {isConverting && (
-                        <div className="space-y-2">
-                           <Progress value={progress} />
-                           <p className="text-sm text-center text-muted-foreground">{progressText}</p>
-                        </div>
-                    )}
+                        {isConverting && (
+                            <div className="space-y-2">
+                            <Progress value={progress} />
+                            <p className="text-sm text-center text-muted-foreground">{progressText}</p>
+                            </div>
+                        )}
 
-                    {convertedSrc && !isConverting && (
-                       <Card className="bg-primary/5 border-primary/20">
-                          <CardHeader><CardTitle className="text-xl text-center">Conversion Complete!</CardTitle></CardHeader>
-                          <CardContent className="flex flex-col items-center gap-4">
-                            <audio src={convertedSrc} controls className="w-full"></audio>
-                            <Button onClick={handleDownload} size="lg" className="bg-green-600 hover:bg-green-700">
-                                <Download className="mr-2" /> Download {supportedFormats[outputFormat].label}
-                            </Button>
-                          </CardContent>
-                       </Card>
-                    )}
+                        {convertedSrc && !isConverting && (
+                        <Card className="bg-primary/5 border-primary/20">
+                            <CardHeader><CardTitle className="text-xl text-center">Conversion Complete!</CardTitle></CardHeader>
+                            <CardContent className="flex flex-col items-center gap-4">
+                                <audio src={convertedSrc} controls className="w-full"></audio>
+                                <Button onClick={handleDownload} size="lg" className="bg-green-600 hover:bg-green-700">
+                                    <Download className="mr-2" /> Download {supportedFormats[outputFormat].label}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                        )}
 
-                </CardContent>
-            </Card>
-        </main>
-    </div>
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
+    </>
   );
 }
-
-    
