@@ -31,7 +31,7 @@ const generateTextFlow = ai.defineFlow(
     }
     const runner = genkit({ plugins: [googleAI({ apiKey })] });
     const response = await runner.generate({
-      model: 'googleai/gemini-1.5-pro-latest',
+      model: 'googleai/gemini-1.5-flash-latest',
       prompt: `You are a helpful AI writing assistant integrated into a document editor.
 The user has provided the following prompt. Please provide a thorough and well-structured response.
 Fulfill their request, returning only the raw text content.
