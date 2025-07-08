@@ -14,9 +14,10 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
-import { Loader2, Wand2, Sparkles, Send } from 'lucide-react';
+import { Loader2, Wand2, Sparkles, Send, FileText } from 'lucide-react';
 import { generateText } from '@/ai/flows/generate-text-flow';
-import { brainstormIdeas } from '@/ai/flows/brainstorm-ideas';
+import { brainstormIdeas, type BrainstormIdeasOutput } from '@/ai/flows/brainstorm-ideas';
+import { generateDocument, type GenerateDocumentOutput } from '@/ai/flows/generate-document-flow';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from './ui/scroll-area';
@@ -89,6 +90,97 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
             >
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                 Generate & Insert
+            </Button>
+        </div>
+    )
+}
+
+// Document Tab Component
+const DocumentTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'>) => {
+    const [prompt, setPrompt] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+    const { getApiKey } = useUserApiKey();
+
+    const handleGenerateDocument = async () => {
+        if (!editor || !prompt) return;
+
+        setIsLoading(true);
+        try {
+            const apiKey = getApiKey() || undefined;
+            const result = await generateDocument({ prompt, apiKey });
+            
+            // Convert the AI's block-based response into Tiptap's JSON format
+            const contentToInsert = result.blocks.map(block => {
+                switch (block.type) {
+                    case 'heading':
+                        return {
+                            type: 'heading',
+                            attrs: { level: (block as any).level },
+                            content: [{ type: 'text', text: (block as any).content }],
+                        };
+                    case 'paragraph':
+                        return {
+                            type: 'paragraph',
+                            content: [{ type: 'text', text: (block as any).content }],
+                        };
+                    case 'bulletList':
+                    case 'orderedList':
+                        return {
+                            type: block.type,
+                            content: (block as any).items.map((item: string) => ({
+                                type: 'listItem',
+                                content: [{
+                                    type: 'paragraph',
+                                    content: [{ type: 'text', text: item }],
+                                }],
+                            })),
+                        };
+                    default:
+                        return null;
+                }
+            }).filter(Boolean);
+
+            if (contentToInsert.length > 0) {
+                editor.chain().focus().insertContent(contentToInsert).run();
+            } else {
+                throw new Error("AI returned an empty or invalid document structure.");
+            }
+
+            onOpenChange(false);
+            setPrompt('');
+        } catch (error) {
+            console.error('AI document generation failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+            toast({
+                variant: 'destructive',
+                title: 'Generation Failed',
+                description: errorMessage,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="grid gap-4 py-4">
+            <div className="grid w-full gap-1.5">
+                <Label htmlFor="doc-prompt">Document Prompt</Label>
+                <Textarea
+                    id="doc-prompt"
+                    placeholder="e.g., 'a short blog post about the benefits of React, with a title, intro paragraph, and a bulleted list of features.'"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    rows={8}
+                />
+            </div>
+             <Button
+                type="button"
+                onClick={handleGenerateDocument}
+                disabled={isLoading || !prompt}
+            >
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                Generate Document
             </Button>
         </div>
     )
@@ -190,14 +282,19 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
                  <DialogDescription>
                     Use AI to write new content or brainstorm ideas.
                  </DialogDescription>
-                 <TabsList className="grid w-full grid-cols-2 mt-4">
+                 <TabsList className="grid w-full grid-cols-3 mt-4">
                     <TabsTrigger value="write">Write</TabsTrigger>
+                    <TabsTrigger value="document">Document</TabsTrigger>
                     <TabsTrigger value="brainstorm">Brainstorm</TabsTrigger>
                  </TabsList>
             </DialogHeader>
 
             <TabsContent value="write" className="p-6 pt-0">
                 <WriteTab editor={editor} onOpenChange={onOpenChange}/>
+            </TabsContent>
+            
+            <TabsContent value="document" className="p-6 pt-0">
+                <DocumentTab editor={editor} onOpenChange={onOpenChange}/>
             </TabsContent>
 
             <TabsContent value="brainstorm" className="m-0 p-0">
