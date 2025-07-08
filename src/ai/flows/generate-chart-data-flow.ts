@@ -9,10 +9,13 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const GenerateChartDataInputSchema = z.object({
   prompt: z.string().describe("The user's request for chart content."),
+  apiKey: z.string().optional().describe('Optional API key for Gemini.'),
 });
 export type GenerateChartDataInput = z.infer<typeof GenerateChartDataInputSchema>;
 
@@ -31,7 +34,8 @@ const generateChartDataFlow = ai.defineFlow(
     inputSchema: GenerateChartDataInputSchema,
     outputSchema: GenerateChartDataOutputSchema,
   },
-  async (input) => {
+  async ({ prompt, apiKey }) => {
+    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
     const finalPrompt = `You are an expert data assistant. Based on the user's prompt, generate a JSON array of objects representing data points for a chart.
 
 Each object in the array is a data point (e.g., a row). Each key-value pair in an object is a data field for that point.
@@ -47,10 +51,10 @@ Example output:
   { "month": "March", "sales": 3500, "expenses": 1800 }
 ]
 
-User Prompt: "${input.prompt}"
+User Prompt: "${prompt}"
 `;
 
-    const response = await ai.generate({
+    const response = await runner.generate({
         prompt: finalPrompt,
     });
     

@@ -5,20 +5,29 @@
  * - generateText - A function that takes a prompt and returns generated text.
  */
 import { ai } from '@/ai/genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 
-export async function generateText(prompt: string): Promise<string> {
-  return generateTextFlow(prompt);
+const GenerateTextInputSchema = z.object({
+  prompt: z.string().describe('The user prompt for text generation.'),
+  apiKey: z.string().optional().describe('Optional API key for Gemini.'),
+});
+export type GenerateTextInput = z.infer<typeof GenerateTextInputSchema>;
+
+export async function generateText(input: GenerateTextInput): Promise<string> {
+  return generateTextFlow(input);
 }
 
 const generateTextFlow = ai.defineFlow(
   {
     name: 'generateTextFlow',
-    inputSchema: z.string(),
+    inputSchema: GenerateTextInputSchema,
     outputSchema: z.string(),
   },
-  async (prompt) => {
-    const response = await ai.generate({
+  async ({ prompt, apiKey }) => {
+    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
+    const response = await runner.generate({
       prompt: `You are a helpful AI writing assistant integrated into a document editor.
 The user has provided the following prompt. Please provide a thorough and well-structured response.
 Fulfill their request, returning only the raw text content.

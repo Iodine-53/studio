@@ -9,6 +9,8 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 // Schemas for individual block types
@@ -37,6 +39,7 @@ const DocumentBlockSchema = z.union([
 
 const GenerateDocumentInputSchema = z.object({
   prompt: z.string().describe('The user\'s request for document content.'),
+  apiKey: z.string().optional().describe('Optional API key for Gemini.'),
 });
 export type GenerateDocumentInput = z.infer<typeof GenerateDocumentInputSchema>;
 
@@ -50,23 +53,6 @@ export async function generateDocument(input: GenerateDocumentInput): Promise<Ge
   return generateDocumentFlow(input);
 }
 
-
-const generateDocumentPrompt = ai.definePrompt({
-    name: 'generateDocumentPrompt',
-    input: { schema: GenerateDocumentInputSchema },
-    output: { schema: GenerateDocumentOutputSchema },
-    prompt: `You are an expert document creation assistant. Based on the user's prompt, generate a sequence of content blocks to build a document.
-
-You can create headings (levels 1-3), paragraphs, bulleted lists, and ordered lists.
-
-Analyze the user's request and structure your response as an array of block objects.
-
-For example, if the user asks for "a title about dogs, a paragraph, and then a list of dog breeds", you should generate a heading, a paragraph, and a list block.
-
-Prompt: {{{prompt}}}
-`,
-});
-
 const generateDocumentFlow = ai.defineFlow(
   {
     name: 'generateDocumentFlow',
@@ -74,7 +60,24 @@ const generateDocumentFlow = ai.defineFlow(
     outputSchema: GenerateDocumentOutputSchema,
   },
   async (input) => {
-    const { output } = await generateDocumentPrompt(input);
+    const runner = input.apiKey ? genkit({ plugins: [googleAI({ apiKey: input.apiKey })] }) : ai;
+    const { output } = await runner.generate({
+        model: 'googleai/gemini-2.0-flash',
+        prompt: `You are an expert document creation assistant. Based on the user's prompt, generate a sequence of content blocks to build a document.
+
+You can create headings (levels 1-3), paragraphs, bulleted lists, and ordered lists.
+
+Analyze the user's request and structure your response as an array of block objects.
+
+For example, if the user asks for "a title about dogs, a paragraph, and then a list of dog breeds", you should generate a heading, a paragraph, and a list block.
+
+Prompt: ${input.prompt}
+`,
+        output: {
+            schema: GenerateDocumentOutputSchema
+        }
+    });
+    
     if (!output || !output.blocks || output.blocks.length === 0) {
       // This allows the frontend to catch the error and display a message.
       throw new Error('AI generation failed. The model returned no content. Please try rephrasing your prompt.');

@@ -7,20 +7,30 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 
-export async function generateImage(prompt: string): Promise<string> {
-  return generateImageFlow(prompt);
+const GenerateImageInputSchema = z.object({
+    prompt: z.string().describe('The user prompt for image generation.'),
+    apiKey: z.string().optional().describe('Optional API key for Gemini.'),
+});
+export type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
+
+
+export async function generateImage(input: GenerateImageInput): Promise<string> {
+  return generateImageFlow(input);
 }
 
 const generateImageFlow = ai.defineFlow(
   {
     name: 'generateImageFlow',
-    inputSchema: z.string(),
+    inputSchema: GenerateImageInputSchema,
     outputSchema: z.string(),
   },
-  async (prompt) => {
-    const response = await ai.generate({
+  async ({ prompt, apiKey }) => {
+    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
+    const response = await runner.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: prompt,
       config: {

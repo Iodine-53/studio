@@ -11,10 +11,13 @@
 'use server';
 
 import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const BrainstormIdeasInputSchema = z.object({
   topic: z.string().describe('The topic for which to generate brainstorming ideas.'),
+  apiKey: z.string().optional().describe('Optional API key for Gemini.'),
 });
 export type BrainstormIdeasInput = z.infer<typeof BrainstormIdeasInputSchema>;
 
@@ -27,21 +30,26 @@ export async function brainstormIdeas(input: BrainstormIdeasInput): Promise<Brai
   return brainstormIdeasFlow(input);
 }
 
-const brainstormIdeasPrompt = ai.definePrompt({
-  name: 'brainstormIdeasPrompt',
-  input: {schema: BrainstormIdeasInputSchema},
-  output: {schema: BrainstormIdeasOutputSchema},
-  prompt: `You are a creative brainstorming assistant. Generate a list of creative ideas for the following topic:\n\nTopic: {{{topic}}}\n\nIdeas:`, // Fixed the typo here
-});
-
 const brainstormIdeasFlow = ai.defineFlow(
   {
     name: 'brainstormIdeasFlow',
     inputSchema: BrainstormIdeasInputSchema,
     outputSchema: BrainstormIdeasOutputSchema,
   },
-  async input => {
-    const {output} = await brainstormIdeasPrompt(input);
-    return output!;
+  async (input) => {
+    const runner = input.apiKey ? genkit({ plugins: [googleAI({ apiKey: input.apiKey })] }) : ai;
+    
+    const { output } = await runner.generate({
+        prompt: `You are a creative brainstorming assistant. Generate a list of creative ideas for the following topic:\n\nTopic: ${input.topic}\n\nIdeas:`,
+        model: 'googleai/gemini-2.0-flash',
+        output: {
+            schema: BrainstormIdeasOutputSchema
+        }
+    });
+
+    if (!output) {
+        throw new Error("AI generation failed. The model returned no content.");
+    }
+    return output;
   }
 );

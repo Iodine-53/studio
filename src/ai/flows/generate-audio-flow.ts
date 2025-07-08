@@ -8,12 +8,18 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 import wav from 'wav';
-import { googleAI } from '@genkit-ai/googleai';
 
-// The input is a simple string.
-const GenerateAudioInputSchema = z.string();
+// The input is now an object to support an optional API key.
+const GenerateAudioInputSchema = z.object({
+  query: z.string().describe('The text to convert to speech.'),
+  apiKey: z.string().optional().describe('Optional API key for Gemini.'),
+});
+export type GenerateAudioInput = z.infer<typeof GenerateAudioInputSchema>;
+
 
 // The output is an object containing the base64-encoded WAV data URI.
 const GenerateAudioOutputSchema = z.object({
@@ -50,8 +56,8 @@ async function toWav(
 }
 
 // Main exported function that the UI will call.
-export async function generateAudio(query: string): Promise<GenerateAudioOutput> {
-  return generateAudioFlow(query);
+export async function generateAudio(input: GenerateAudioInput): Promise<GenerateAudioOutput> {
+  return generateAudioFlow(input);
 }
 
 // The Genkit flow definition.
@@ -61,7 +67,8 @@ const generateAudioFlow = ai.defineFlow(
     inputSchema: GenerateAudioInputSchema,
     outputSchema: GenerateAudioOutputSchema,
   },
-  async (query) => {
+  async ({ query, apiKey }) => {
+    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
     const isMultiSpeaker = /Speaker\s*\d+:/i.test(query);
 
     let speechConfig: any;
@@ -88,7 +95,7 @@ const generateAudioFlow = ai.defineFlow(
       };
     }
     
-    const { media } = await ai.generate({
+    const { media } = await runner.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
       config: {
         responseModalities: ['AUDIO'],

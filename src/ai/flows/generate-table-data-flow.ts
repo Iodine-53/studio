@@ -9,10 +9,13 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const GenerateTableDataInputSchema = z.object({
   prompt: z.string().describe("The user's request for table content."),
+  apiKey: z.string().optional().describe('Optional API key for Gemini.'),
 });
 export type GenerateTableDataInput = z.infer<typeof GenerateTableDataInputSchema>;
 
@@ -34,7 +37,9 @@ const generateTableDataFlow = ai.defineFlow(
     inputSchema: GenerateTableDataInputSchema,
     outputSchema: GenerateTableDataOutputSchema, // The final output should still match this schema
   },
-  async (input) => {
+  async ({ prompt, apiKey }) => {
+    const runner = apiKey ? genkit({ plugins: [googleAI({ apiKey })] }) : ai;
+    
     const finalPrompt = `You are an expert data assistant. Based on the user's prompt, generate a JSON object representing table data.
 
 The JSON object MUST have two keys:
@@ -56,11 +61,11 @@ Example output:
   ]
 }
 
-User Prompt: "${input.prompt}"
+User Prompt: "${prompt}"
 `;
 
     // Ask the AI for a text response, which should be our JSON string
-    const response = await ai.generate({
+    const response = await runner.generate({
         prompt: finalPrompt,
     });
     
