@@ -93,7 +93,7 @@ export const ProgressBarNodeView: React.FC<NodeViewProps> = ({ node, updateAttri
               <CardTitle className="font-headline">{title}</CardTitle>
             )}
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {items.map((item: any) => (
               <div key={item.id}>
                 {isEditing ? (
@@ -147,17 +147,17 @@ export const ProgressBarNodeView: React.FC<NodeViewProps> = ({ node, updateAttri
                       />
                   </div>
                 ) : (
-                   <div className="grid grid-cols-12 items-center gap-x-4 gap-y-1">
-                      <p className="font-semibold text-foreground text-right truncate col-span-4">{item.label}</p>
-                      <div className="w-full bg-secondary rounded-full h-6 relative col-span-8">
-                          <div
-                              className="h-6 rounded-full flex items-center justify-end px-2 transition-all duration-300"
-                              style={{ width: `${item.value}%`, backgroundColor: item.color }}
-                          >
-                              {item.value > 10 && <span className="font-mono text-white text-xs font-semibold">{item.value}%</span>}
-                          </div>
-                          {item.value <= 10 && <span className="absolute left-full ml-2 font-mono text-muted-foreground text-xs">{item.value}%</span>}
-                      </div>
+                   <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium">{item.label}</span>
+                      <span className="text-sm font-medium text-muted-foreground">{item.value}%</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2.5">
+                      <div
+                        className="h-2.5 rounded-full"
+                        style={{ width: `${item.value}%`, backgroundColor: item.color }}
+                      ></div>
+                    </div>
                   </div>
                 )}
               </div>

@@ -388,22 +388,22 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
 
     case 'progressBarBlock': {
-      const { blockTitle, progressBars } = node.attrs;
+      const { title, items } = node.attrs;
       return (
         <div style={wrapperStyle}>
           <div className="my-4 p-4 border rounded-lg not-prose">
-            <h4 className="font-bold text-lg mb-4">{blockTitle}</h4>
-            <div className="space-y-4">
-              {progressBars.map((bar: any) => (
+            <h4 className="font-bold text-lg mb-4">{title}</h4>
+            <div className="space-y-3">
+              {items.map((bar: any) => (
                 <div key={bar.id}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">{bar.title}</span>
-                    <span className="text-sm font-medium">{bar.progress}%</span>
+                    <span className="text-sm font-medium">{bar.label}</span>
+                    <span className="text-sm font-medium">{bar.value}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
                       className="h-2.5 rounded-full"
-                      style={{ width: `${bar.progress}%`, backgroundColor: bar.color }}
+                      style={{ width: `${bar.value}%`, backgroundColor: bar.color }}
                     ></div>
                   </div>
                 </div>

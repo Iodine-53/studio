@@ -174,14 +174,14 @@ const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, wi
 
 const renderBarChartToImage = (title: string, items: any[]): Promise<string> => {
   return new Promise((resolve) => {
-    const BAR_HEIGHT = 28;
+    const BAR_HEIGHT = 10;
     const PADDING = 20;
-    const LABEL_WIDTH = 150;
-    const BAR_SPACING = 20;
+    const LABEL_HEIGHT = 20;
+    const LINE_SPACING = 15; // Closer together
     const BLOCK_TITLE_HEIGHT = 40;
-    const CANVAS_WIDTH = 700;
+    const CANVAS_WIDTH = 600;
 
-    const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + (items.length * (BAR_HEIGHT + BAR_SPACING));
+    const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + (items.length * (LABEL_HEIGHT + BAR_HEIGHT + LINE_SPACING)) - LINE_SPACING; // No spacing after last item
     
     const canvas = document.createElement('canvas');
     canvas.width = CANVAS_WIDTH;
@@ -197,7 +197,7 @@ const renderBarChartToImage = (title: string, items: any[]): Promise<string> => 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = '#111827';
-    ctx.font = 'bold 24px sans-serif';
+    ctx.font = 'bold 20px sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(title, PADDING, PADDING);
@@ -205,33 +205,32 @@ const renderBarChartToImage = (title: string, items: any[]): Promise<string> => 
     let currentY = PADDING + BLOCK_TITLE_HEIGHT;
 
     items.forEach(item => {
+      // Draw label and percentage
       ctx.fillStyle = '#1F2937';
-      ctx.font = '16px sans-serif';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(item.label, PADDING + LABEL_WIDTH, currentY + BAR_HEIGHT / 2);
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(item.label, PADDING, currentY);
 
-      const barX = PADDING + LABEL_WIDTH + 20;
-      const barCanvasWidth = CANVAS_WIDTH - barX - PADDING;
+      ctx.fillStyle = '#6B7280';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${item.value}%`, CANVAS_WIDTH - PADDING, currentY);
+
+      currentY += LABEL_HEIGHT;
+
+      const barX = PADDING;
+      const barCanvasWidth = CANVAS_WIDTH - (PADDING * 2);
       
-      ctx.fillStyle = '#E5E7EB'; // Background
-      drawRoundedRect(ctx, barX, currentY, barCanvasWidth, BAR_HEIGHT, 14);
+      ctx.fillStyle = '#E5E7EB';
+      drawRoundedRect(ctx, barX, currentY, barCanvasWidth, BAR_HEIGHT, 5);
 
       if (item.value > 0) {
         const barWidth = barCanvasWidth * (item.value / 100);
         ctx.fillStyle = item.color;
-        drawRoundedRect(ctx, barX, currentY, barWidth, BAR_HEIGHT, 14);
-        
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 12px sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        if (barWidth > 40) { // Only draw text if there's enough space
-          ctx.fillText(`${item.value}%`, barX + barWidth - 10, currentY + BAR_HEIGHT / 2);
-        }
+        drawRoundedRect(ctx, barX, currentY, barWidth, BAR_HEIGHT, 5);
       }
       
-      currentY += BAR_HEIGHT + BAR_SPACING;
+      currentY += BAR_HEIGHT + LINE_SPACING;
     });
     
     setTimeout(() => {
@@ -596,16 +595,14 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
         const imageWidthInPixels = Math.floor(600 * (width / 100));
 
         // Calculate height based on aspect ratio of the generated canvas
-        const BAR_HEIGHT = 28;
+        const BAR_HEIGHT = 10;
         const PADDING = 20;
-        const BAR_SPACING = 20;
+        const LABEL_HEIGHT = 20;
+        const LINE_SPACING = 15;
         const BLOCK_TITLE_HEIGHT = 40;
-        const CANVAS_WIDTH = 700;
+        const CANVAS_WIDTH = 600;
         
-        const totalBarsHeight = items.reduce((acc: number) => {
-            return acc + BAR_HEIGHT + BAR_SPACING;
-        }, 0);
-        const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + totalBarsHeight;
+        const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + (items.length * (LABEL_HEIGHT + BAR_HEIGHT + LINE_SPACING)) - LINE_SPACING;
         const aspectRatio = canvasHeight / CANVAS_WIDTH;
         const imageHeightInPixels = Math.floor(imageWidthInPixels * aspectRatio);
 
