@@ -69,6 +69,7 @@ User Prompt: "${prompt}"
 
     // Ask the AI for a text response, which should be our JSON string
     const response = await runner.generate({
+        model: 'googleai/gemini-1.5-flash-latest',
         prompt: finalPrompt,
     });
     
