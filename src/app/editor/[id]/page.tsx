@@ -78,10 +78,6 @@ export default function EditorPage() {
         tableRow: false,
         tableHeader: false,
         tableCell: false,
-        // Configure taskItem to allow nesting, which is what we had before
-        taskItem: {
-          nested: true,
-        },
         // from original config
         link: {
             linkOnPaste: false,
