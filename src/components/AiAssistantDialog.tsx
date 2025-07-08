@@ -54,7 +54,10 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
 
         setIsLoading(true);
         try {
-            const apiKey = getApiKey() || undefined;
+            const apiKey = getApiKey();
+            if (!apiKey) {
+              throw new Error("A Gemini API key is required. Please set it in the settings.");
+            }
             const result = await generateText({ prompt, apiKey });
 
             if (result) {
@@ -114,7 +117,10 @@ const ListTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'
 
         setIsLoading(true);
         try {
-            const apiKey = getApiKey() || undefined;
+            const apiKey = getApiKey();
+            if (!apiKey) {
+              throw new Error("A Gemini API key is required. Please set it in the settings.");
+            }
             const result = await generateDocument({ prompt, apiKey });
             
             // Convert the AI's block-based response into Tiptap's JSON format
@@ -253,9 +259,12 @@ const BrainstormTab = () => {
         setIsLoading(true);
 
         try {
-            const apiKey = getApiKey() || undefined;
+            const apiKey = getApiKey();
+            if (!apiKey) {
+              throw new Error("A Gemini API key is required. Please set it in the settings.");
+            }
             const response = await brainstormIdeas({ topic: inputValue, apiKey });
-            setMessages([...newMessages, { role: 'ai', content: response.ideas }]);
+            setMessages([...newMessages, { role: 'ai', content: response.response }]);
         } catch (error) {
             console.error('AI brainstorming failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';

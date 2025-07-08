@@ -2,11 +2,11 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for brainstorming ideas on a given topic.
+ * @fileOverview This file defines a Genkit flow for a general chat interaction.
  *
- * - brainstormIdeas - A function that takes a topic as input and returns a list of creative ideas.
- * - BrainstormIdeasInput - The input type for the brainstormIdeas function.
- * - BrainstormIdeasOutput - The return type for the brainstormIdeas function.
+ * - brainstormIdeas - A function that takes a prompt and returns a text response.
+ * - BrainstormIdeasInput - The input type for the function.
+ * - BrainstormIdeasOutput - The return type for the function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,13 +15,13 @@ import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const BrainstormIdeasInputSchema = z.object({
-  topic: z.string().describe('The topic for which to generate brainstorming ideas.'),
+  topic: z.string().describe('The user prompt for the chat.'),
   apiKey: z.string().optional().describe('Optional API key for Gemini.'),
 });
 export type BrainstormIdeasInput = z.infer<typeof BrainstormIdeasInputSchema>;
 
 const BrainstormIdeasOutputSchema = z.object({
-  ideas: z.array(z.string()).describe('A list of creative ideas for the given topic.'),
+  response: z.string().describe('The AI response to the prompt.'),
 });
 export type BrainstormIdeasOutput = z.infer<typeof BrainstormIdeasOutputSchema>;
 
@@ -41,17 +41,16 @@ const brainstormIdeasFlow = ai.defineFlow(
     }
     const runner = genkit({ plugins: [googleAI({ apiKey: input.apiKey })] });
     
-    const { output } = await runner.generate({
-        prompt: `You are a creative brainstorming assistant. Generate a list of creative ideas for the following topic:\n\nTopic: ${input.topic}\n\nIdeas:`,
+    const response = await runner.generate({
+        prompt: input.topic,
         model: 'googleai/gemini-1.5-flash-latest',
-        output: {
-            schema: BrainstormIdeasOutputSchema
-        }
     });
 
-    if (!output) {
+    const textResponse = response.text;
+    if (!textResponse) {
         throw new Error("AI generation failed. The model returned no content.");
     }
-    return output;
+
+    return { response: textResponse };
   }
 );
