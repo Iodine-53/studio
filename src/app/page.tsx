@@ -1,11 +1,13 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Github, Twitter, FileText, Image, AudioWaveform, Film, FileSliders, Voicemail } from "lucide-react";
+import { Github, Twitter, FileText, Image, AudioWaveform, Film, FileSliders, Voicemail, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 
 const Logo = () => (
     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
@@ -54,11 +56,16 @@ const tools = [
 ];
 
 export default function Home() {
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
+  
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="absolute top-0 left-0 right-0 p-4">
         <div className="container mx-auto flex justify-end">
           <div className="flex gap-2 items-center">
+              <Button variant="ghost" size="icon" onClick={() => setIsApiDialogOpen(true)} aria-label="Settings">
+                <Settings className="h-5 w-5"/>
+              </Button>
               <ThemeToggle />
               <Button variant="ghost" size="icon" asChild><a href="https://twitter.com" aria-label="Twitter" target="_blank" rel="noopener noreferrer"><Twitter className="h-5 w-5"/></a></Button>
               <Button variant="ghost" size="icon" asChild><a href="https://github.com" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><Github className="h-5 w-5"/></a></Button>
@@ -110,6 +117,8 @@ export default function Home() {
           <p className="text-muted-foreground text-sm">&copy; {new Date().getFullYear()} ToolboxAI. All rights reserved.</p>
         </div>
       </footer>
+      
+      <ApiKeyDialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen} />
     </div>
   );
 }
