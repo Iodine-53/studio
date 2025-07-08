@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Quote
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -30,9 +30,9 @@ const getCommandItems = (): CommandItem[] => [
   // Lists
   { title: "Bullet List", icon: List, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleBulletList().run(); } },
   { title: "Numbered List", icon: ListOrdered, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleOrderedList().run(); } },
-  { title: "Check List", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleTaskList().run(); } },
 
   // Block Elements
+  { title: "Blockquote", icon: Quote, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleBlockquote().run(); } },
   { title: "Image", icon: Image, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setImage({ src: null }).run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertInteractiveTable().run(); } },
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCodeBlock().run(); } },
@@ -45,7 +45,7 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Accordion", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertAccordion().run(); } },
   { title: "Todo List", icon: ListTodo, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTodoList().run(); } },
   { title: "Embed", icon: Film, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setEmbed({ src: '' }).run(); } },
-  { title: "Progress Bars", icon: SlidersHorizontal, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertProgressBarBlock().run(); } },
+  { title: "Bar Chart / Progress", icon: SlidersHorizontal, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertProgressBarBlock().run(); } },
 ];
 
 const renderItems = () => {
@@ -77,10 +77,11 @@ const renderItems = () => {
       onUpdate(props: any) {
         component?.updateProps(props);
 
-        // If the position becomes invalid during an update, hide the popup to prevent crashes.
+        // If the position becomes invalid during an update, destroy the popup to prevent crashes.
         if (typeof props.clientRect !== 'function' || !props.clientRect()) {
           if (popup && popup[0]) {
-            popup[0].hide();
+            popup[0].destroy();
+            popup = undefined;
           }
           return;
         }
@@ -114,6 +115,7 @@ const renderItems = () => {
         }
         // Reset component to avoid stale references
         component = undefined;
+        popup = undefined;
       },
     };
   }

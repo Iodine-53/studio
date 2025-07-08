@@ -21,46 +21,44 @@ const PREDEFINED_COLORS = [
 ];
 
 export const ProgressBarNodeView: React.FC<NodeViewProps> = ({ node, updateAttributes, selected }) => {
-  const { blockTitle, progressBars, textAlign, layout } = node.attrs;
+  const { title, items, textAlign, layout } = node.attrs;
   const isEditing = selected;
   const width = layout?.width || 100;
   
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Handler to update the entire block's attributes
-  const updateAllAttributes = (newAttrs: { blockTitle?: string; progressBars?: any[] }) => {
+  const updateAllAttributes = (newAttrs: { title?: string; items?: any[] }) => {
     updateAttributes(newAttrs);
   };
   
-  // Handlers for individual progress bar actions
-  const addProgressBar = useCallback(() => {
-    const newId = (progressBars.length > 0 ? Math.max(...progressBars.map((p: any) => p.id)) : 0) + 1;
+  const addBar = useCallback(() => {
+    const newId = (items.length > 0 ? Math.max(...items.map((p: any) => p.id)) : 0) + 1;
     updateAllAttributes({ 
-      progressBars: [...progressBars, {
+      items: [...items, {
         id: newId,
-        title: `Progress ${newId}`,
-        progress: 0,
+        label: `New Item`,
+        value: 0,
         color: PREDEFINED_COLORS[newId % PREDEFINED_COLORS.length]
       }]
     });
-  }, [progressBars, updateAllAttributes]);
+  }, [items, updateAllAttributes]);
 
-  const removeProgressBar = useCallback((id: number) => {
-    if (progressBars.length > 1) {
-      updateAllAttributes({ progressBars: progressBars.filter((p: any) => p.id !== id) });
+  const removeBar = useCallback((id: number) => {
+    if (items.length > 1) {
+      updateAllAttributes({ items: items.filter((p: any) => p.id !== id) });
     } else {
-        toast({ title: "Cannot Remove", description: "The block must have at least one progress bar." });
+        toast({ title: "Cannot Remove", description: "The block must have at least one item." });
     }
-  }, [progressBars, updateAllAttributes, toast]);
+  }, [items, updateAllAttributes, toast]);
 
-  const updateBarAttribute = useCallback((id: number, attr: string, value: any) => {
-    const newProgressBars = progressBars.map((p: any) => p.id === id ? { ...p, [attr]: value } : p);
-    updateAllAttributes({ progressBars: newProgressBars });
-  }, [progressBars, updateAllAttributes]);
+  const updateItemAttribute = useCallback((id: number, attr: string, value: any) => {
+    const newItems = items.map((p: any) => p.id === id ? { ...p, [attr]: value } : p);
+    updateAllAttributes({ items: newItems });
+  }, [items, updateAllAttributes]);
 
-  const handleAiGenerate = (generatedData: { blockTitle: string; progressBars: any[] }) => {
-    if (!generatedData || !generatedData.progressBars || generatedData.progressBars.length === 0) {
+  const handleAiGenerate = (generatedData: { title: string; items: any[] }) => {
+    if (!generatedData || !generatedData.items || generatedData.items.length === 0) {
       toast({
         variant: 'destructive',
         title: 'AI Generation Failed',
@@ -68,13 +66,10 @@ export const ProgressBarNodeView: React.FC<NodeViewProps> = ({ node, updateAttri
       });
       return;
     }
-    updateAllAttributes({
-      blockTitle: generatedData.blockTitle,
-      progressBars: generatedData.progressBars,
-    });
+    updateAllAttributes(generatedData);
     toast({
       title: 'AI Data Generated',
-      description: 'The progress bars have been populated.',
+      description: 'The component has been populated with new data.',
     });
   };
 
@@ -89,91 +84,89 @@ export const ProgressBarNodeView: React.FC<NodeViewProps> = ({ node, updateAttri
           <CardHeader>
             {isEditing ? (
               <Input
-                value={blockTitle}
-                onChange={(e) => updateAllAttributes({ blockTitle: e.target.value })}
+                value={title}
+                onChange={(e) => updateAllAttributes({ title: e.target.value })}
                 className="text-2xl font-bold font-headline border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
-                placeholder="Progress Title"
+                placeholder="Block Title"
               />
             ) : (
-              <CardTitle className="font-headline">{blockTitle}</CardTitle>
+              <CardTitle className="font-headline">{title}</CardTitle>
             )}
           </CardHeader>
-          <CardContent className="space-y-3">
-            {progressBars.map((bar: any) => (
-              <div key={bar.id} className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  {isEditing ? (
-                    <Input 
-                      value={bar.title}
-                      onChange={e => updateBarAttribute(bar.id, 'title', e.target.value)}
-                      className="h-8 flex-grow"
-                      placeholder="Progress Label"
-                    />
-                  ) : (
-                    <p className="font-semibold text-foreground">{bar.title}</p>
-                  )}
-                  
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-sm font-mono text-muted-foreground w-12 text-right">{bar.progress}%</span>
-                    {isEditing && (
-                      <>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Palette size={16} style={{ color: bar.color }} />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-2">
-                            <div className="grid grid-cols-5 gap-1">
-                              {PREDEFINED_COLORS.map(color => (
-                                <Button
-                                  key={color}
-                                  variant="outline"
-                                  size="icon"
-                                  className={cn("h-8 w-8", bar.color === color && 'ring-2 ring-primary')}
-                                  style={{ backgroundColor: color }}
-                                  onClick={() => updateBarAttribute(bar.id, 'color', color)}
-                                />
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive/70 hover:text-destructive"
-                          onClick={() => removeProgressBar(bar.id)}
-                          disabled={progressBars.length <= 1}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {/* RENDER LOGIC: Use a slider for editing, a simple div for viewing */}
+          <CardContent className="space-y-4">
+            {items.map((item: any) => (
+              <div key={item.id}>
                 {isEditing ? (
-                   <Slider
-                    value={[bar.progress]}
-                    onValueChange={(value) => updateBarAttribute(bar.id, 'progress', value[0])}
-                    max={100}
-                    step={1}
-                  />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                       <Input 
+                          value={item.label}
+                          onChange={e => updateItemAttribute(item.id, 'label', e.target.value)}
+                          className="h-8 flex-grow"
+                          placeholder="Label"
+                        />
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <span className="text-sm font-mono text-muted-foreground w-12 text-right">{item.value}%</span>
+                           <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Palette size={16} style={{ color: item.color }} />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2">
+                              <div className="grid grid-cols-5 gap-1">
+                                {PREDEFINED_COLORS.map(color => (
+                                  <Button
+                                    key={color}
+                                    variant="outline"
+                                    size="icon"
+                                    className={cn("h-8 w-8", item.color === color && 'ring-2 ring-primary')}
+                                    style={{ backgroundColor: color }}
+                                    onClick={() => updateItemAttribute(item.id, 'color', color)}
+                                  />
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive/70 hover:text-destructive"
+                            onClick={() => removeBar(item.id)}
+                            disabled={items.length <= 1}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                    </div>
+                     <Slider
+                        value={[item.value]}
+                        onValueChange={(value) => updateItemAttribute(item.id, 'value', value[0])}
+                        max={100}
+                        step={1}
+                      />
+                  </div>
                 ) : (
-                   <div className="w-full bg-secondary rounded-full h-6">
-                      <div
-                        className="h-6 rounded-full"
-                        style={{ width: `${bar.progress}%`, backgroundColor: bar.color }}
-                      ></div>
-                   </div>
+                   <div className="grid grid-cols-12 items-center gap-x-4 gap-y-1">
+                      <p className="font-semibold text-foreground text-right truncate col-span-4">{item.label}</p>
+                      <div className="w-full bg-secondary rounded-full h-6 relative col-span-8">
+                          <div
+                              className="h-6 rounded-full flex items-center justify-end px-2 transition-all duration-300"
+                              style={{ width: `${item.value}%`, backgroundColor: item.color }}
+                          >
+                              {item.value > 10 && <span className="font-mono text-white text-xs font-semibold">{item.value}%</span>}
+                          </div>
+                          {item.value <= 10 && <span className="absolute left-full ml-2 font-mono text-muted-foreground text-xs">{item.value}%</span>}
+                      </div>
+                  </div>
                 )}
               </div>
             ))}
             {isEditing && (
                 <div className="flex gap-2 pt-2 border-t">
-                    <Button variant="outline" className="flex-1" onClick={addProgressBar}>
+                    <Button variant="outline" className="flex-1" onClick={addBar}>
                         <Plus size={16} className="mr-2"/>
-                        Add Bar
+                        Add Item
                     </Button>
                      <Button variant="outline" className="flex-1" onClick={() => setIsAiDialogOpen(true)}>
                         <Wand2 size={16} className="mr-2"/>

@@ -19,14 +19,14 @@ export const ProgressBarBlock = Node.create({
 
   addAttributes() {
     return {
-      blockTitle: {
-        default: 'Progress Tracker',
+      title: {
+        default: 'Key Metrics',
       },
-      progressBars: {
+      items: {
         default: [
-          { id: 1, title: 'Project Alpha', progress: 65, color: '#3B82F6' },
-          { id: 2, title: 'Task Beta', progress: 40, color: '#10B981' },
-          { id: 3, title: 'Goal Gamma', progress: 85, color: '#F59E0B' }
+          { id: 1, label: 'Metric A', value: 65, color: '#3B82F6' },
+          { id: 2, label: 'Metric B', value: 40, color: '#10B981' },
+          { id: 3, label: 'Metric C', value: 85, color: '#F59E0B' }
         ],
       },
       textAlign: {
@@ -57,11 +57,46 @@ export const ProgressBarBlock = Node.create({
   },
   
   parseHTML() {
-    return [{ tag: 'div[data-type="progress-bar-block"]' }];
+    return [{ 
+        tag: 'div[data-type="progress-bar-block"]',
+        getAttrs: (dom: HTMLElement) => {
+            const itemsAttr = dom.getAttribute('data-items');
+            const titleAttr = dom.getAttribute('data-title');
+            
+            // Handle legacy attributes for backward compatibility
+            const oldTitle = dom.getAttribute('data-block-title');
+            const oldItems = dom.getAttribute('data-progress-bars');
+            
+            let items = [];
+            if (itemsAttr) {
+                items = JSON.parse(itemsAttr);
+            } else if (oldItems) {
+                // Map old structure to new
+                items = JSON.parse(oldItems).map((item: any) => ({
+                    id: item.id,
+                    label: item.title,
+                    value: item.progress,
+                    color: item.color
+                }));
+            }
+            
+            return {
+                title: titleAttr || oldTitle,
+                items,
+            };
+        },
+    }];
   },
   
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'progress-bar-block' })];
+    return [
+      'div', 
+      mergeAttributes(
+        { 'data-type': 'progress-bar-block' },
+        { 'data-title': HTMLAttributes.title },
+        { 'data-items': JSON.stringify(HTMLAttributes.items) }
+      )
+    ];
   },
   
   addNodeView() {

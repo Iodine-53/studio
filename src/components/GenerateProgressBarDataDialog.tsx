@@ -35,7 +35,7 @@ export function GenerateProgressBarDataDialog({ open, onOpenChange, onGenerate }
       onOpenChange(false);
       setPrompt('');
     } catch (error) {
-      console.error('AI progress bar data generation failed:', error);
+      console.error('AI bar chart data generation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       toast({
         variant: 'destructive',
@@ -51,9 +51,9 @@ export function GenerateProgressBarDataDialog({ open, onOpenChange, onGenerate }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Generate Progress Bars with AI</DialogTitle>
+          <DialogTitle>Generate Bar Chart Data with AI</DialogTitle>
           <DialogDescription>
-            Describe the progress you want to track. The AI will generate a set of progress bars for you.
+            Describe the data you want to display. The AI will generate a title and a set of labeled bars for you.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -61,7 +61,7 @@ export function GenerateProgressBarDataDialog({ open, onOpenChange, onGenerate }
             <Label htmlFor="progress-prompt">Prompt</Label>
             <Textarea
               id="progress-prompt"
-              placeholder="e.g., 'progress for a website launch project with design, development, and testing phases'"
+              placeholder="e.g., 'a skill chart for a resume with skills in React, TypeScript, and Node.js'"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={5}

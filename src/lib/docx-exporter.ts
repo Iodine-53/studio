@@ -172,22 +172,16 @@ const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, wi
     ctx.fill();
 };
 
-const renderProgressBarToImage = (blockTitle: string, progressBars: any[]): Promise<string> => {
+const renderBarChartToImage = (title: string, items: any[]): Promise<string> => {
   return new Promise((resolve) => {
     const BAR_HEIGHT = 28;
     const PADDING = 20;
-    const BAR_SPACING = 20; // Vertical space between each full bar component
-    const TITLE_SPACING = 10; // Space between bar title and the bar itself
+    const LABEL_WIDTH = 150;
+    const BAR_SPACING = 20;
     const BLOCK_TITLE_HEIGHT = 40;
     const CANVAS_WIDTH = 700;
-    
-    // Recalculate total height
-    const totalBarsHeight = progressBars.reduce((acc) => {
-      // For each bar: title height (assume 20px) + title spacing + bar height + bar spacing
-      return acc + 20 + TITLE_SPACING + BAR_HEIGHT + BAR_SPACING;
-    }, 0);
 
-    const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + totalBarsHeight;
+    const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + (items.length * (BAR_HEIGHT + BAR_SPACING));
     
     const canvas = document.createElement('canvas');
     canvas.width = CANVAS_WIDTH;
@@ -199,49 +193,47 @@ const renderProgressBarToImage = (blockTitle: string, progressBars: any[]): Prom
       return;
     }
 
-    // White background
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Block Title
     ctx.fillStyle = '#111827';
     ctx.font = 'bold 24px sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(blockTitle, PADDING, PADDING);
+    ctx.fillText(title, PADDING, PADDING);
 
     let currentY = PADDING + BLOCK_TITLE_HEIGHT;
 
-    progressBars.forEach(bar => {
-      // Bar Title & Percentage
+    items.forEach(item => {
       ctx.fillStyle = '#1F2937';
       ctx.font = '16px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(bar.title, PADDING, currentY);
-
       ctx.textAlign = 'right';
-      ctx.fillText(`${bar.progress}%`, canvas.width - PADDING, currentY);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(item.label, PADDING + LABEL_WIDTH, currentY + BAR_HEIGHT / 2);
 
-      currentY += 20 + TITLE_SPACING; // Move down past title
+      const barX = PADDING + LABEL_WIDTH + 20;
+      const barCanvasWidth = CANVAS_WIDTH - barX - PADDING;
       
-      const barYPosition = currentY;
-      const barCanvasWidth = canvas.width - (PADDING * 2);
+      ctx.fillStyle = '#E5E7EB'; // Background
+      drawRoundedRect(ctx, barX, currentY, barCanvasWidth, BAR_HEIGHT, 14);
 
-      // Bar Background
-      ctx.fillStyle = '#E5E7EB'; // gray-200
-      drawRoundedRect(ctx, PADDING, barYPosition, barCanvasWidth, BAR_HEIGHT, BAR_HEIGHT / 2);
-
-      // Bar Foreground
-      if (bar.progress > 0) {
-        const barWidth = barCanvasWidth * (bar.progress / 100);
-        ctx.fillStyle = bar.color;
-        drawRoundedRect(ctx, PADDING, barYPosition, barWidth, BAR_HEIGHT, BAR_HEIGHT / 2);
+      if (item.value > 0) {
+        const barWidth = barCanvasWidth * (item.value / 100);
+        ctx.fillStyle = item.color;
+        drawRoundedRect(ctx, barX, currentY, barWidth, BAR_HEIGHT, 14);
+        
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        if (barWidth > 40) { // Only draw text if there's enough space
+          ctx.fillText(`${item.value}%`, barX + barWidth - 10, currentY + BAR_HEIGHT / 2);
+        }
       }
       
       currentY += BAR_HEIGHT + BAR_SPACING;
     });
     
-    // Add a small delay to ensure rendering completes before creating the data URL
     setTimeout(() => {
         resolve(canvas.toDataURL('image/png'));
     }, 100);
@@ -260,21 +252,17 @@ function createTextRuns(node: TiptapNode): TextRun[] {
         const linkMark = contentNode.marks?.find(mark => mark.type === 'link');
         const href = linkMark?.attrs?.href;
 
-        // Handle links first, as they have a dedicated style
         if (href) {
-            // Note: The 'Hyperlink' style in docx will typically define the color and underline.
             return [new TextRun({
                 children: [text],
                 style: 'Hyperlink',
             })];
         }
 
-        // Handle other text styles
         const textStyleMark = contentNode.marks?.find(mark => mark.type === 'textStyle');
-        const color = textStyleMark?.attrs?.color?.substring(1); // Remove '#'
+        const color = textStyleMark?.attrs?.color?.substring(1);
         const fontFamily = textStyleMark?.attrs?.fontFamily;
         const fontSizePx = parseInt(textStyleMark?.attrs?.fontSize, 10);
-        // Conversion: 1px = 0.75pt, 1pt = 2 half-points. So 1px = 1.5 half-points.
         const size = !isNaN(fontSizePx) ? Math.round(fontSizePx * 1.5) : undefined; 
 
         return [new TextRun({
@@ -433,7 +421,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           children: [new TextRun({ text: codeText, font: { name: 'Courier New' } })],
           shading: {
               type: ShadingType.CLEAR,
-              fill: "F1F1F1", // Light grey
+              fill: "F1F1F1",
           },
           spacing: { after: 200 }
       })];
@@ -595,9 +583,9 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
 
     case 'progressBarBlock': {
       try {
-        const { blockTitle, progressBars, layout, textAlign } = node.attrs;
+        const { title, items, layout, textAlign } = node.attrs;
         
-        const imageBase64 = await renderProgressBarToImage(blockTitle, progressBars);
+        const imageBase64 = await renderBarChartToImage(title, items);
         if (!imageBase64) throw new Error("Progress bar rendering returned empty.");
         
         const imageBuffer = await getImageBuffer(imageBase64);
@@ -611,12 +599,11 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
         const BAR_HEIGHT = 28;
         const PADDING = 20;
         const BAR_SPACING = 20;
-        const TITLE_SPACING = 10;
         const BLOCK_TITLE_HEIGHT = 40;
         const CANVAS_WIDTH = 700;
         
-        const totalBarsHeight = progressBars.reduce((acc: number) => {
-            return acc + 20 + TITLE_SPACING + BAR_HEIGHT + BAR_SPACING;
+        const totalBarsHeight = items.reduce((acc: number) => {
+            return acc + BAR_HEIGHT + BAR_SPACING;
         }, 0);
         const canvasHeight = PADDING + BLOCK_TITLE_HEIGHT + totalBarsHeight;
         const aspectRatio = canvasHeight / CANVAS_WIDTH;
@@ -660,7 +647,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
 
 export const exportToDocx = async (docJson: TiptapNode) => {
   if (!docJson.content) {
-    return new Blob(); // Return an empty blob if there's no content
+    return new Blob();
   }
 
   const elements = (await Promise.all(docJson.content.map(convertNodeToDocx))).flat();
