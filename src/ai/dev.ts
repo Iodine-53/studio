@@ -7,3 +7,4 @@ import '@/ai/flows/generate-image-flow.ts';
 import '@/ai/flows/generate-document-flow.ts';
 import '@/ai/flows/generate-table-data-flow.ts';
 import '@/ai/flows/generate-chart-data-flow.ts';
+import '@/ai/flows/generate-audio-flow.ts';
