@@ -276,7 +276,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                     <YAxis tick={{fontSize: 12}} />
                     <Tooltip />
                     <Legend />
-                    {chartConfig.dataKeys?.map((key: string, index: number) => (
+                    {(chartConfig.dataKeys || []).map((key: string, index: number) => (
                         <SeriesComponent key={key} dataKey={key} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
                     ))}
                     </ChartComponent>
@@ -298,7 +298,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                     <h3 className="font-bold text-xl">{node.attrs?.title}</h3>
                     <p className="text-muted-foreground mb-4">{node.attrs?.subtitle}</p>
                     <div className="space-y-3">
-                        {node.attrs?.items.map((item: any) => (
+                        {(node.attrs?.items || []).map((item: any) => (
                             <div key={item.id} className="border-t pt-2">
                                 <h4 className="font-semibold">{item.title}</h4>
                                 <div className="text-sm text-foreground/80 leading-relaxed prose prose-sm max-w-none">
@@ -318,7 +318,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                 <div className="my-4 p-4 border rounded-lg not-prose">
                     <h4 className="font-bold text-xl mb-2">{node.attrs?.title}</h4>
                     <ul className="space-y-2 list-none pl-0">
-                        {node.attrs?.tasks.map((task: any) => (
+                        {(node.attrs?.tasks || []).map((task: any) => (
                             <li key={task.id} className="flex items-center gap-2">
                                 {task.completed ? <CheckSquare className="h-5 w-5 text-primary flex-shrink-0"/> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0"/>}
                                 <span className={cn(task.completed && 'line-through text-muted-foreground')}>
@@ -335,8 +335,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'interactiveTable': {
       try {
         const { title, headers: headersJson, data: dataJson } = node.attrs;
-        const headers = JSON.parse(headersJson);
-        const data = JSON.parse(dataJson);
+        const headers = JSON.parse(headersJson || '[]');
+        const data = JSON.parse(dataJson || '[]');
     
         return (
           <div style={wrapperStyle}>
@@ -394,7 +394,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
           <div className="my-4 p-4 border rounded-lg not-prose">
             <h4 className="font-bold text-lg mb-4">{title}</h4>
             <div className="space-y-3">
-              {items.map((bar: any) => (
+              {(items || []).map((bar: any) => (
                 <div key={bar.id}>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm font-medium">{bar.label}</span>
