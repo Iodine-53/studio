@@ -195,25 +195,53 @@ export default function VideoToAudioPage() {
     };
 
     const encodeToMp3 = (audioBuffer: AudioBuffer): Blob => {
-        const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
-        const samples = new Int16Array(audioBuffer.length);
-        const pcm = audioBuffer.getChannelData(0);
-        
-        let offset = 0;
-        for (let i = 0; i < pcm.length; i++) {
-            const s = Math.max(-1, Math.min(1, pcm[i]));
-            samples[offset++] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-        }
-
-        const mp3Data = [];
+        const channels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, 128);
+        const mp3Data: Int8Array[] = [];
+    
         const sampleBlockSize = 1152;
-        for (let i = 0; i < samples.length; i += sampleBlockSize) {
-            const sampleChunk = samples.subarray(i, i + sampleBlockSize);
-            const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
-            if (mp3buf.length > 0) {
-                mp3Data.push(mp3buf);
+    
+        if (channels === 1) {
+            // Mono
+            const samples = new Int16Array(audioBuffer.length);
+            const pcm = audioBuffer.getChannelData(0);
+            for (let i = 0; i < pcm.length; i++) {
+                const s = Math.max(-1, Math.min(1, pcm[i]));
+                samples[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            for (let i = 0; i < samples.length; i += sampleBlockSize) {
+                const sampleChunk = samples.subarray(i, i + sampleBlockSize);
+                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                if (mp3buf.length > 0) {
+                    mp3Data.push(mp3buf);
+                }
+            }
+        } else { 
+            // Stereo
+            const left = new Int16Array(audioBuffer.length);
+            const right = new Int16Array(audioBuffer.length);
+            const pcmLeft = audioBuffer.getChannelData(0);
+            const pcmRight = audioBuffer.getChannelData(1);
+            
+            for (let i = 0; i < pcmLeft.length; i++) {
+                let sL = Math.max(-1, Math.min(1, pcmLeft[i]));
+                left[i] = sL < 0 ? sL * 0x8000 : sL * 0x7FFF;
+
+                let sR = Math.max(-1, Math.min(1, pcmRight[i]));
+                right[i] = sR < 0 ? sR * 0x8000 : sR * 0x7FFF;
+            }
+
+            for (let i = 0; i < left.length; i += sampleBlockSize) {
+                const leftChunk = left.subarray(i, i + sampleBlockSize);
+                const rightChunk = right.subarray(i, i + sampleBlockSize);
+                const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+                if (mp3buf.length > 0) {
+                    mp3Data.push(mp3buf);
+                }
             }
         }
+
         const mp3buf = mp3encoder.flush();
         if (mp3buf.length > 0) {
             mp3Data.push(mp3buf);
