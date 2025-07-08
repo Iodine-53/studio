@@ -24,26 +24,44 @@ type OutputFormat = keyof typeof supportedFormats;
 const encodeToMp3 = (audioBuffer: AudioBuffer): Promise<Blob> => {
     return new Promise((resolve, reject) => {
         try {
+            // Polyfill MPEGMode if it's not defined on the window object
+            if (typeof (window as any).MPEGMode === 'undefined') {
+              (window as any).MPEGMode = {
+                STEREO: 0,
+                JOINT_STEREO: 1,
+                DUAL_CHANNEL: 2,
+                MONO: 3,
+              };
+            }
             const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
             const mp3Data = [];
-            
-            const samples = [];
-            for(let i=0; i < audioBuffer.numberOfChannels; i++) {
-                samples.push(audioBuffer.getChannelData(i));
-            }
 
-            const sampleBlockSize = 1152;
-            for (let i = 0; i < samples[0].length; i += sampleBlockSize) {
-                const leftChunk = new Int16Array(sampleBlockSize);
-                const rightChunk = audioBuffer.numberOfChannels > 1 ? new Int16Array(sampleBlockSize) : undefined;
-                
-                for(let j=0; j < sampleBlockSize; j++) {
-                    leftChunk[j] = samples[0][i+j] * 32767;
-                    if(rightChunk) {
-                        rightChunk[j] = samples[1][i+j] * 32767;
+            const pcmLeft = audioBuffer.getChannelData(0);
+            const pcmRight = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : pcmLeft;
+            const sampleBlockSize = 1152; //
+            
+            for (let i = 0; i < pcmLeft.length; i += sampleBlockSize) {
+                const leftChunk = pcmLeft.subarray(i, i + sampleBlockSize);
+                let rightChunk: Float32Array | undefined = undefined;
+                if (audioBuffer.numberOfChannels > 1) {
+                    rightChunk = pcmRight.subarray(i, i + sampleBlockSize);
+                }
+
+                // lamejs requires Int16, so we convert Float32 to Int16
+                const leftInt16 = new Int16Array(leftChunk.length);
+                for(let j=0; j<leftChunk.length; j++) {
+                    leftInt16[j] = leftChunk[j] * 32767;
+                }
+
+                let rightInt16: Int16Array | undefined = undefined;
+                if (rightChunk) {
+                    rightInt16 = new Int16Array(rightChunk.length);
+                    for(let j=0; j<rightChunk.length; j++) {
+                        rightInt16[j] = rightChunk[j] * 32767;
                     }
                 }
-                const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+                
+                const mp3buf = mp3encoder.encodeBuffer(leftInt16, rightInt16);
                 if (mp3buf.length > 0) {
                     mp3Data.push(mp3buf);
                 }
@@ -325,3 +343,5 @@ export default function AudioConverterPage() {
     </div>
   );
 }
+
+    
