@@ -23,7 +23,9 @@ export type TiptapNode = {
 
 const renderNode = (node: TiptapNode, key: number) => <NodeRenderer key={key} node={node} />;
 
-const renderNodes = (nodes: TiptapNode[] | undefined) => nodes?.map(renderNode);
+// Defensive renderNodes to prevent crashes on undefined content
+const renderNodes = (nodes: TiptapNode[] | undefined) => (nodes || []).map(renderNode);
+
 
 // New StaticDrawing component to render sketches in the print preview
 const StaticDrawing: FC<{ node: TiptapNode }> = ({ node }) => {
@@ -157,7 +159,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       // A paragraph should not contain block-level children according to the HTML spec.
       // If the Tiptap JSON has a block node inside a paragraph, we render the paragraph as a <div>
       // to prevent an invalid HTML structure like <p><div>...</div></p>, which causes hydration errors.
-      const hasBlockChild = node.content?.some(childNode =>
+      const hasBlockChild = (node.content || []).some(childNode =>
         [
           'image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'callout',
           'horizontalRule', 'interactiveTable', 'embed', 'progressBarBlock',
@@ -302,7 +304,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                             <div key={item.id} className="border-t pt-2">
                                 <h4 className="font-semibold">{item.title}</h4>
                                 <div className="text-sm text-foreground/80 leading-relaxed prose prose-sm max-w-none">
-                                    {item.content.split('\n').map((line: string, i: number) => <p key={i}>{line}</p>)}
+                                    {(item.content || '').split('\n').map((line: string, i: number) => <p key={i}>{line}</p>)}
                                 </div>
                             </div>
                         ))}
@@ -352,9 +354,9 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((row: string[], i: number) => (
+                    {(data || []).map((row: string[], i: number) => (
                       <tr key={i} className="border-b">
-                        {row.map((cell: string, j: number) => (
+                        {(row || []).map((cell: string, j: number) => (
                           <td key={j} className="p-2">{cell}</td>
                         ))}
                       </tr>
@@ -393,12 +395,12 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         <div style={wrapperStyle}>
           <div className="my-4 p-4 border rounded-lg not-prose">
             <h4 className="font-bold text-lg mb-4">{title}</h4>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {(items || []).map((bar: any) => (
                 <div key={bar.id}>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm font-medium">{bar.label}</span>
-                    <span className="text-sm font-medium">{bar.value}%</span>
+                    <span className="text-sm font-medium text-gray-600">{bar.value}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
@@ -415,8 +417,11 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
 
     default:
-      console.warn(`Unsupported node type in PrintPreview: ${node.type}`);
-      return <div className="hidden">{children}</div>;
+      // Fallback for unknown nodes or nodes that only contain other nodes
+      if (node.content && node.content.length > 0) {
+        return <>{children}</>;
+      }
+      return null;
   }
 };
 
@@ -482,5 +487,3 @@ export const PrintPreview: FC<PrintPreviewProps> = ({ isOpen, onClose, content }
     </div>
   );
 };
-
-    

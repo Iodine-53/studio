@@ -167,9 +167,16 @@ export default function PrintPage() {
                 page-break-after: avoid !important;
               }
               
-              p, ul, ol {
+              p {
                 orphans: 3;
                 widows: 3;
+              }
+
+              ul, ol {
+                orphans: 3;
+                widows: 3;
+                padding-left: 1.5rem;
+                list-style-position: outside;
               }
             }
         `}</style>
