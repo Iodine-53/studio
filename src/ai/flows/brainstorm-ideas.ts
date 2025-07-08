@@ -43,7 +43,7 @@ const brainstormIdeasFlow = ai.defineFlow(
     
     const { output } = await runner.generate({
         prompt: `You are a creative brainstorming assistant. Generate a list of creative ideas for the following topic:\n\nTopic: ${input.topic}\n\nIdeas:`,
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'googleai/gemini-1.5-pro-latest',
         output: {
             schema: BrainstormIdeasOutputSchema
         }

@@ -65,7 +65,7 @@ const generateDocumentFlow = ai.defineFlow(
     }
     const runner = genkit({ plugins: [googleAI({ apiKey: input.apiKey })] });
     const { output } = await runner.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'googleai/gemini-1.5-pro-latest',
         prompt: `You are an expert document creation assistant. Based on the user's prompt, generate a sequence of content blocks to build a document.
 
 You can create headings (levels 1-3), paragraphs, bulleted lists, and ordered lists.

@@ -58,7 +58,7 @@ User Prompt: "${prompt}"
 `;
 
     const response = await runner.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'googleai/gemini-1.5-pro-latest',
         prompt: finalPrompt,
     });
     
