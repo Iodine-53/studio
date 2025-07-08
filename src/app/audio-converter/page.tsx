@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useCallback, ChangeEvent } from 'react';
@@ -10,88 +9,16 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
-import { Mp3Encoder } from 'lamejs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-type OutputFormat = 'wav' | 'mp3';
+// Supported audio formats with MIME types and extensions
+const supportedFormats = {
+  'audio/webm;codecs=opus': { label: 'WebM (Opus)', extension: '.webm' },
+  'audio/mp4;codecs=mp4a.40.2': { label: 'MP4 (AAC)', extension: '.m4a' },
+  'audio/ogg;codecs=vorbis': { label: 'OGG (Vorbis)', extension: '.ogg' },
+};
 
-// Helper: Convert an AudioBuffer to a WAV Blob
-function audioBufferToWav(buffer: AudioBuffer): Blob {
-    const numOfChan = buffer.numberOfChannels;
-    const length = buffer.length * numOfChan * 2 + 44;
-    const bufferArray = new ArrayBuffer(length);
-    const view = new DataView(bufferArray);
-    const channels: Float32Array[] = [];
-    let pos = 0;
-
-    const setUint16 = (data: number) => { view.setUint16(pos, data, true); pos += 2; };
-    const setUint32 = (data: number) => { view.setUint32(pos, data, true); pos += 4; };
-
-    setUint32(0x46464952); // 'RIFF'
-    setUint32(length - 8);
-    setUint32(0x45564157); // 'WAVE'
-    setUint32(0x20746d66); // 'fmt '
-    setUint32(16);
-    setUint16(1);
-    setUint16(numOfChan);
-    setUint32(buffer.sampleRate);
-    setUint32(buffer.sampleRate * 2 * numOfChan);
-    setUint16(numOfChan * 2);
-    setUint16(16);
-    setUint32(0x61746164); // 'data'
-    setUint32(length - pos - 4);
-
-    for (let i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
-
-    for (let i = 0; i < buffer.length; i++) {
-        for (let j = 0; j < numOfChan; j++) {
-            const sample = Math.max(-1, Math.min(1, channels[j][i]));
-            view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-            pos += 2;
-        }
-    }
-    return new Blob([view], { type: 'audio/wav' });
-}
-
-// Helper: Convert an AudioBuffer to an MP3 Blob
-function audioBufferToMp3(buffer: AudioBuffer): Blob {
-    const numberOfChannels = buffer.numberOfChannels;
-    const sampleRate = buffer.sampleRate;
-    const mp3Encoder = new Mp3Encoder(numberOfChannels, sampleRate, 128);
-    const mp3Data = [];
-
-    const sampleBlockSize = 1152;
-    const dataLength = buffer.length;
-
-    for (let i = 0; i < dataLength; i += sampleBlockSize) {
-        const leftChunkFloat = buffer.getChannelData(0).subarray(i, i + sampleBlockSize);
-        const leftChunkInt16 = new Int16Array(leftChunkFloat.length);
-        for (let j = 0; j < leftChunkFloat.length; j++) {
-            leftChunkInt16[j] = leftChunkFloat[j] * 32767.5;
-        }
-
-        let rightChunkInt16: Int16Array | undefined = undefined;
-        if (numberOfChannels === 2) {
-            const rightChunkFloat = buffer.getChannelData(1).subarray(i, i + sampleBlockSize);
-            rightChunkInt16 = new Int16Array(rightChunkFloat.length);
-            for (let j = 0; j < rightChunkFloat.length; j++) {
-                rightChunkInt16[j] = rightChunkFloat[j] * 32767.5;
-            }
-        }
-        
-        const mp3buf = mp3Encoder.encodeBuffer(leftChunkInt16, rightChunkInt16);
-        if (mp3buf.length > 0) {
-            mp3Data.push(mp3buf);
-        }
-    }
-    const mp3buf = mp3Encoder.flush();
-    if (mp3buf.length > 0) {
-        mp3Data.push(mp3buf);
-    }
-
-    return new Blob(mp3Data, { type: 'audio/mp3' });
-}
-
+type OutputFormat = keyof typeof supportedFormats;
 
 export default function AudioConverterPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -100,8 +27,8 @@ export default function AudioConverterPage() {
   const [isConverting, setIsConverting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
-  const [outputFormat, setOutputFormat] = useState<OutputFormat>('mp3');
-  
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>('audio/webm;codecs=opus');
+
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,7 +65,7 @@ export default function AudioConverterPage() {
     setAudioSrc(url);
     audioSrcRef.current = url;
   };
-  
+
   const handleDragEvents = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -167,9 +94,16 @@ export default function AudioConverterPage() {
   const handleConvert = async () => {
     if (!selectedFile) return;
 
+    if (!MediaRecorder.isTypeSupported(outputFormat)) {
+      toast({ variant: 'destructive', title: 'Format Not Supported', description: 'Your browser does not support this audio format. Please try another.' });
+      return;
+    }
+
     setIsConverting(true);
     if (convertedSrcRef.current) URL.revokeObjectURL(convertedSrcRef.current);
     setConvertedSrc(null);
+    setProgress(0);
+    setProgressText('Preparing...');
 
     try {
       setProgress(10);
@@ -180,37 +114,57 @@ export default function AudioConverterPage() {
       setProgressText('Decoding audio...');
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const audioBuffer = await audioContext.decodeAudioData(fileBuffer);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+
+      const destination = audioContext.createMediaStreamDestination();
+      source.connect(destination);
+
+      const mediaRecorder = new MediaRecorder(destination.stream, { mimeType: outputFormat });
+      const chunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const convertedBlob = new Blob(chunks, { type: outputFormat });
+        const url = URL.createObjectURL(convertedBlob);
+        setConvertedSrc(url);
+        convertedSrcRef.current = url;
+        setProgress(100);
+        setProgressText('Conversion Complete!');
+        toast({ title: "Success!", description: `Audio converted successfully.` });
+        setIsConverting(false);
+        audioContext.close();
+      };
       
+      mediaRecorder.onerror = (event) => {
+        throw new Error(`MediaRecorder error: ${(event as any).error?.name}`);
+      };
+
       setProgress(70);
-      setProgressText(`Encoding to ${outputFormat.toUpperCase()}...`);
-      
-      let convertedBlob: Blob;
-      if (outputFormat === 'mp3') {
-        convertedBlob = audioBufferToMp3(audioBuffer);
-      } else {
-        convertedBlob = audioBufferToWav(audioBuffer);
-      }
+      setProgressText(`Encoding to ${supportedFormats[outputFormat].label}...`);
+      mediaRecorder.start();
+      source.start();
 
-      const url = URL.createObjectURL(convertedBlob);
-      setConvertedSrc(url);
-      convertedSrcRef.current = url;
-
-      setProgress(100);
-      setProgressText('Conversion Complete!');
-      toast({ title: "Success!", description: `Audio converted to ${outputFormat.toUpperCase()}.` });
+      source.onended = () => {
+        mediaRecorder.stop();
+      };
 
     } catch (error) {
       console.error("Conversion error:", error);
-      toast({ variant: 'destructive', title: 'Conversion Failed', description: "Could not process this file. It may be corrupt or in an unsupported format." });
+      toast({ variant: 'destructive', title: 'Conversion Failed', description: error instanceof Error ? error.message : "Could not process this file." });
       resetState();
-    } finally {
       setIsConverting(false);
     }
   };
-  
+
   const handleDownload = () => {
     if (convertedSrc && selectedFile) {
-      const fileName = selectedFile.name.replace(/\.[^/.]+$/, `.${outputFormat}`);
+      const { extension } = supportedFormats[outputFormat];
+      const fileName = selectedFile.name.replace(/\.[^/.]+$/, extension);
       saveAs(convertedSrc, fileName);
     }
   };
@@ -232,14 +186,11 @@ export default function AudioConverterPage() {
             <Card className="w-full max-w-2xl shadow-xl">
                 <CardHeader className="text-center">
                     <CardTitle className="text-3xl font-bold font-headline">Convert Audio Files</CardTitle>
-                    <CardDescription>Quickly convert your audio to MP3 or WAV format.</CardDescription>
+                    <CardDescription>Quickly convert your audio files using browser-native APIs.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-6 pb-8 space-y-6">
-                    <div 
-                        className={cn(
-                            'p-8 text-center border-2 border-dashed rounded-lg cursor-pointer transition-colors',
-                            isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                        )}
+                    <div
+                        className={cn('p-8 text-center border-2 border-dashed rounded-lg cursor-pointer transition-colors', isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50')}
                         onClick={() => fileInputRef.current?.click()}
                         onDrop={handleDrop} onDragOver={handleDragEvents} onDragEnter={handleDragEvents} onDragLeave={handleDragEvents}
                     >
@@ -248,22 +199,23 @@ export default function AudioConverterPage() {
                         <p className="text-sm text-muted-foreground">Supports MP3, WAV, OGG, and more</p>
                         <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
                     </div>
-                    
+
                     {selectedFile && (
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold text-center">Your Audio</h3>
                             <audio src={audioSrc ?? ''} controls className="w-full"></audio>
-                             
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                                 <div>
                                     <label htmlFor="output-format" className="text-sm font-medium">Output Format</label>
-                                    <Select value={outputFormat} onValueChange={(v: OutputFormat) => setOutputFormat(v)}>
+                                     <Select value={outputFormat} onValueChange={(v: OutputFormat) => setOutputFormat(v)}>
                                         <SelectTrigger id="output-format" className="mt-1">
                                             <SelectValue placeholder="Select format" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="mp3">MP3</SelectItem>
-                                            <SelectItem value="wav">WAV</SelectItem>
+                                            {Object.entries(supportedFormats).map(([mime, { label }]) => (
+                                                <SelectItem key={mime} value={mime} disabled={!MediaRecorder.isTypeSupported(mime)}>{label}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -274,23 +226,21 @@ export default function AudioConverterPage() {
                             </div>
                         </div>
                     )}
-                    
+
                     {isConverting && (
                         <div className="space-y-2">
                            <Progress value={progress} />
                            <p className="text-sm text-center text-muted-foreground">{progressText}</p>
                         </div>
                     )}
-                    
+
                     {convertedSrc && !isConverting && (
                        <Card className="bg-primary/5 border-primary/20">
-                          <CardHeader>
-                            <CardTitle className="text-xl text-center">Conversion Complete!</CardTitle>
-                          </CardHeader>
+                          <CardHeader><CardTitle className="text-xl text-center">Conversion Complete!</CardTitle></CardHeader>
                           <CardContent className="flex flex-col items-center gap-4">
                             <audio src={convertedSrc} controls className="w-full"></audio>
                             <Button onClick={handleDownload} size="lg" className="bg-green-600 hover:bg-green-700">
-                                <Download className="mr-2" /> Download {outputFormat.toUpperCase()}
+                                <Download className="mr-2" /> Download {supportedFormats[outputFormat].label}
                             </Button>
                           </CardContent>
                        </Card>

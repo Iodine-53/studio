@@ -1,97 +1,24 @@
-
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Download, Music, UploadCloud, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
-import { Mp3Encoder } from 'lamejs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-type OutputFormat = 'wav' | 'mp3';
+// Supported audio formats with MIME types and extensions
+const supportedFormats = {
+  'audio/webm;codecs=opus': { label: 'WebM (Opus)', extension: '.webm' },
+  'audio/mp4;codecs=mp4a.40.2': { label: 'MP4 (AAC)', extension: '.m4a' },
+  'audio/ogg;codecs=vorbis': { label: 'OGG (Vorbis)', extension: '.ogg' },
+};
 
-// Helper: Convert an AudioBuffer to a WAV Blob
-function audioBufferToWav(buffer: AudioBuffer): Blob {
-    const numOfChan = buffer.numberOfChannels;
-    const length = buffer.length * numOfChan * 2 + 44;
-    const bufferArray = new ArrayBuffer(length);
-    const view = new DataView(bufferArray);
-    const channels: Float32Array[] = [];
-    let pos = 0;
-
-    const setUint16 = (data: number) => { view.setUint16(pos, data, true); pos += 2; };
-    const setUint32 = (data: number) => { view.setUint32(pos, data, true); pos += 4; };
-
-    setUint32(0x46464952); // 'RIFF'
-    setUint32(length - 8);
-    setUint32(0x45564157); // 'WAVE'
-    setUint32(0x20746d66); // 'fmt '
-    setUint32(16);
-    setUint16(1);
-    setUint16(numOfChan);
-    setUint32(buffer.sampleRate);
-    setUint32(buffer.sampleRate * 2 * numOfChan);
-    setUint16(numOfChan * 2);
-    setUint16(16);
-    setUint32(0x61746164); // 'data'
-    setUint32(length - pos - 4);
-
-    for (let i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
-
-    for (let i = 0; i < buffer.length; i++) {
-        for (let j = 0; j < numOfChan; j++) {
-            const sample = Math.max(-1, Math.min(1, channels[j][i]));
-            view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-            pos += 2;
-        }
-    }
-    return new Blob([view], { type: 'audio/wav' });
-}
-
-// Helper: Convert an AudioBuffer to an MP3 Blob
-function audioBufferToMp3(buffer: AudioBuffer): Blob {
-    const numberOfChannels = buffer.numberOfChannels;
-    const sampleRate = buffer.sampleRate;
-    const mp3Encoder = new Mp3Encoder(numberOfChannels, sampleRate, 128);
-    const mp3Data = [];
-
-    const sampleBlockSize = 1152;
-    const dataLength = buffer.length;
-
-    for (let i = 0; i < dataLength; i += sampleBlockSize) {
-        const leftChunkFloat = buffer.getChannelData(0).subarray(i, i + sampleBlockSize);
-        const leftChunkInt16 = new Int16Array(leftChunkFloat.length);
-        for (let j = 0; j < leftChunkFloat.length; j++) {
-            leftChunkInt16[j] = leftChunkFloat[j] * 32767.5;
-        }
-
-        let rightChunkInt16: Int16Array | undefined = undefined;
-        if (numberOfChannels === 2) {
-            const rightChunkFloat = buffer.getChannelData(1).subarray(i, i + sampleBlockSize);
-            rightChunkInt16 = new Int16Array(rightChunkFloat.length);
-            for (let j = 0; j < rightChunkFloat.length; j++) {
-                rightChunkInt16[j] = rightChunkFloat[j] * 32767.5;
-            }
-        }
-        
-        const mp3buf = mp3Encoder.encodeBuffer(leftChunkInt16, rightChunkInt16);
-        if (mp3buf.length > 0) {
-            mp3Data.push(mp3buf);
-        }
-    }
-    const mp3buf = mp3Encoder.flush();
-    if (mp3buf.length > 0) {
-        mp3Data.push(mp3buf);
-    }
-
-    return new Blob(mp3Data, { type: 'audio/mp3' });
-}
-
+type OutputFormat = keyof typeof supportedFormats;
 
 export default function VideoToAudioPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -100,7 +27,7 @@ export default function VideoToAudioPage() {
   const [isConverting, setIsConverting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
-  const [outputFormat, setOutputFormat] = useState<OutputFormat>('mp3');
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>('audio/webm;codecs=opus');
 
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
@@ -119,7 +46,7 @@ export default function VideoToAudioPage() {
     if (previousVideoURL.current) URL.revokeObjectURL(previousVideoURL.current);
     if (previousAudioURL.current) URL.revokeObjectURL(previousAudioURL.current);
   }, []);
-  
+
   const handleFileSelect = (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('video/')) {
@@ -132,7 +59,7 @@ export default function VideoToAudioPage() {
     setVideoSrc(url);
     previousVideoURL.current = url;
   };
-  
+
   const handleDragEvents = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -155,52 +82,88 @@ export default function VideoToAudioPage() {
       return;
     }
 
+    if (!MediaRecorder.isTypeSupported(outputFormat)) {
+      toast({ variant: 'destructive', title: 'Format Not Supported', description: 'Your browser does not support this audio format. Please try another.' });
+      return;
+    }
+
     setIsConverting(true);
     setAudioSrc(null);
     if (previousAudioURL.current) URL.revokeObjectURL(previousAudioURL.current);
+    setProgress(0);
+    setProgressText('Preparing...');
 
     try {
-        setProgress(10);
-        setProgressText('Reading video file...');
+      const videoElement = document.createElement('video');
+      videoElement.src = URL.createObjectURL(selectedFile);
+      videoElement.muted = true;
 
-        const fileBuffer = await selectedFile.arrayBuffer();
-        
-        setProgress(30);
-        setProgressText('Decoding audio track...');
+      await new Promise<void>((resolve, reject) => {
+        videoElement.onloadedmetadata = () => resolve();
+        videoElement.onerror = () => reject(new Error('Failed to load video metadata.'));
+      });
+      
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const source = audioContext.createMediaElementSource(videoElement);
+      const destination = audioContext.createMediaStreamDestination();
+      source.connect(destination);
+      source.connect(audioContext.destination); // Optional: play audio while processing
 
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const audioBuffer = await audioContext.decodeAudioData(fileBuffer);
-        
-        setProgress(70);
-        setProgressText(`Encoding to ${outputFormat.toUpperCase()}...`);
+      const mediaRecorder = new MediaRecorder(destination.stream, { mimeType: outputFormat });
+      const chunks: Blob[] = [];
 
-        let convertedBlob: Blob;
-        if (outputFormat === 'mp3') {
-          convertedBlob = audioBufferToMp3(audioBuffer);
-        } else {
-          convertedBlob = audioBufferToWav(audioBuffer);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
         }
+      };
 
-        const url = URL.createObjectURL(convertedBlob);
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(chunks, { type: outputFormat });
+        const url = URL.createObjectURL(audioBlob);
         setAudioSrc(url);
         previousAudioURL.current = url;
-
         setProgress(100);
         setProgressText('Extraction Complete!');
-        toast({ title: "Success!", description: "Audio extracted and ready for download." });
+        toast({ title: 'Success!', description: 'Audio extracted and ready for download.' });
+        setIsConverting(false);
+        audioContext.close();
+        URL.revokeObjectURL(videoElement.src);
+      };
+      
+      mediaRecorder.onerror = (event) => {
+        throw new Error(`MediaRecorder error: ${(event as any).error?.name}`);
+      };
+
+      mediaRecorder.start();
+      videoElement.play();
+
+      const updateProgress = () => {
+        if (videoElement.duration && !videoElement.ended) {
+          const currentProgress = (videoElement.currentTime / videoElement.duration) * 100;
+          setProgress(currentProgress);
+          setProgressText(`Extracting... ${Math.round(currentProgress)}%`);
+          requestAnimationFrame(updateProgress);
+        }
+      };
+      requestAnimationFrame(updateProgress);
+
+      videoElement.onended = () => {
+        mediaRecorder.stop();
+      };
 
     } catch (error) {
-        console.error("Conversion error:", error);
-        toast({ variant: 'destructive', title: 'Conversion Failed', description: "Could not process this video. The file may be corrupt or in an unsupported format." });
-        resetState();
-    } finally {
-        setIsConverting(false);
+      console.error('Conversion error:', error);
+      toast({ variant: 'destructive', title: 'Extraction Failed', description: error instanceof Error ? error.message : "An unknown error occurred." });
+      resetState();
+      setIsConverting(false);
     }
-  }, [selectedFile, toast, resetState, outputFormat]);
-  
+  }, [selectedFile, outputFormat, toast, resetState]);
+
   const handleDownload = () => {
     if (audioSrc && selectedFile) {
-      const fileName = selectedFile.name.replace(/\.[^/.]+$/, `.${outputFormat}`);
+      const { extension } = supportedFormats[outputFormat];
+      const fileName = selectedFile.name.replace(/\.[^/.]+$/, extension);
       saveAs(audioSrc, fileName);
     }
   };
@@ -225,11 +188,8 @@ export default function VideoToAudioPage() {
                     <CardDescription>Fast, secure, and entirely in your browser. No uploads required.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-6 pb-8 space-y-6">
-                    <div 
-                        className={cn(
-                            'p-8 text-center border-2 border-dashed rounded-lg cursor-pointer transition-colors',
-                            isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                        )}
+                    <div
+                        className={cn('p-8 text-center border-2 border-dashed rounded-lg cursor-pointer transition-colors', isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50')}
                         onClick={() => fileInputRef.current?.click()}
                         onDrop={handleDrop} onDragOver={handleDragEvents} onDragEnter={handleDragEvents} onDragLeave={handleDragEvents}
                     >
@@ -238,7 +198,7 @@ export default function VideoToAudioPage() {
                         <p className="text-sm text-muted-foreground">Supports MP4, WebM, MOV, and more</p>
                         <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => handleFileSelect(e.target.files?.[0] || null)} />
                     </div>
-                    
+
                     {selectedFile && (
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold text-center">Video Preview</h3>
@@ -251,40 +211,38 @@ export default function VideoToAudioPage() {
                                             <SelectValue placeholder="Select format" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="mp3">MP3</SelectItem>
-                                            <SelectItem value="wav">WAV</SelectItem>
+                                            {Object.entries(supportedFormats).map(([mime, { label }]) => (
+                                                <SelectItem key={mime} value={mime} disabled={!MediaRecorder.isTypeSupported(mime)}>{label}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <Button onClick={convertVideoToAudio} disabled={isConverting} size="lg" className="w-full">
                                     {isConverting ? <Loader2 className="mr-2 animate-spin"/> : <Music className="mr-2" />}
-                                    {isConverting ? progressText : 'Extract Audio'}
+                                    {isConverting ? 'Extracting...' : 'Extract Audio'}
                                 </Button>
                              </div>
                         </div>
                     )}
-                    
+
                     {isConverting && (
                         <div className="space-y-2">
                            <Progress value={progress} />
                            <p className="text-sm text-center text-muted-foreground">{progressText}</p>
                         </div>
                     )}
-                    
+
                     {audioSrc && !isConverting && (
                        <Card className="bg-primary/5 border-primary/20">
-                          <CardHeader>
-                            <CardTitle className="text-xl text-center">Extraction Complete!</CardTitle>
-                          </CardHeader>
+                          <CardHeader><CardTitle className="text-xl text-center">Extraction Complete!</CardTitle></CardHeader>
                           <CardContent className="flex flex-col items-center gap-4">
                             <audio src={audioSrc} controls className="w-full"></audio>
                             <Button onClick={handleDownload} size="lg" className="bg-green-600 hover:bg-green-700">
-                                <Download className="mr-2" /> Download {outputFormat.toUpperCase()}
+                                <Download className="mr-2" /> Download {supportedFormats[outputFormat].label}
                             </Button>
                           </CardContent>
                        </Card>
                     )}
-
                 </CardContent>
             </Card>
         </main>
