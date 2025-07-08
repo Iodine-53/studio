@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const supportedFormats = {
   'audio/mpeg': { label: 'MP3', extension: '.mp3' },
   'audio/wav': { label: 'WAV', extension: '.wav' },
+  'audio/mp4': { label: 'M4A (AAC)', extension: '.m4a' },
 };
 type OutputFormat = keyof typeof supportedFormats;
 
@@ -30,15 +31,19 @@ const encodeToMp3 = (audioBuffer: AudioBuffer): Promise<Blob> => {
         try {
             const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
             const mp3Data = [];
+            const channels = [];
+            for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+                channels.push(audioBuffer.getChannelData(i));
+            }
 
-            const pcmLeft = audioBuffer.getChannelData(0);
-            const pcmRight = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : pcmLeft;
             const sampleBlockSize = 1152;
+            const pcmLeft = channels[0];
+            const pcmRight = audioBuffer.numberOfChannels > 1 ? channels[1] : pcmLeft;
             
             for (let i = 0; i < pcmLeft.length; i += sampleBlockSize) {
                 const leftChunk = pcmLeft.subarray(i, i + sampleBlockSize);
                 const rightChunk = audioBuffer.numberOfChannels > 1 ? pcmRight.subarray(i, i + sampleBlockSize) : undefined;
-
+                
                 const leftInt16 = new Int16Array(leftChunk.length);
                 for(let j=0; j<leftChunk.length; j++) {
                     leftInt16[j] = leftChunk[j] * 32767;
@@ -109,6 +114,50 @@ const encodeToWav = (audioBuffer: AudioBuffer): Promise<Blob> => {
         }
 
         resolve(new Blob([view], { type: 'audio/wav' }));
+    });
+};
+
+const encodeToAac = (audioBuffer: AudioBuffer): Promise<Blob> => {
+    return new Promise(async (resolve, reject) => {
+        if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported('audio/mp4')) {
+            return reject(new Error('AAC (M4A) encoding is not supported by your browser.'));
+        }
+
+        try {
+            const offlineContext = new OfflineAudioContext(
+                audioBuffer.numberOfChannels,
+                audioBuffer.length,
+                audioBuffer.sampleRate
+            );
+
+            const source = offlineContext.createBufferSource();
+            source.buffer = audioBuffer;
+
+            const destination = offlineContext.createMediaStreamDestination();
+            source.connect(destination);
+
+            const chunks: BlobPart[] = [];
+            const recorder = new MediaRecorder(destination.stream, { mimeType: 'audio/mp4' });
+
+            recorder.ondataavailable = e => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
+
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'audio/mp4' });
+                resolve(blob);
+            };
+
+            recorder.onerror = err => reject(err);
+
+            recorder.start();
+            source.start(0);
+            await offlineContext.startRendering();
+            recorder.stop();
+
+        } catch (error) {
+            reject(error);
+        }
     });
 };
 
@@ -209,6 +258,8 @@ export default function AudioConverterPage() {
         convertedBlob = await encodeToMp3(audioBuffer);
       } else if (outputFormat === 'audio/wav') {
         convertedBlob = await encodeToWav(audioBuffer);
+      } else if (outputFormat === 'audio/mp4') {
+        convertedBlob = await encodeToAac(audioBuffer);
       } else {
         throw new Error('Unsupported format selected');
       }
@@ -256,7 +307,7 @@ export default function AudioConverterPage() {
                 <Card className="w-full max-w-2xl shadow-xl">
                     <CardHeader className="text-center">
                         <CardTitle className="text-3xl font-bold font-headline">Convert Audio Files</CardTitle>
-                        <CardDescription>Convert your audio files to MP3 or WAV right in your browser.</CardDescription>
+                        <CardDescription>Convert your audio files to MP3, WAV, or M4A right in your browser.</CardDescription>
                     </CardHeader>
                     <CardContent className="px-6 pb-8 space-y-6">
                         <div
