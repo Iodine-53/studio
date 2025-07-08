@@ -14,12 +14,48 @@ import { saveAs } from 'file-saver';
 import { useUserApiKey } from '@/hooks/use-user-api-key';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import wav from 'wav';
+import { Buffer } from 'buffer';
+
+// Polyfill Buffer for client-side usage
+if (typeof window !== 'undefined') {
+  (window as any).Buffer = Buffer;
+}
+
 
 const VOICES = [
   'Algenib', 'Achernar', 'Enif', 'Hadar', 'Regulus', 'Spica', 'Sirius', 'Vega'
 ];
 
 const MAX_CHARS = 5000; // Gemini TTS character limit
+
+// Helper function to convert raw PCM audio data to a WAV file buffer.
+async function toWav(
+  pcmData: Buffer,
+  channels = 1,
+  rate = 24000,
+  sampleWidth = 2
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const writer = new wav.Writer({
+      channels,
+      sampleRate: rate,
+      bitDepth: sampleWidth * 8,
+    });
+
+    const bufs: Buffer[] = [];
+    writer.on('error', reject);
+    writer.on('data', (d) => {
+      bufs.push(d);
+    });
+    writer.on('end', () => {
+      resolve(Buffer.concat(bufs).toString('base64'));
+    });
+
+    writer.write(pcmData);
+    writer.end();
+  });
+}
 
 export default function TextToAudioPage() {
   const [inputText, setInputText] = useState(
@@ -60,13 +96,19 @@ export default function TextToAudioPage() {
       const isMultiSpeaker = /Speaker\s*\d+:/i.test(inputText);
       
       const result = await generateAudio({
-        query: inputText, // Passing the raw text, normalization now happens on the server.
+        query: inputText,
         apiKey,
-        // Only send the voice if it's NOT a multi-speaker script
         voice: isMultiSpeaker ? undefined : selectedVoice,
       });
 
-      setAudioSrc(result.media);
+      // The flow now returns raw PCM data; we convert it to WAV on the client.
+      const pcmBase64 = result.pcmDataUri.substring(result.pcmDataUri.indexOf(',') + 1);
+      const pcmBuffer = Buffer.from(pcmBase64, 'base64');
+      
+      const wavBase64 = await toWav(pcmBuffer);
+      const wavDataUri = 'data:audio/wav;base64,' + wavBase64;
+
+      setAudioSrc(wavDataUri);
       toast({
         title: 'Success!',
         description: 'Your audio has been generated.',

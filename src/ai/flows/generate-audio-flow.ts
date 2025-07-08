@@ -11,7 +11,6 @@ import { ai } from '@/ai/genkit';
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
-import wav from 'wav';
 
 // The input is now an object to support an optional API key and voice selection.
 const GenerateAudioInputSchema = z.object({
@@ -22,39 +21,11 @@ const GenerateAudioInputSchema = z.object({
 export type GenerateAudioInput = z.infer<typeof GenerateAudioInputSchema>;
 
 
-// The output is an object containing the base64-encoded WAV data URI.
+// The output is an object containing the base64-encoded PCM data URI from the model.
 const GenerateAudioOutputSchema = z.object({
-  media: z.string(),
+  pcmDataUri: z.string(),
 });
 export type GenerateAudioOutput = z.infer<typeof GenerateAudioOutputSchema>;
-
-// Helper function to convert raw PCM audio data to a WAV file buffer.
-async function toWav(
-  pcmData: Buffer,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
-
-    const bufs: Buffer[] = [];
-    writer.on('error', reject);
-    writer.on('data', (d) => {
-      bufs.push(d);
-    });
-    writer.on('end', () => {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
-
-    writer.write(pcmData);
-    writer.end();
-  });
-}
 
 // Main exported function that the UI will call.
 export async function generateAudio(input: GenerateAudioInput): Promise<GenerateAudioOutput> {
@@ -116,13 +87,9 @@ const generateAudioFlow = ai.defineFlow(
       throw new Error('Audio generation failed. The model returned no content.');
     }
     
-    // The model returns audio in PCM format, which needs to be converted to WAV for browser playback.
-    const audioBuffer = Buffer.from(media.url.substring(media.url.indexOf(',') + 1), 'base64');
-    
-    const wavBase64 = await toWav(audioBuffer);
-
+    // The model returns audio in PCM format. We return the raw data URI to the client.
     return {
-      media: 'data:audio/wav;base64,' + wavBase64,
+      pcmDataUri: media.url,
     };
   }
 );
