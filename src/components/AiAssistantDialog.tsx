@@ -335,7 +335,7 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
                  </DialogDescription>
                  <TabsList className="grid w-full grid-cols-3 mt-4">
                     <TabsTrigger value="write">Write</TabsTrigger>
-                    <TabsTrigger value="document">List</TabsTrigger>
+                    <TabsTrigger value="list">List</TabsTrigger>
                     <TabsTrigger value="brainstorm">Brainstorm</TabsTrigger>
                  </TabsList>
             </DialogHeader>
@@ -344,7 +344,7 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
                 <WriteTab editor={editor} onOpenChange={onOpenChange}/>
             </TabsContent>
             
-            <TabsContent value="document" className="p-6 pt-0">
+            <TabsContent value="list" className="p-6 pt-0">
                 <ListTab editor={editor} onOpenChange={onOpenChange}/>
             </TabsContent>
 

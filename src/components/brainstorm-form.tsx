@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Wand2 } from 'lucide-react';
+import { useUserApiKey } from '@/hooks/use-user-api-key';
 
 const formSchema = z.object({
   topic: z.string().min(3, {
@@ -23,6 +24,7 @@ export function BrainstormForm() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BrainstormIdeasOutput | null>(null);
+  const { getApiKey } = useUserApiKey();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,7 +37,8 @@ export function BrainstormForm() {
     setLoading(true);
     setResult(null);
     try {
-      const response = await brainstormIdeas(values);
+      const apiKey = getApiKey() || undefined;
+      const response = await brainstormIdeas({ ...values, apiKey });
       setResult(response);
     } catch (error) {
       console.error(error);

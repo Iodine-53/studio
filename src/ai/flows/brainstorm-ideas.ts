@@ -1,4 +1,5 @@
-// 'use server'
+
+'use server';
 
 /**
  * @fileOverview This file defines a Genkit flow for brainstorming ideas on a given topic.
@@ -7,8 +8,6 @@
  * - BrainstormIdeasInput - The input type for the brainstormIdeas function.
  * - BrainstormIdeasOutput - The return type for the brainstormIdeas function.
  */
-
-'use server';
 
 import {ai} from '@/ai/genkit';
 import {genkit} from 'genkit';
