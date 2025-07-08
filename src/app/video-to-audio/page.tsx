@@ -55,23 +55,39 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
 
 // Helper: Convert an AudioBuffer to an MP3 Blob
 function audioBufferToMp3(buffer: AudioBuffer): Blob {
-    const mp3Encoder = new Mp3Encoder(buffer.numberOfChannels, buffer.sampleRate, 128);
-    const samples = buffer.getChannelData(0); // Using single-channel for simplicity
-    const sampleBlockSize = 1152;
+    const numberOfChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const mp3Encoder = new Mp3Encoder(numberOfChannels, sampleRate, 128);
     const mp3Data = [];
 
-    const int16Samples = new Int16Array(samples.length);
-    for (let i = 0; i < samples.length; i++) {
-        int16Samples[i] = samples[i] * 32767.5;
-    }
+    const sampleBlockSize = 1152;
+    const dataLength = buffer.length;
 
-    for (let i = 0; i < int16Samples.length; i += sampleBlockSize) {
-        const sampleChunk = int16Samples.subarray(i, i + sampleBlockSize);
-        const mp3buf = mp3Encoder.encodeBuffer(sampleChunk);
-        if (mp3buf.length > 0) mp3Data.push(mp3buf);
+    for (let i = 0; i < dataLength; i += sampleBlockSize) {
+        const leftChunkFloat = buffer.getChannelData(0).subarray(i, i + sampleBlockSize);
+        const leftChunkInt16 = new Int16Array(leftChunkFloat.length);
+        for (let j = 0; j < leftChunkFloat.length; j++) {
+            leftChunkInt16[j] = leftChunkFloat[j] * 32767.5;
+        }
+
+        let rightChunkInt16: Int16Array | undefined = undefined;
+        if (numberOfChannels === 2) {
+            const rightChunkFloat = buffer.getChannelData(1).subarray(i, i + sampleBlockSize);
+            rightChunkInt16 = new Int16Array(rightChunkFloat.length);
+            for (let j = 0; j < rightChunkFloat.length; j++) {
+                rightChunkInt16[j] = rightChunkFloat[j] * 32767.5;
+            }
+        }
+        
+        const mp3buf = mp3Encoder.encodeBuffer(leftChunkInt16, rightChunkInt16);
+        if (mp3buf.length > 0) {
+            mp3Data.push(mp3buf);
+        }
     }
     const mp3buf = mp3Encoder.flush();
-    if (mp3buf.length > 0) mp3Data.push(mp3buf);
+    if (mp3buf.length > 0) {
+        mp3Data.push(mp3buf);
+    }
 
     return new Blob(mp3Data, { type: 'audio/mp3' });
 }
