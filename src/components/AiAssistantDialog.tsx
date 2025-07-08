@@ -14,7 +14,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
-import { Loader2, Wand2, Sparkles, Send, FileText } from 'lucide-react';
+import { Loader2, Wand2, Sparkles, Send, FileText, Trash2 } from 'lucide-react';
 import { generateText } from '@/ai/flows/generate-text-flow';
 import { brainstormIdeas, type BrainstormIdeasOutput } from '@/ai/flows/brainstorm-ideas';
 import { generateDocument, type GenerateDocumentOutput } from '@/ai/flows/generate-document-flow';
@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUserApiKey } from '@/hooks/use-user-api-key';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Props = {
   editor: Editor | null;
@@ -258,8 +259,10 @@ const BrainstormTab = () => {
 
     const handleBrainstorm = async () => {
         if (!inputValue) return;
-        const newMessages: BrainstormMessage[] = [...messages, { role: 'user', content: inputValue }];
-        setMessages(newMessages);
+
+        const newUserMessage: BrainstormMessage = { role: 'user', content: inputValue };
+        const updatedMessages = [...messages, newUserMessage];
+        setMessages(updatedMessages);
         setInputValue('');
         setIsLoading(true);
 
@@ -268,13 +271,16 @@ const BrainstormTab = () => {
             if (!apiKey) {
               throw new Error("A Gemini API key is required. Please set it in the settings.");
             }
-            const apiHistory = newMessages.map(msg => ({
+            
+            // The history for the model is everything in the conversation.
+            const historyForModel = updatedMessages.map(msg => ({
                 role: msg.role,
                 content: msg.content,
             }));
 
-            const response = await brainstormIdeas({ history: apiHistory, apiKey });
-            setMessages([...newMessages, { role: 'model', content: response.response }]);
+            const response = await brainstormIdeas({ history: historyForModel, apiKey });
+
+            setMessages([...updatedMessages, { role: 'model', content: response.response }]);
         } catch (error) {
             console.error('AI brainstorming failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -288,7 +294,15 @@ const BrainstormTab = () => {
         } finally {
             setIsLoading(false);
         }
-    }
+    };
+    
+    const handleClearChat = () => {
+        setMessages([]);
+        toast({
+            title: "Chat Cleared",
+            description: "Your brainstorming history has been reset.",
+        });
+    };
     
     return (
         <div className="flex flex-col h-[400px]">
@@ -328,6 +342,20 @@ const BrainstormTab = () => {
                         disabled={isLoading}
                     />
                     <Button onClick={handleBrainstorm} disabled={isLoading || !inputValue}><Send className="h-4 w-4" /></Button>
+                    {messages.length > 0 && !isLoading && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="outline" size="icon" onClick={handleClearChat}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Clear Chat History</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
                  </div>
             </div>
         </div>
