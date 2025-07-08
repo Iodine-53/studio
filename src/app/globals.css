@@ -84,14 +84,9 @@
     }
   }
   
-  /* Make the editor canvas full-width, but constrain text for readability. */
+  /* Make the editor canvas full-width */
   .prose {
     max-width: none;
-  }
-  .prose > :is(h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote, pre) {
-    max-width: 75ch; /* A good readable width for text */
-    margin-left: auto;
-    margin-right: auto;
   }
 }
 
