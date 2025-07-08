@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useUserApiKey } from '@/hooks/use-user-api-key';
 
 type Props = {
   editor: Editor | null;
@@ -38,13 +39,15 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const { getApiKey } = useUserApiKey();
 
     const handleGenerate = async () => {
         if (!editor || !prompt) return;
 
         setIsLoading(true);
         try {
-            const result = await generateText(prompt);
+            const apiKey = getApiKey() || undefined;
+            const result = await generateText({ prompt, apiKey });
 
             if (result) {
                 editor.chain().focus().insertContent(result).run();
@@ -97,6 +100,7 @@ const BrainstormTab = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<BrainstormMessage[]>([]);
     const { toast } = useToast();
+    const { getApiKey } = useUserApiKey();
 
     const handleBrainstorm = async () => {
         if (!inputValue) return;
@@ -106,7 +110,8 @@ const BrainstormTab = () => {
         setIsLoading(true);
 
         try {
-            const response = await brainstormIdeas({ topic: inputValue });
+            const apiKey = getApiKey() || undefined;
+            const response = await brainstormIdeas({ topic: inputValue, apiKey });
             setMessages([...newMessages, { role: 'ai', content: response.ideas }]);
         } catch (error) {
             console.error('AI brainstorming failed:', error);

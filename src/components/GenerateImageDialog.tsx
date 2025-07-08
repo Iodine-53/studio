@@ -16,6 +16,7 @@ import { Input } from './ui/input';
 import { Loader2, Wand2 } from 'lucide-react';
 import { generateImage } from '@/ai/flows/generate-image-flow';
 import { useToast } from '@/hooks/use-toast';
+import { useUserApiKey } from '@/hooks/use-user-api-key';
 
 type Props = {
   open: boolean;
@@ -27,13 +28,15 @@ export function GenerateImageDialog({ open, onOpenChange, onGenerate }: Props) {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { getApiKey } = useUserApiKey();
 
   const handleGenerate = async () => {
     if (!prompt) return;
     setIsLoading(true);
     try {
       const fullPrompt = `An image of ${prompt}`;
-      const result = await generateImage(fullPrompt);
+      const apiKey = getApiKey() || undefined;
+      const result = await generateImage({ prompt: fullPrompt, apiKey });
       onGenerate(result);
       onOpenChange(false);
       setPrompt('');

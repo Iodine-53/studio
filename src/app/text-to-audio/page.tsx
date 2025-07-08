@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { generateAudio } from '@/ai/flows/generate-audio-flow';
 import { saveAs } from 'file-saver';
+import { useUserApiKey } from '@/hooks/use-user-api-key';
 
 export default function TextToAudioPage() {
   const [inputText, setInputText] = useState(
@@ -21,6 +22,7 @@ export default function TextToAudioPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const { toast } = useToast();
+  const { getApiKey } = useUserApiKey();
 
   const handleGenerate = async () => {
     if (!inputText.trim()) {
@@ -35,7 +37,8 @@ export default function TextToAudioPage() {
     setIsLoading(true);
     setAudioSrc(null);
     try {
-      const result = await generateAudio(inputText);
+      const apiKey = getApiKey() || undefined;
+      const result = await generateAudio({ query: inputText, apiKey });
       setAudioSrc(result.media);
       toast({
         title: 'Success!',
