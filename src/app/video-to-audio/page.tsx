@@ -3,69 +3,77 @@
 
 import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Download, Film, Music, UploadCloud, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Music, UploadCloud, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
+import { Mp3Encoder } from 'lamejs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+type OutputFormat = 'wav' | 'mp3';
 
-// Helper function to encode a raw AudioBuffer into a WAV file Blob
+// Helper: Convert an AudioBuffer to a WAV Blob
 function audioBufferToWav(buffer: AudioBuffer): Blob {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
     const bufferArray = new ArrayBuffer(length);
     const view = new DataView(bufferArray);
     const channels: Float32Array[] = [];
-    let offset = 0;
     let pos = 0;
 
-    const setUint16 = (data: number) => {
-        view.setUint16(pos, data, true);
-        pos += 2;
-    };
+    const setUint16 = (data: number) => { view.setUint16(pos, data, true); pos += 2; };
+    const setUint32 = (data: number) => { view.setUint32(pos, data, true); pos += 4; };
 
-    const setUint32 = (data: number) => {
-        view.setUint32(pos, data, true);
-        pos += 4;
-    };
-
-    // RIFF header
     setUint32(0x46464952); // 'RIFF'
     setUint32(length - 8);
     setUint32(0x45564157); // 'WAVE'
-
-    // 'fmt ' chunk
     setUint32(0x20746d66); // 'fmt '
-    setUint32(16); // chunk size
-    setUint16(1); // format = 1 (PCM)
+    setUint32(16);
+    setUint16(1);
     setUint16(numOfChan);
     setUint32(buffer.sampleRate);
-    setUint32(buffer.sampleRate * 2 * numOfChan); // byte rate
-    setUint16(numOfChan * 2); // block align
-    setUint16(16); // bits per sample
-
-    // 'data' chunk
+    setUint32(buffer.sampleRate * 2 * numOfChan);
+    setUint16(numOfChan * 2);
+    setUint16(16);
     setUint32(0x61746164); // 'data'
     setUint32(length - pos - 4);
 
-    for (let i = 0; i < buffer.numberOfChannels; i++) {
-        channels.push(buffer.getChannelData(i));
-    }
+    for (let i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
 
-    // Write interleaved PCM data
     for (let i = 0; i < buffer.length; i++) {
         for (let j = 0; j < numOfChan; j++) {
-            const sample = Math.max(-1, Math.min(1, channels[j][i])); // clamp
-            const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF; // scale to 16-bit signed int
-            view.setInt16(pos, intSample, true);
+            const sample = Math.max(-1, Math.min(1, channels[j][i]));
+            view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
             pos += 2;
         }
     }
-
     return new Blob([view], { type: 'audio/wav' });
+}
+
+// Helper: Convert an AudioBuffer to an MP3 Blob
+function audioBufferToMp3(buffer: AudioBuffer): Blob {
+    const mp3Encoder = new Mp3Encoder(buffer.numberOfChannels, buffer.sampleRate, 128);
+    const samples = buffer.getChannelData(0); // Using single-channel for simplicity
+    const sampleBlockSize = 1152;
+    const mp3Data = [];
+
+    const int16Samples = new Int16Array(samples.length);
+    for (let i = 0; i < samples.length; i++) {
+        int16Samples[i] = samples[i] * 32767.5;
+    }
+
+    for (let i = 0; i < int16Samples.length; i += sampleBlockSize) {
+        const sampleChunk = int16Samples.subarray(i, i + sampleBlockSize);
+        const mp3buf = mp3Encoder.encodeBuffer(sampleChunk);
+        if (mp3buf.length > 0) mp3Data.push(mp3buf);
+    }
+    const mp3buf = mp3Encoder.flush();
+    if (mp3buf.length > 0) mp3Data.push(mp3buf);
+
+    return new Blob(mp3Data, { type: 'audio/mp3' });
 }
 
 
@@ -76,6 +84,7 @@ export default function VideoToAudioPage() {
   const [isConverting, setIsConverting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>('mp3');
 
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
@@ -147,10 +156,16 @@ export default function VideoToAudioPage() {
         const audioBuffer = await audioContext.decodeAudioData(fileBuffer);
         
         setProgress(70);
-        setProgressText('Encoding to WAV format...');
+        setProgressText(`Encoding to ${outputFormat.toUpperCase()}...`);
 
-        const wavBlob = audioBufferToWav(audioBuffer);
-        const url = URL.createObjectURL(wavBlob);
+        let convertedBlob: Blob;
+        if (outputFormat === 'mp3') {
+          convertedBlob = audioBufferToMp3(audioBuffer);
+        } else {
+          convertedBlob = audioBufferToWav(audioBuffer);
+        }
+
+        const url = URL.createObjectURL(convertedBlob);
         setAudioSrc(url);
         previousAudioURL.current = url;
 
@@ -165,11 +180,11 @@ export default function VideoToAudioPage() {
     } finally {
         setIsConverting(false);
     }
-  }, [selectedFile, toast, resetState]);
+  }, [selectedFile, toast, resetState, outputFormat]);
   
   const handleDownload = () => {
     if (audioSrc && selectedFile) {
-      const fileName = selectedFile.name.replace(/\.[^/.]+$/, '') + '.wav';
+      const fileName = selectedFile.name.replace(/\.[^/.]+$/, `.${outputFormat}`);
       saveAs(audioSrc, fileName);
     }
   };
@@ -212,10 +227,24 @@ export default function VideoToAudioPage() {
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold text-center">Video Preview</h3>
                             <video src={videoSrc ?? ''} controls className="w-full rounded-lg bg-black"></video>
-                             <Button onClick={convertVideoToAudio} disabled={isConverting} size="lg" className="w-full">
-                                {isConverting ? <Loader2 className="mr-2 animate-spin"/> : <Music className="mr-2" />}
-                                {isConverting ? progressText : 'Extract Audio (to WAV)'}
-                            </Button>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <div>
+                                    <label htmlFor="output-format" className="text-sm font-medium">Output Format</label>
+                                    <Select value={outputFormat} onValueChange={(v: OutputFormat) => setOutputFormat(v)}>
+                                        <SelectTrigger id="output-format" className="mt-1">
+                                            <SelectValue placeholder="Select format" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="mp3">MP3</SelectItem>
+                                            <SelectItem value="wav">WAV</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Button onClick={convertVideoToAudio} disabled={isConverting} size="lg" className="w-full">
+                                    {isConverting ? <Loader2 className="mr-2 animate-spin"/> : <Music className="mr-2" />}
+                                    {isConverting ? progressText : 'Extract Audio'}
+                                </Button>
+                             </div>
                         </div>
                     )}
                     
@@ -234,7 +263,7 @@ export default function VideoToAudioPage() {
                           <CardContent className="flex flex-col items-center gap-4">
                             <audio src={audioSrc} controls className="w-full"></audio>
                             <Button onClick={handleDownload} size="lg" className="bg-green-600 hover:bg-green-700">
-                                <Download className="mr-2" /> Download WAV
+                                <Download className="mr-2" /> Download {outputFormat.toUpperCase()}
                             </Button>
                           </CardContent>
                        </Card>
