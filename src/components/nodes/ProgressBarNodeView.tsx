@@ -98,7 +98,7 @@ export const ProgressBarNodeView: React.FC<NodeViewProps> = ({ node, updateAttri
               <CardTitle className="font-headline">{blockTitle}</CardTitle>
             )}
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {progressBars.map((bar: any) => (
               <div key={bar.id} className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
@@ -160,9 +160,9 @@ export const ProgressBarNodeView: React.FC<NodeViewProps> = ({ node, updateAttri
                     step={1}
                   />
                 ) : (
-                   <div className="w-full bg-secondary rounded-full h-2.5">
+                   <div className="w-full bg-secondary rounded-full h-6">
                       <div
-                        className="h-2.5 rounded-full"
+                        className="h-6 rounded-full"
                         style={{ width: `${bar.progress}%`, backgroundColor: bar.color }}
                       ></div>
                    </div>
