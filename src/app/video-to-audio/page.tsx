@@ -12,12 +12,18 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
 
-type SupportedMimeType = 'audio/webm' | 'audio/mp4' | 'audio/ogg';
+type SupportedMimeType = 
+  | 'audio/webm;codecs=opus' 
+  | 'audio/mp4;codecs=mp4a.40.2' 
+  | 'audio/ogg;codecs=vorbis'
+  | 'audio/webm;codecs=vorbis';
 
-const MIME_TYPE_MAP: Record<SupportedMimeType, string> = {
-  'audio/webm': '.webm',
-  'audio/mp4': '.m4a',
-  'audio/ogg': '.ogg',
+const MIME_TYPE_MAP: Record<string, string> = {
+  'audio/webm;codecs=opus': '.webm',
+  'audio/webm;codecs=vorbis': '.webm',
+  'audio/mp4;codecs=mp4a.40.2': '.m4a',
+  'audio/ogg;codecs=vorbis': '.ogg',
+  'audio/webm': '.webm', // Fallback
 };
 
 export default function VideoToAudioPage() {
@@ -26,7 +32,7 @@ export default function VideoToAudioPage() {
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [isConverting, setIsConverting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [selectedFormat, setSelectedFormat] = useState<SupportedMimeType>('audio/webm');
+  const [selectedFormat, setSelectedFormat] = useState<SupportedMimeType>('audio/webm;codecs=opus');
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +40,7 @@ export default function VideoToAudioPage() {
   const previousAudioURL = useRef<string | null>(null);
   const animationFrameId = useRef<number>();
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setSelectedFile(null);
     setVideoSrc(null);
     setAudioSrc(null);
@@ -43,7 +49,7 @@ export default function VideoToAudioPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (previousVideoURL.current) URL.revokeObjectURL(previousVideoURL.current);
     if (previousAudioURL.current) URL.revokeObjectURL(previousAudioURL.current);
-  };
+  }, []);
   
   const handleFileSelect = (file: File | null) => {
     if (!file) return;
@@ -82,6 +88,9 @@ export default function VideoToAudioPage() {
 
     setIsConverting(true);
     setProgress(0);
+    setAudioSrc(null);
+    if (previousAudioURL.current) URL.revokeObjectURL(previousAudioURL.current);
+
 
     try {
       const video = document.createElement('video');
@@ -98,9 +107,12 @@ export default function VideoToAudioPage() {
       const destination = audioContext.createMediaStreamDestination();
       source.connect(destination);
 
-      const mimeType = MediaRecorder.isTypeSupported(selectedFormat) ? selectedFormat : 'audio/webm';
+      const mimeType = MediaRecorder.isTypeSupported(selectedFormat) 
+          ? selectedFormat 
+          : 'audio/webm;codecs=opus';
+
       if (!MediaRecorder.isTypeSupported(mimeType)) {
-          throw new Error(`Your browser does not support ${selectedFormat} recording.`);
+          throw new Error(`Your browser does not support the selected audio format. Please try another.`);
       }
 
       const mediaRecorder = new MediaRecorder(destination.stream, { mimeType });
@@ -146,7 +158,7 @@ export default function VideoToAudioPage() {
         toast({ variant: 'destructive', title: 'Conversion Failed', description: (error as Error).message });
         resetState();
     }
-  }, [selectedFile, selectedFormat, toast]);
+  }, [selectedFile, selectedFormat, toast, resetState]);
   
   const handleDownload = () => {
     if (audioSrc && selectedFile) {
@@ -201,9 +213,10 @@ export default function VideoToAudioPage() {
                                     <Select value={selectedFormat} onValueChange={(v: SupportedMimeType) => setSelectedFormat(v)} disabled={isConverting}>
                                         <SelectTrigger id="format-select"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="audio/webm">WebM</SelectItem>
-                                            <SelectItem value="audio/mp4">MP4 (M4A)</SelectItem>
-                                            <SelectItem value="audio/ogg">Ogg</SelectItem>
+                                            <SelectItem value="audio/webm;codecs=opus">WebM (Opus)</SelectItem>
+                                            <SelectItem value="audio/mp4;codecs=mp4a.40.2">MP4 (AAC)</SelectItem>
+                                            <SelectItem value="audio/ogg;codecs=vorbis">OGG (Vorbis)</SelectItem>
+                                            <SelectItem value="audio/webm;codecs=vorbis">WebM (Vorbis)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
