@@ -14,7 +14,6 @@ import { saveAs } from 'file-saver';
 import { useUserApiKey } from '@/hooks/use-user-api-key';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import wav from 'wav';
 import { Buffer } from 'buffer';
 
 // Polyfill Buffer for client-side usage
@@ -30,31 +29,45 @@ const VOICES = [
 const MAX_CHARS = 5000; // Gemini TTS character limit
 
 // Helper function to convert raw PCM audio data to a WAV file buffer.
-async function toWav(
+function toWav(
   pcmData: Buffer,
   channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
+  sampleRate = 24000,
+  bitDepth = 16
+): Buffer {
+    const byteRate = sampleRate * channels * (bitDepth / 8);
+    const blockAlign = channels * (bitDepth / 8);
+    const dataSize = pcmData.length;
+    const chunkSize = 36 + dataSize;
 
-    const bufs: Buffer[] = [];
-    writer.on('error', reject);
-    writer.on('data', (d) => {
-      bufs.push(d);
-    });
-    writer.on('end', () => {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
+    // Total buffer size is 44 bytes for the header + the PCM data size
+    const buffer = Buffer.alloc(44 + dataSize);
 
-    writer.write(pcmData);
-    writer.end();
-  });
+    let offset = 0;
+
+    // RIFF header
+    buffer.write('RIFF', offset); offset += 4;
+    buffer.writeUInt32LE(chunkSize, offset); offset += 4;
+    buffer.write('WAVE', offset); offset += 4;
+
+    // fmt sub-chunk
+    buffer.write('fmt ', offset); offset += 4;
+    buffer.writeUInt32LE(16, offset); offset += 4; // Subchunk1Size for PCM
+    buffer.writeUInt16LE(1, offset); offset += 2; // AudioFormat (1 for PCM)
+    buffer.writeUInt16LE(channels, offset); offset += 2;
+    buffer.writeUInt32LE(sampleRate, offset); offset += 4;
+    buffer.writeUInt32LE(byteRate, offset); offset += 4;
+    buffer.writeUInt16LE(blockAlign, offset); offset += 2;
+    buffer.writeUInt16LE(bitDepth, offset); offset += 2;
+
+    // data sub-chunk
+    buffer.write('data', offset); offset += 4;
+    buffer.writeUInt32LE(dataSize, offset); offset += 4;
+
+    // PCM data
+    pcmData.copy(buffer, offset);
+
+    return buffer;
 }
 
 export default function TextToAudioPage() {
@@ -105,7 +118,8 @@ export default function TextToAudioPage() {
       const pcmBase64 = result.pcmDataUri.substring(result.pcmDataUri.indexOf(',') + 1);
       const pcmBuffer = Buffer.from(pcmBase64, 'base64');
       
-      const wavBase64 = await toWav(pcmBuffer);
+      const wavBuffer = toWav(pcmBuffer);
+      const wavBase64 = wavBuffer.toString('base64');
       const wavDataUri = 'data:audio/wav;base64,' + wavBase64;
 
       setAudioSrc(wavDataUri);
