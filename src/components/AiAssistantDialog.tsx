@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   Dialog,
@@ -34,6 +34,13 @@ type BrainstormMessage = {
     role: 'user' | 'ai';
     content: string | string[]; // AI can return a list of ideas
 }
+
+type StoredBrainstormChat = {
+    timestamp: number;
+    messages: BrainstormMessage[];
+};
+
+const BRAINSTORM_STORAGE_KEY = 'brainstormChatHistory';
 
 // Write Tab Component
 const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'>) => {
@@ -193,6 +200,50 @@ const BrainstormTab = () => {
     const [messages, setMessages] = useState<BrainstormMessage[]>([]);
     const { toast } = useToast();
     const { getApiKey } = useUserApiKey();
+    const isInitialMount = useRef(true);
+
+    // Load messages from localStorage on initial render
+    useEffect(() => {
+        const storedData = localStorage.getItem(BRAINSTORM_STORAGE_KEY);
+        if (storedData) {
+            try {
+                const { timestamp, messages: storedMessages }: StoredBrainstormChat = JSON.parse(storedData);
+                const now = new Date().getTime();
+                const twentyFourHours = 24 * 60 * 60 * 1000;
+
+                // Check if the stored data is less than 24 hours old
+                if (now - timestamp < twentyFourHours) {
+                    setMessages(storedMessages);
+                } else {
+                    // If it's expired, remove it from storage
+                    localStorage.removeItem(BRAINSTORM_STORAGE_KEY);
+                }
+            } catch (error) {
+                console.error("Failed to parse brainstorm chat history, clearing storage.", error);
+                localStorage.removeItem(BRAINSTORM_STORAGE_KEY);
+            }
+        }
+    }, []); // Empty dependency array ensures this runs only once on mount
+
+    // Save messages to localStorage whenever they change, skipping the initial render
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        if (messages.length > 0) {
+            const dataToStore: StoredBrainstormChat = {
+                timestamp: new Date().getTime(),
+                messages,
+            };
+            localStorage.setItem(BRAINSTORM_STORAGE_KEY, JSON.stringify(dataToStore));
+        } else {
+            // If the chat becomes empty, clear it from storage
+            localStorage.removeItem(BRAINSTORM_STORAGE_KEY);
+        }
+    }, [messages]);
+
 
     const handleBrainstorm = async () => {
         if (!inputValue) return;
