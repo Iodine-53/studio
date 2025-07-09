@@ -34,14 +34,12 @@ import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
 
 import TiptapEditor from "@/components/tiptap-editor";
-import { getDocument, saveDocument, getAllDocuments, type Document } from "@/lib/db";
+import { getDocument, saveDocument, type Document } from "@/lib/db";
 import { ArrowLeft, Loader2, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { format } from 'date-fns';
 import { AiAssistantDialog } from "@/components/AiAssistantDialog";
 
 // Register languages for code block syntax highlighting
@@ -55,7 +53,6 @@ export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
   const [doc, setDoc] = useState<Document | null>(null);
-  const [recentDocuments, setRecentDocuments] = useState<Document[]>([]);
   const [currentContent, setCurrentContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingDocx, setIsExportingDocx] = useState(false);
@@ -147,12 +144,9 @@ export default function EditorPage() {
       return;
     }
 
-    const fetchDocuments = async () => {
+    const fetchDocument = async () => {
       setIsLoading(true);
-      const [loadedDoc, allDocs] = await Promise.all([
-        getDocument(docId),
-        getAllDocuments()
-      ]);
+      const loadedDoc = await getDocument(docId);
 
       if (loadedDoc) {
         setDoc(loadedDoc);
@@ -161,17 +155,12 @@ export default function EditorPage() {
         console.error("Document not found");
         router.push("/");
       }
-
-      const filteredDocs = allDocs
-        .filter(d => d.id !== docId)
-        .slice(0, 5);
-      setRecentDocuments(filteredDocs);
       
       setIsLoading(false);
     };
     
     if (docId) {
-        fetchDocuments();
+        fetchDocument();
     }
     
     return () => {
@@ -251,38 +240,10 @@ export default function EditorPage() {
             </div>
           </nav>
         </header>
-        <main className="flex-1 flex w-full justify-start gap-6 px-2 sm:px-4 py-8">
-            {/* Editor Column */}
-            <div className="flex-1 min-w-0">
-                <div className="bg-card rounded-lg shadow-2xl border min-h-[85vh]">
-                    <TiptapEditor editor={editor} onAiAssistantClick={() => setIsAiAssistantOpen(true)} />
-                </div>
+        <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
+            <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border">
+                <TiptapEditor editor={editor} onAiAssistantClick={() => setIsAiAssistantOpen(true)} />
             </div>
-
-            {/* Recent Documents Sidebar (Right Column) */}
-            <aside className="hidden 2xl:block w-64 flex-shrink-0">
-                <div className="sticky top-24 space-y-6">
-                    <h2 className="text-xl font-bold font-headline text-primary">Recent Documents</h2>
-                    {recentDocuments.length > 0 ? (
-                        <div className="space-y-4">
-                            {recentDocuments.map((recentDoc) => (
-                                <Link href={`/editor/${recentDoc.id}`} key={recentDoc.id} className="block">
-                                    <Card className="transition-all duration-300 hover:border-primary hover:shadow-lg hover:-translate-y-0.5">
-                                        <CardHeader>
-                                            <CardTitle className="text-lg truncate">{recentDoc.title}</CardTitle>
-                                            <CardDescription>
-                                                Updated: {format(new Date(recentDoc.updatedAt), 'PP')}
-                                            </CardDescription>
-                                        </CardHeader>
-                                    </Card>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground italic">No other documents found.</p>
-                    )}
-                </div>
-            </aside>
         </main>
       </div>
       <PrintPreview
