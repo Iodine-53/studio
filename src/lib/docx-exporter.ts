@@ -505,54 +505,105 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
             });
         }))).flat();
 
-    case 'callout':
+    case 'callout': {
         const calloutContent = (await Promise.all((node.content || []).map(convertNodeToDocx))).flat();
+        
+        const type = node.attrs?.type || 'info';
+        const colors = {
+          info: { fill: 'E6F7FF', border: '91D5FF' },
+          warning: { fill: 'FFFBE6', border: 'FFE58F' },
+          danger: { fill: 'FFF1F0', border: 'FFA39E' },
+          success: { fill: 'F6FFED', border: 'B7EB8F' }
+        };
+        const { fill, border } = colors[type as keyof typeof colors] || colors.info;
+
         return [new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [new TableRow({
                 children: [new TableCell({
                     children: calloutContent,
-                    shading: { type: ShadingType.CLEAR, fill: 'E6F7FF' },
+                    shading: { type: ShadingType.CLEAR, fill },
                     borders: {
-                        left: { style: BorderStyle.SINGLE, size: 6, color: '40A9FF' }
-                    }
+                        top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                        bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                        left: { style: BorderStyle.SINGLE, size: 6, color: border },
+                        right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    },
+                    margins: { left: 100, right: 100, top: 100, bottom: 100 }
                 })]
             })]
         })];
+    }
     
-    case 'accordion':
+    case 'accordion': {
         const accordionElements: Paragraph[] = [];
         accordionElements.push(new Paragraph({
             children: [new TextRun({ text: node.attrs?.title || 'Accordion', bold: true })],
             heading: HeadingLevel.HEADING_3,
+            spacing: { after: 100 }
         }));
         for (const item of (node.attrs?.items || [])) {
             accordionElements.push(new Paragraph({
                 children: [new TextRun({ text: item.title, bold: true })],
-                spacing: { before: 200 },
+                spacing: { before: 150 },
             }));
             accordionElements.push(new Paragraph({
                 children: [new TextRun(item.content)],
             }));
         }
-        return accordionElements;
+        // Wrap in a styled table cell
+        return [new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [new TableRow({
+                children: [new TableCell({
+                    children: accordionElements,
+                    shading: { fill: 'F5F5F5', type: ShadingType.CLEAR },
+                    borders: {
+                      top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                      bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                      left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                      right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    },
+                    margins: { top: 200, bottom: 200, left: 200, right: 200 }
+                })]
+            })]
+        })];
+      }
 
-    case 'todoList':
-         const todoElements: Paragraph[] = [];
-         todoElements.push(new Paragraph({
-            children: [new TextRun({ text: node.attrs?.title, bold: true })],
-            heading: HeadingLevel.HEADING_3,
-         }));
-         for (const task of (node.attrs?.tasks || [])) {
-            const checkbox = task.completed ? '☑' : '☐';
-            todoElements.push(new Paragraph({
-                children: [
-                    new TextRun({ text: `${checkbox} ` }),
-                    new TextRun({ text: task.text, strike: task.completed }),
-                ]
-            }));
-         }
-         return todoElements;
+    case 'todoList': {
+        const todoElements: Paragraph[] = [];
+        todoElements.push(new Paragraph({
+           children: [new TextRun({ text: node.attrs?.title, bold: true })],
+           heading: HeadingLevel.HEADING_3,
+           spacing: { after: 100 }
+        }));
+        for (const task of (node.attrs?.tasks || [])) {
+           const checkbox = task.completed ? '☑' : '☐';
+           todoElements.push(new Paragraph({
+               children: [
+                   new TextRun({ text: `${checkbox} ` }),
+                   new TextRun({ text: task.text, strike: task.completed }),
+               ]
+           }));
+        }
+       // Wrap in a styled table cell
+       return [new Table({
+           width: { size: 100, type: WidthType.PERCENTAGE },
+           rows: [new TableRow({
+               children: [new TableCell({
+                   children: todoElements,
+                   shading: { fill: 'F5F5F5', type: ShadingType.CLEAR },
+                   borders: {
+                     top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                     bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                     left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                     right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                   },
+                   margins: { top: 200, bottom: 200, left: 200, right: 200 }
+               })]
+           })]
+       })];
+     }
 
     case 'embed': {
       const { src } = node.attrs;

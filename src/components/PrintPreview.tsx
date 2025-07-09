@@ -1,7 +1,7 @@
 
 "use client";
 
-import { X, CheckSquare, Square, AlertTriangle, Download, Video } from "lucide-react";
+import { X, CheckSquare, Square, AlertTriangle, Download, Video, Info, CheckCircle, AlertCircle } from "lucide-react";
 import React, { type FC, useRef, useEffect, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -216,18 +216,27 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
                 <div className={cn(isCompleted && 'line-through text-muted-foreground')}>{children}</div>
             </li>
         );
-    case 'callout':
+    case 'callout': {
+        const type = node.attrs?.type || 'info';
+        const iconMap = {
+            info: <Info className="h-5 w-5 text-blue-500 mt-1 flex-shrink-0"/>,
+            warning: <AlertTriangle className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0"/>,
+            danger: <AlertCircle className="h-5 w-5 text-red-500 mt-1 flex-shrink-0"/>,
+            success: <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0"/>,
+        };
+        
         return (
             <div className={cn("my-4 p-4 border-l-4 rounded-r-lg flex items-start gap-3",
-                node.attrs?.type === 'info' && "border-blue-400 bg-blue-50",
-                node.attrs?.type === 'warning' && "border-yellow-400 bg-yellow-50",
-                node.attrs?.type === 'danger' && "border-red-400 bg-red-50",
-                node.attrs?.type === 'success' && "border-green-400 bg-green-50",
+                type === 'info' && "border-blue-400 bg-blue-50",
+                type === 'warning' && "border-yellow-400 bg-yellow-50",
+                type === 'danger' && "border-red-400 bg-red-50",
+                type === 'success' && "border-green-400 bg-green-50",
             )}>
-                <AlertTriangle className="h-5 w-5 text-primary mt-1 flex-shrink-0"/>
+                {iconMap[type as keyof typeof iconMap]}
                 <div>{children}</div>
             </div>
         );
+    }
     case 'drawing':
       return <StaticDrawing node={node} />;
     
