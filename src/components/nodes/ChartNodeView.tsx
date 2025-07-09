@@ -68,6 +68,13 @@ const CustomLegend = (props: any) => {
     );
 };
 
+// Helper to truncate text
+const truncateLabel = (value: string, maxLength = 15) => {
+    if (typeof value !== 'string') return value;
+    return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value;
+};
+
+
 export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: NodeViewProps) => {
   const { textAlign, layout } = node.attrs;
   const width = layout?.width || 100;
@@ -283,6 +290,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         fontSize: 12,
         tickLine: false,
         axisLine: false,
+        tickFormatter: truncateLabel,
     };
     const commonXAxisProps = {
         ...commonAxisProps,
@@ -295,21 +303,15 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
 
     const defs = (
         <defs>
-            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#60A5FA" stopOpacity={1} />
-                <stop offset="100%" stopColor="#3B82F6" stopOpacity={1} />
+          {dataKeys.map((key, index) => (
+             <linearGradient key={`gradient-${key}`} id={`gradient-${key}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.8} />
+              <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.2} />
             </linearGradient>
-            <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
-                <stop offset="100%" stopColor="#60A5FA" stopOpacity={1} />
-            </linearGradient>
-            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.1} />
-            </linearGradient>
-            <filter id="shadow">
-                <feDropShadow dx="2" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.1"/>
-            </filter>
+          ))}
+          <filter id="shadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.1"/>
+          </filter>
         </defs>
     );
 
@@ -332,7 +334,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             {vc.tooltip && <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--accent))", opacity: 0.3 }} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
             {dataKeys.map((key, index) => (
-              <Bar key={key} dataKey={key} fill="url(#barGradient)" radius={[4, 4, 0, 0]} filter="url(#shadow)" />
+              <Bar key={key} dataKey={key} fill={`url(#gradient-${key})`} radius={[4, 4, 0, 0]} filter="url(#shadow)" />
             ))}
             {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
           </BarChart>
@@ -356,9 +358,9 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
             {dataKeys.map((key, index) => (
-              <Line key={key} type="monotone" dataKey={key} stroke="url(#lineGradient)" strokeWidth={3}
-                  dot={{ fill: '#3B82F6', strokeWidth: 2, stroke: '#FFFFFF', r: 6, filter: 'url(#shadow)' }}
-                  activeDot={{ r: 8, fill: '#1D4ED8', stroke: '#FFFFFF', strokeWidth: 2, filter: 'url(#shadow)' }}
+              <Line key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3}
+                  dot={{ fill: COLORS[index % COLORS.length], strokeWidth: 2, stroke: '#FFFFFF', r: 6, filter: 'url(#shadow)' }}
+                  activeDot={{ r: 8, fill: COLORS[index % COLORS.length], stroke: '#FFFFFF', strokeWidth: 2, filter: 'url(#shadow)' }}
               />
             ))}
             {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
@@ -383,15 +385,15 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
             {dataKeys.map((key, index) => (
-              <Area key={key} type="monotone" dataKey={key} stroke="#3B82F6" strokeWidth={3}
-                fill="url(#areaGradient)" filter="url(#areaShadow)" />
+              <Area key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3}
+                fill={`url(#gradient-${key})`} filter="url(#shadow)" />
             ))}
             {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
           </AreaChart>
         );
       }
       case 'pie': {
-        const pieData = data.map((d, i) => ({ ...d, [valueKey || '']: Number(d[valueKey || '']), color: COLORS[i % COLORS.length] })).filter(d => !isNaN(d[valueKey || '']) && d[valueKey || ''] > 0);
+        const pieData = data.map((d) => ({ ...d, [valueKey || '']: Number(d[valueKey || '']) })).filter(d => !isNaN(d[valueKey || '']) && d[valueKey || ''] > 0);
         return (
           <PieChart>
              <defs>
@@ -400,13 +402,13 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
               </filter>
               {pieData.map((entry, index) => (
                 <linearGradient key={`gradient-${index}`} id={`pieGradient-${index}`} x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
-                  <stop offset="100%" stopColor={entry.color} stopOpacity={0.7} />
+                  <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={1} />
+                  <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.7} />
                 </linearGradient>
               ))}
             </defs>
             <Pie data={pieData} dataKey={valueKey} nameKey={nameKey} cx="50%" cy="50%" innerRadius="60%" outerRadius="80%" paddingAngle={2} filter="url(#pieShadow)">
-              {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={`url(#pieGradient-${index})`} stroke="#FFFFFF" strokeWidth={2} />)}
+              {pieData.map((_entry, index) => <Cell key={`cell-${index}`} fill={`url(#pieGradient-${index})`} stroke="#FFFFFF" strokeWidth={2} />)}
             </Pie>
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
@@ -476,7 +478,14 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   }
 
   // View Mode
-  const savedChartData = JSON.parse(node.attrs.chartData || '[]');
+  const savedChartData = JSON.parse(node.attrs.chartData || '[]').map((d: any) => {
+    const dataPoint = {...d};
+    Object.keys(dataPoint).forEach(key => {
+        const num = parseFloat(dataPoint[key]);
+        if (!isNaN(num)) dataPoint[key] = num;
+    });
+    return dataPoint;
+  });
   const savedChartConfig = JSON.parse(node.attrs.chartConfig || '{}');
   const savedViewConfig = JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}');
 
