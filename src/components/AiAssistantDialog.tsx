@@ -200,6 +200,31 @@ const ListTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'
     )
 }
 
+// Helper function to recursively remove large data from Tiptap JSON.
+const sanitizeDocumentJson = (node: any): any => {
+    if (!node) return null;
+
+    // Sanitize the current node's attributes
+    if (node.attrs) {
+        // Omit image data URLs
+        if (node.attrs.src && node.attrs.src.startsWith('data:image')) {
+            node.attrs.src = '[Image data omitted for brevity]';
+        }
+        // Omit drawing paths
+        if (node.attrs.paths) {
+            node.attrs.paths = '[Drawing data omitted for brevity]';
+        }
+    }
+
+    // Recursively sanitize child nodes if they exist
+    if (node.content && Array.isArray(node.content)) {
+        node.content = node.content.map(sanitizeDocumentJson).filter(Boolean);
+    }
+    
+    return node;
+};
+
+
 // Brainstorm Tab Component
 const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
     const [inputValue, setInputValue] = useState('');
@@ -265,7 +290,11 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
 
         if (userPrompt.startsWith('/')) {
             if (editor) {
-                documentContext = JSON.stringify(editor.getJSON());
+                const fullJson = editor.getJSON();
+                // Create a deep copy to avoid mutating the editor's state directly
+                const jsonToSanitize = JSON.parse(JSON.stringify(fullJson));
+                const sanitizedJson = sanitizeDocumentJson(jsonToSanitize);
+                documentContext = JSON.stringify(sanitizedJson);
             } else {
                 toast({
                     variant: 'destructive',
