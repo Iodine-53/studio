@@ -1,3 +1,4 @@
+
 "use client";
 
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
@@ -37,7 +38,21 @@ const CHART_TYPES: { name: ChartType, icon: React.FC<any> }[] = [
   { name: 'pie', icon: PieChartIcon },
 ];
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF5733', '#C70039', '#900C3F', '#581845'];
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16', '#EC4899', '#6B7280'];
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-background p-3 border border-border rounded-lg shadow-lg">
+          <p className="font-semibold text-foreground">{`${label}`}</p>
+          {payload.map((p: any, index: number) => (
+             <p key={index} style={{ color: p.color }}>{`${p.name}: ${p.value}`}</p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+};
 
 const CustomLegend = (props: any) => {
     const { payload } = props;
@@ -46,7 +61,7 @@ const CustomLegend = (props: any) => {
             {payload.map((entry: any, index: number) => (
                 <div key={`item-${index}`} className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                    <span>{entry.value}</span>
+                    <span className="text-muted-foreground">{entry.value}</span>
                 </div>
             ))}
         </div>
@@ -56,7 +71,7 @@ const CustomLegend = (props: any) => {
 export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: NodeViewProps) => {
   const { textAlign, layout } = node.attrs;
   const width = layout?.width || 100;
-  const height = layout?.height || 320;
+  const height = layout?.height || 400;
 
   // State for the component's own editing mode
   const [isEditing, setIsEditing] = useState(false);
@@ -67,7 +82,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   const [chartType, setChartType] = useState(node.attrs.chartType);
   const [chartData, setChartData] = useState<any[]>([]);
   const [chartConfig, setChartConfig] = useState<ChartConfig>({});
-  const [viewConfig, setViewConfig] = useState({ legend: true, tooltip: true, grid: true });
+  const [viewConfig, setViewConfig] = useState({ legend: true, tooltip: true, grid: true, brush: true });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
@@ -88,7 +103,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       try {
         setChartData(JSON.parse(node.attrs.chartData || '[]'));
         setChartConfig(JSON.parse(node.attrs.chartConfig || '{}'));
-        setViewConfig(JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}'));
+        setViewConfig(JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true,"brush":true}'));
       } catch (e) {
         console.error("Failed to parse chart attributes", e);
         setChartData([]);
@@ -198,7 +213,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       };
       reader.readAsText(file);
     }
-    if(event.target) event.target.value = '';
+    if(event.target) event.target.value = "";
   };
   
   const handleTableChange = (rowIndex: number, key: string, value: string) => {
@@ -262,8 +277,44 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     
     const { xAxisKey, dataKeys = [], nameKey, valueKey } = config;
 
+    // Common Axis and Grid components
+    const commonAxisProps = {
+        stroke: "hsl(var(--muted-foreground))",
+        fontSize: 12,
+        tickLine: false,
+        axisLine: false,
+    };
+    const commonXAxisProps = {
+        ...commonAxisProps,
+        dataKey: xAxisKey,
+        angle: -45,
+        textAnchor: "end",
+        height: 80,
+    };
+    const commonGrid = <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.8} />;
+
+    const defs = (
+        <defs>
+            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#60A5FA" stopOpacity={1} />
+                <stop offset="100%" stopColor="#3B82F6" stopOpacity={1} />
+            </linearGradient>
+            <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
+                <stop offset="100%" stopColor="#60A5FA" stopOpacity={1} />
+            </linearGradient>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8} />
+                <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.1} />
+            </linearGradient>
+            <filter id="shadow">
+                <feDropShadow dx="2" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.1"/>
+            </filter>
+        </defs>
+    );
+
     switch (type) {
-      case 'bar': case 'line': case 'area':
+      case 'bar': {
         const processedData = data.map(row => {
             const newRow: {[key:string]: any} = { ...row };
             dataKeys.forEach(key => {
@@ -272,38 +323,96 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             });
             return newRow;
         });
-        const ChartComponent = type === 'bar' ? BarChart : type === 'line' ? LineChart : AreaChart;
-        const SeriesComponent = type === 'bar' ? Bar : type === 'line' ? Line : Area;
-        
         return (
-          <ChartComponent data={processedData}>
-            {vc.grid && <CartesianGrid strokeDasharray="3 3" />}
-            <XAxis dataKey={xAxisKey} tick={{fontSize: 12}} />
-            <YAxis tick={{fontSize: 12}} />
-            {vc.tooltip && <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />}
+          <BarChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            {defs}
+            {vc.grid && commonGrid}
+            <XAxis {...commonXAxisProps} />
+            <YAxis {...commonAxisProps} />
+            {vc.tooltip && <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--accent))", opacity: 0.3 }} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
             {dataKeys.map((key, index) => (
-              <SeriesComponent key={key} type="monotone" dataKey={key} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} fillOpacity={type === 'area' ? 0.3 : 1} />
+              <Bar key={key} dataKey={key} fill="url(#barGradient)" radius={[4, 4, 0, 0]} filter="url(#shadow)" />
             ))}
-            <Brush dataKey={xAxisKey} height={30} stroke={COLORS[0]} />
-          </ChartComponent>
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
+          </BarChart>
         );
-      case 'pie':
-        const pieData = data.map(d => ({ ...d, [valueKey || '']: Number(d[valueKey || '']) })).filter(d => !isNaN(d[valueKey || '']) && d[valueKey || ''] > 0);
+      }
+      case 'line': {
+        const processedData = data.map(row => {
+            const newRow: {[key:string]: any} = { ...row };
+            dataKeys.forEach(key => {
+              const value = parseFloat(row[key]);
+              if (!isNaN(value)) newRow[key] = value;
+            });
+            return newRow;
+        });
+         return (
+          <LineChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            {defs}
+            {vc.grid && commonGrid}
+            <XAxis {...commonXAxisProps} />
+            <YAxis {...commonAxisProps} />
+            {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
+            {vc.legend && <Legend content={<CustomLegend />} />}
+            {dataKeys.map((key, index) => (
+              <Line key={key} type="monotone" dataKey={key} stroke="url(#lineGradient)" strokeWidth={3}
+                  dot={{ fill: '#3B82F6', strokeWidth: 2, stroke: '#FFFFFF', r: 6, filter: 'url(#shadow)' }}
+                  activeDot={{ r: 8, fill: '#1D4ED8', stroke: '#FFFFFF', strokeWidth: 2, filter: 'url(#shadow)' }}
+              />
+            ))}
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
+          </LineChart>
+        );
+      }
+      case 'area': {
+        const processedData = data.map(row => {
+            const newRow: {[key:string]: any} = { ...row };
+            dataKeys.forEach(key => {
+              const value = parseFloat(row[key]);
+              if (!isNaN(value)) newRow[key] = value;
+            });
+            return newRow;
+        });
+        return (
+          <AreaChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            {defs}
+            {vc.grid && commonGrid}
+            <XAxis {...commonXAxisProps} />
+            <YAxis {...commonAxisProps} />
+            {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
+            {vc.legend && <Legend content={<CustomLegend />} />}
+            {dataKeys.map((key, index) => (
+              <Area key={key} type="monotone" dataKey={key} stroke="#3B82F6" strokeWidth={3}
+                fill="url(#areaGradient)" filter="url(#areaShadow)" />
+            ))}
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
+          </AreaChart>
+        );
+      }
+      case 'pie': {
+        const pieData = data.map((d, i) => ({ ...d, [valueKey || '']: Number(d[valueKey || '']), color: COLORS[i % COLORS.length] })).filter(d => !isNaN(d[valueKey || '']) && d[valueKey || ''] > 0);
         return (
           <PieChart>
-            <Pie data={pieData} dataKey={valueKey} nameKey={nameKey} cx="40%" cy="50%" outerRadius="80%" labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                if (percent < 0.05) return null;
-                const RADIAN = Math.PI / 180; const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                const x = cx + radius * Math.cos(-midAngle * RADIAN); const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                return (<text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">{`${(percent * 100).toFixed(0)}%`}</text>);
-              }}>
-              {pieData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+             <defs>
+              <filter id="pieShadow">
+                <feDropShadow dx="2" dy="2" stdDeviation="4" floodColor="#000" floodOpacity="0.1"/>
+              </filter>
+              {pieData.map((entry, index) => (
+                <linearGradient key={`gradient-${index}`} id={`pieGradient-${index}`} x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
+                  <stop offset="100%" stopColor={entry.color} stopOpacity={0.7} />
+                </linearGradient>
+              ))}
+            </defs>
+            <Pie data={pieData} dataKey={valueKey} nameKey={nameKey} cx="50%" cy="50%" innerRadius="60%" outerRadius="80%" paddingAngle={2} filter="url(#pieShadow)">
+              {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={`url(#pieGradient-${index})`} stroke="#FFFFFF" strokeWidth={2} />)}
             </Pie>
-            {vc.tooltip && <Tooltip formatter={(value, name) => [`${value}`, name]} />}
-            {vc.legend && <Legend layout="vertical" verticalAlign="middle" align="right" iconSize={12} iconType="circle" wrapperStyle={{ maxHeight: '90%', overflowY: 'auto', paddingLeft: '20px', fontSize: '12px', lineHeight: '20px' }} />}
+            {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
+            {vc.legend && <Legend content={<CustomLegend />} />}
           </PieChart>
         );
+      }
       default: return null;
     }
   }, []);
@@ -344,7 +453,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                       <TabsContent value="appearance" className="mt-4 space-y-4">
                           <div className="flex items-end gap-4">
                               <div className="flex-grow"><Label>Chart Type</Label><div className="flex items-center gap-2 mt-1">{CHART_TYPES.map(type => (<Button key={type.name} variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => setChartType(type.name)}><type.icon className="h-4 w-4"/><span className="sr-only">{type.name} chart</span></Button>))}</div></div>
-                              <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline"><Settings2 className="mr-2 h-4 w-4" /> View Options</Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuLabel>Display Elements</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuCheckboxItem checked={viewConfig.legend} onCheckedChange={(checked) => setViewConfig(v => ({...v, legend: checked}))}>Show Legend</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.tooltip} onCheckedChange={(checked) => setViewConfig(v => ({...v, tooltip: checked}))}>Show Tooltip</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.grid} onCheckedChange={(checked) => setViewConfig(v => ({...v, grid: checked}))}>Show Grid</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>
+                              <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline"><Settings2 className="mr-2 h-4 w-4" /> View Options</Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuLabel>Display Elements</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuCheckboxItem checked={viewConfig.legend} onCheckedChange={(checked) => setViewConfig(v => ({...v, legend: checked}))}>Show Legend</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.tooltip} onCheckedChange={(checked) => setViewConfig(v => ({...v, tooltip: checked}))}>Show Tooltip</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.grid && chartType !== 'pie'} onCheckedChange={(checked) => setViewConfig(v => ({...v, grid: checked}))} disabled={chartType === 'pie'}>Show Grid</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.brush && chartType !== 'pie'} onCheckedChange={(checked) => setViewConfig(v => ({...v, brush: checked}))} disabled={chartType === 'pie'}>Show Brush</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>
                           </div>
                           {chartType === 'pie' ? (<div className="grid sm:grid-cols-2 gap-4"><div><Label>Name Key</Label><Select value={chartConfig.nameKey} onValueChange={key => setChartConfig({ ...chartConfig, nameKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Value Key</Label><Select value={chartConfig.valueKey} onValueChange={key => setChartConfig({ ...chartConfig, valueKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div></div>) : (<><div><Label>X-Axis</Label><Select value={chartConfig.xAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, xAxisKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Series (Y-Axis)</Label><div className="space-y-2 rounded-md border p-4 max-h-40 overflow-y-auto">{availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (<div key={key} className="flex items-center space-x-2"><Checkbox id={`key-${key}`} checked={chartConfig.dataKeys?.includes(key)} onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)} /><label htmlFor={`key-${key}`} className="text-sm font-medium leading-none">{key}</label></div>))}{availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (<p className="text-sm text-muted-foreground">Select an X-Axis key or add more columns.</p>)}</div></div></>)}
                       </TabsContent>
@@ -378,10 +487,10 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         style={{ width: `${width}%` }}
     >
       <div 
-        className={cn("relative group/chart-view w-full p-4 border rounded-lg not-prose", selected && 'ring-2 ring-primary')}
+        className={cn("relative group/chart-view w-full p-4 border rounded-lg not-prose bg-card", selected && 'ring-2 ring-primary')}
         data-drag-handle
       >
-         <h4 className="font-bold text-lg mb-2 text-center">{node.attrs.title}</h4>
+         <h4 className="font-bold text-xl mb-4 text-center">{node.attrs.title}</h4>
          <div className="w-full" style={{ height: `${height}px` }}>
             <ResponsiveContainer width="100%" height="100%">
               {renderChart(savedChartData, node.attrs.chartType, savedChartConfig, savedViewConfig)}

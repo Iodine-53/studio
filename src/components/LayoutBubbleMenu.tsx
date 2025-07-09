@@ -43,23 +43,28 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
 
     const { node } = selection;
     const oldLayout = node.attrs.layout || {};
-    const oldWidth = oldLayout.width ?? 100;
-
-    const newLayout: { width: number, height?: number } = { ...oldLayout, width: newWidth };
-
-    // For nodes with an explicit height attribute (like charts), scale height proportionally
-    if (node.type.name === 'chartBlock' && oldLayout.height) {
-        const oldHeight = oldLayout.height;
-        const scaleFactor = oldWidth > 0 ? newWidth / oldWidth : 1;
-        newLayout.height = Math.round(oldHeight * scaleFactor);
-    }
     
-    // Apply the new layout attributes
-    editor
-        .chain()
-        .focus()
-        .updateAttributes(node.type.name, { layout: newLayout })
-        .run();
+    // For charts, we also scale the height proportionally
+    if (node.type.name === 'chartBlock') {
+        const oldWidth = oldLayout.width ?? 100;
+        const oldHeight = oldLayout.height ?? 400;
+        const scaleFactor = oldWidth > 0 ? newWidth / oldWidth : 1;
+        const newHeight = Math.round(oldHeight * scaleFactor);
+
+        const newLayout = { ...oldLayout, width: newWidth, height: newHeight };
+        editor
+            .chain()
+            .focus()
+            .updateAttributes(node.type.name, { layout: newLayout })
+            .run();
+    } else {
+        const newLayout = { ...oldLayout, width: newWidth };
+        editor
+            .chain()
+            .focus()
+            .updateAttributes(node.type.name, { layout: newLayout })
+            .run();
+    }
   };
   
   const handleDelete = () => {
