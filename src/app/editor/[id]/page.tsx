@@ -32,7 +32,7 @@ import { Embed } from '@/lib/tiptap/extensions/Embed';
 import { Callout } from '@/lib/tiptap/extensions/Callout';
 import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
-import { LayoutBlock } from "@/lib/tiptap/extensions/LayoutBlock";
+import { DualBlockNode } from "@/lib/tiptap/extensions/DualBlock";
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
@@ -118,11 +118,11 @@ export default function EditorPage() {
       Callout,
       PasteHandler,
       ProgressBarBlock,
-      LayoutBlock,
+      DualBlockNode,
     ],
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full min-h-full',
+        class: 'prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow',
       },
     },
     onUpdate: ({ editor }) => {
