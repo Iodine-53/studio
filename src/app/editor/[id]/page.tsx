@@ -240,7 +240,7 @@ export default function EditorPage() {
             </div>
           </nav>
         </header>
-        <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
+        <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 overflow-hidden">
             <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border flex flex-col flex-grow">
                 <TiptapEditor editor={editor} onAiAssistantClick={() => setIsAiAssistantOpen(true)} />
             </div>

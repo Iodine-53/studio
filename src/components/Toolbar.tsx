@@ -44,7 +44,15 @@ const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
   }
   
   const handleAddBlock = () => {
-    editor.chain().focus().enter().insertContent('/').run();
+    // Insert a new paragraph, then insert the slash, then focus.
+    // This is more reliable than using .enter()
+    const { from, to } = editor.state.selection;
+    editor
+      .chain()
+      .insertContentAt(to, { type: 'paragraph' })
+      .focus(to + 1) // focus inside the new paragraph
+      .insertContent('/')
+      .run();
   }
 
   const getActiveLineHeight = () => {
@@ -74,7 +82,7 @@ const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
 
   return (
     <TooltipProvider>
-      <div className="sticky top-16 z-20 flex w-full flex-wrap items-center gap-1 rounded-t-xl border-b bg-card p-2">
+      <div className="sticky top-0 z-20 flex w-full flex-wrap items-center gap-1 rounded-t-xl border-b bg-card p-2">
           {/* Text Formatting Tools */}
           <Tooltip>
             <TooltipTrigger asChild>

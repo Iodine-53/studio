@@ -15,10 +15,17 @@ type Props = {
 
 const TiptapEditor = ({ editor, onAiAssistantClick }: Props) => {
   return (
-    <div className="flex flex-col flex-grow">
+    // This component now handles the layout of the toolbar and editor content area
+    <div className="flex flex-col flex-grow overflow-hidden">
       {editor && <LayoutBubbleMenu editor={editor} />}
+      
+      {/* Toolbar is sticky at the top of this container */}
       <Toolbar editor={editor} onAiAssistantClick={onAiAssistantClick} />
-      <EditorContent editor={editor} className="flex-grow" />
+
+      {/* Editor content area is scrollable */}
+      <div className="flex-grow overflow-y-auto">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   )
 }
