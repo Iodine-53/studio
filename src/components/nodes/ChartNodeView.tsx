@@ -61,12 +61,19 @@ const CustomLegend = (props: any) => {
     const { payload } = props;
     return (
         <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 p-2 bg-background/50 rounded-lg text-xs">
-            {payload.map((entry: any, index: number) => (
-                <div key={`item-${index}`} className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                    <span className="text-muted-foreground">{entry.value}</span>
-                </div>
-            ))}
+            {payload.map((entry: any, index: number) => {
+                 // For Pie charts, color is in entry.payload.fill
+                 // For other charts, it's in entry.color
+                 const color = entry.color || entry.payload.fill;
+                 const label = entry.value;
+
+                 return (
+                    <div key={`item-${index}`} className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-muted-foreground">{label}</span>
+                    </div>
+                );
+            })}
         </div>
     );
 };
