@@ -251,7 +251,7 @@ export default function EditorPage() {
             </div>
           </nav>
         </header>
-        <main className="flex-1 flex w-full justify-start gap-8 px-4 sm:px-6 md:px-8 py-8">
+        <main className="flex-1 flex w-full justify-start gap-6 px-2 sm:px-4 py-8">
             {/* Editor Column */}
             <div className="flex-1 min-w-0">
                 <div className="bg-card rounded-lg shadow-2xl border min-h-[85vh]">
@@ -260,7 +260,7 @@ export default function EditorPage() {
             </div>
 
             {/* Recent Documents Sidebar (Right Column) */}
-            <aside className="hidden xl:block w-72 flex-shrink-0">
+            <aside className="hidden 2xl:block w-64 flex-shrink-0">
                 <div className="sticky top-24 space-y-6">
                     <h2 className="text-xl font-bold font-headline text-primary">Recent Documents</h2>
                     {recentDocuments.length > 0 ? (
