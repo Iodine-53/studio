@@ -15,10 +15,10 @@ type Props = {
 
 const TiptapEditor = ({ editor, onAiAssistantClick }: Props) => {
   return (
-    <div className="relative">
+    <div className="flex flex-col flex-grow">
       {editor && <LayoutBubbleMenu editor={editor} />}
       <Toolbar editor={editor} onAiAssistantClick={onAiAssistantClick} />
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="flex-grow" />
     </div>
   )
 }

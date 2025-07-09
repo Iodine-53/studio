@@ -8,7 +8,7 @@ import { useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
-import { SlashCommand } from '@/components/editor/slash-command';
+import { SlashCommand } from '@/lib/tiptap/extensions/slash-command';
 import { TrailingNode } from '@/lib/tiptap/extensions/TrailingNode';
 import { LineHeight } from '@/lib/tiptap/extensions/LineHeight';
 import TextStyle from '@tiptap/extension-text-style';
@@ -120,7 +120,7 @@ export default function EditorPage() {
     ],
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full',
+        class: 'prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full min-h-full',
       },
     },
     onUpdate: ({ editor }) => {
@@ -215,7 +215,7 @@ export default function EditorPage() {
   return (
     <>
       <div className="flex flex-col min-h-screen bg-primary/5">
-        <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
+        <header className="sticky top-0 z-30 flex items-center h-16 px-4 border-b bg-background md:px-6">
           <nav className="flex items-center w-full justify-between gap-4 text-lg font-medium md:gap-2 md:text-sm">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" className="shrink-0" asChild>
@@ -241,7 +241,7 @@ export default function EditorPage() {
           </nav>
         </header>
         <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
-            <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border">
+            <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border flex flex-col flex-grow">
                 <TiptapEditor editor={editor} onAiAssistantClick={() => setIsAiAssistantOpen(true)} />
             </div>
         </main>
