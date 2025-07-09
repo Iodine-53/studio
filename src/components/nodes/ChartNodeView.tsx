@@ -70,25 +70,20 @@ const CustomLegend = (props: any) => {
     );
 };
 
-// Helper to intelligently truncate text to fit a given width.
-const truncateLabel = (value: string, width: number) => {
+// Truncate label to 11 characters + ellipsis if longer
+const truncateLabel = (value: string) => {
     if (typeof value !== 'string') return value;
-    
-    // A rough approximation of character width. Adjust if needed.
-    const avgCharWidth = 7;
-    const maxChars = Math.floor(width / avgCharWidth);
-
-    if (value.length > maxChars) {
-      return value.substring(0, maxChars) + '...';
+    if (value.length > 11) {
+      return `${value.substring(0, 11)}...`;
     }
     return value;
 };
 
 // Custom tick component for X-axis that applies smart truncation
 const CustomAxisTick = (props: any) => {
-    const { x, y, payload, angle, textAnchor, width } = props;
+    const { x, y, payload, angle, textAnchor } = props;
     
-    const truncatedText = truncateLabel(payload.value, width);
+    const truncatedText = truncateLabel(payload.value);
     
     return (
         <g transform={`translate(${x},${y})`}>
@@ -310,18 +305,18 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     const { xAxisKey, dataKeys = [], nameKey, valueKey } = config;
 
     // Common Axis and Grid components
-    const commonAxisProps = {
+    const commonYAxisProps = {
         stroke: "hsl(var(--muted-foreground))",
         fontSize: 12,
         tickLine: false,
         axisLine: false,
     };
-    const commonYAxisProps = {
-        ...commonAxisProps
-    };
     const commonXAxisProps = {
-        ...commonAxisProps,
         dataKey: xAxisKey,
+        stroke: "hsl(var(--muted-foreground))",
+        fontSize: 12,
+        tickLine: false,
+        axisLine: false,
         angle: -45,
         textAnchor: "end",
         height: 80,
@@ -365,7 +360,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             {dataKeys.map((key, index) => (
               <Bar key={key} dataKey={key} fill={COLORS[index % COLORS.length]} radius={[4, 4, 0, 0]} filter="url(#shadow)" />
             ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value, 30)} />}
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value)} />}
           </BarChart>
         );
       }
@@ -392,7 +387,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                   activeDot={{ r: 8, fill: COLORS[index % COLORS.length], stroke: '#FFFFFF', strokeWidth: 2, filter: 'url(#shadow)' }}
               />
             ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value, 30)}/>}
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value)}/>}
           </LineChart>
         );
       }
@@ -417,7 +412,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
               <Area key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3}
                 fill={`url(#gradient-${key})`} filter="url(#shadow)" />
             ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value, 30)}/>}
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value)}/>}
           </AreaChart>
         );
       }
