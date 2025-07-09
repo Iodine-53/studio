@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
@@ -417,7 +418,12 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         );
       }
       case 'pie': {
-        const pieData = data.map((d) => ({ ...d, [valueKey || '']: Number(d[valueKey || '']) })).filter(d => !isNaN(d[valueKey || '']) && d[valueKey || ''] > 0);
+        const pieData = data.map((d, index) => ({
+          ...d,
+          [valueKey || '']: Number(d[valueKey || '']),
+          fill: COLORS[index % COLORS.length] // Add fill color to each data point
+        })).filter(d => !isNaN(d[valueKey || '']) && d[valueKey || ''] > 0);
+
         return (
           <PieChart>
              <defs>
@@ -426,8 +432,8 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
               </filter>
               {pieData.map((entry, index) => (
                 <linearGradient key={`gradient-${index}`} id={`pieGradient-${index}`} x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={1} />
-                  <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.7} />
+                  <stop offset="0%" stopColor={entry.fill} stopOpacity={1} />
+                  <stop offset="100%" stopColor={entry.fill} stopOpacity={0.7} />
                 </linearGradient>
               ))}
             </defs>
