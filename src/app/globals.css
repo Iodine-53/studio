@@ -138,7 +138,7 @@
   }
 
   /* When editing, add a visual indicator */
-  .ProseMirror-selectednode .layout-block {
-    @apply p-2 border-2 border-dashed border-primary;
+  .ProseMirror-selectednode > .layout-block > .layout-column {
+    @apply p-2 border-2 border-dashed border-muted;
   }
 }

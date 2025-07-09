@@ -5,7 +5,7 @@ import { DualBlockNodeView } from '@/components/nodes/DualBlockNodeView'
 
 // TipTap Node Definition
 export const DualBlockNode = Node.create({
-  name: 'layoutBlock', // Renamed to avoid confusion with internal tiptap blocks
+  name: 'layoutBlock',
   group: 'block',
   content: 'block block', // Expects two block content nodes for the two columns
   draggable: true,

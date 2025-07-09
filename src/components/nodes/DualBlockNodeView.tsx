@@ -18,25 +18,17 @@ export const DualBlockNodeView = ({ node, updateAttributes }) => {
         className="layout-column"
         style={{
             width: `${leftWidth}%`,
-            border: '1px solid hsl(var(--border))',
-            borderRadius: '0.5rem',
-            padding: '0.5rem',
-            minHeight: '4rem'
         }}
       >
-        <NodeViewContent className="nodrag block-content" />
+        <NodeViewContent className="block-content" />
       </div>
       <div
         className="layout-column"
         style={{
             width: `${100 - leftWidth}%`,
-            border: '1px solid hsl(var(--border))',
-            borderRadius: '0.5rem',
-            padding: '0.5rem',
-            minHeight: '4rem'
         }}
       >
-        <NodeViewContent className="nodrag block-content" />
+        <NodeViewContent className="block-content" />
       </div>
     </NodeViewWrapper>
   );
