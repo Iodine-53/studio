@@ -265,7 +265,7 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
 
         if (userPrompt.startsWith('/')) {
             if (editor) {
-                documentContext = editor.getText();
+                documentContext = JSON.stringify(editor.getJSON());
             } else {
                 toast({
                     variant: 'destructive',
