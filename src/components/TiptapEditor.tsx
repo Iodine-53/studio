@@ -35,7 +35,7 @@ const TiptapEditor = () => {
     `,
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none min-h-[350px] w-full',
+        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none min-h-[500px] w-full',
       },
     },
   })
