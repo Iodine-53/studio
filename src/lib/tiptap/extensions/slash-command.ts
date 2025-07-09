@@ -32,7 +32,7 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Numbered List", icon: ListOrdered, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleOrderedList().run(); } },
 
   // Block Elements
-  { title: "Dual Block", icon: Columns, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertDualBlock().run(); } },
+  { title: "Two Columns", icon: Columns, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertDualBlock().run(); } },
   { title: "Blockquote", icon: Quote, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleBlockquote().run(); } },
   { title: "Image", icon: Image, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setImage({ src: null }).run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertInteractiveTable().run(); } },
