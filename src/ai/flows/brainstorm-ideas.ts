@@ -22,6 +22,7 @@ const MessageSchema = z.object({
 const BrainstormIdeasInputSchema = z.object({
   history: z.array(MessageSchema).describe('The conversation history.'),
   apiKey: z.string().optional().describe('Optional API key for Gemini.'),
+  documentContext: z.string().optional().describe('Optional text content of the document being edited.'),
 });
 export type BrainstormIdeasInput = z.infer<typeof BrainstormIdeasInputSchema>;
 
@@ -40,27 +41,36 @@ const brainstormIdeasFlow = ai.defineFlow(
     inputSchema: BrainstormIdeasInputSchema,
     outputSchema: BrainstormIdeasOutputSchema,
   },
-  async (input) => {
-    if (!input.apiKey) {
+  async ({ history, apiKey, documentContext }) => {
+    if (!apiKey) {
       throw new Error("A Gemini API key is required. Please set it in the settings.");
     }
-    const runner = genkit({ plugins: [googleAI({ apiKey: input.apiKey })] });
+    const runner = genkit({ plugins: [googleAI({ apiKey })] });
     
-    const conversationHistory = input.history;
-    if (conversationHistory.length === 0) {
+    if (history.length === 0) {
         throw new Error("Cannot generate response for an empty history.");
     }
 
+    let systemPrompt = "You are a helpful AI assistant for brainstorming and creative writing.";
+    if (documentContext) {
+        systemPrompt = `You are an expert writing assistant. The user is currently working on the following document. Use this document as the primary context to answer their questions, providing suggestions, summaries, or new content as requested.
+
+## Document Content
+${documentContext}
+## End of Document Content`;
+    }
+
     // The prompt is the content of the very last message.
-    const lastMessage = conversationHistory[conversationHistory.length - 1];
+    const lastMessage = history[history.length - 1];
     
     // The history for the model is everything *before* the last message.
-    const historyForModel = conversationHistory.slice(0, -1);
+    const historyForModel = history.slice(0, -1);
 
     const response = await runner.generate({
+        model: 'googleai/gemini-1.5-flash-latest',
+        system: systemPrompt,
         prompt: lastMessage.content,
         history: historyForModel,
-        model: 'googleai/gemini-1.5-flash-latest',
     });
 
     const textResponse = response.text;

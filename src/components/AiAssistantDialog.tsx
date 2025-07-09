@@ -201,7 +201,7 @@ const ListTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'
 }
 
 // Brainstorm Tab Component
-const BrainstormTab = () => {
+const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<BrainstormMessage[]>([]);
@@ -260,7 +260,24 @@ const BrainstormTab = () => {
     const handleBrainstorm = async () => {
         if (!inputValue) return;
 
-        const newUserMessage: BrainstormMessage = { role: 'user', content: inputValue };
+        let userPrompt = inputValue;
+        let documentContext: string | undefined = undefined;
+
+        if (userPrompt.startsWith('/')) {
+            if (editor) {
+                documentContext = editor.getText();
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Editor not available',
+                    description: 'Could not access document context.',
+                });
+            }
+            // Remove the slash and any leading space from the prompt
+            userPrompt = userPrompt.substring(1).trim();
+        }
+
+        const newUserMessage: BrainstormMessage = { role: 'user', content: userPrompt };
         const updatedMessages = [...messages, newUserMessage];
         setMessages(updatedMessages);
         setInputValue('');
@@ -278,7 +295,11 @@ const BrainstormTab = () => {
                 content: msg.content,
             }));
 
-            const response = await brainstormIdeas({ history: historyForModel, apiKey });
+            const response = await brainstormIdeas({ 
+                history: historyForModel, 
+                apiKey,
+                documentContext 
+            });
 
             setMessages([...updatedMessages, { role: 'model', content: response.response }]);
         } catch (error) {
@@ -312,7 +333,7 @@ const BrainstormTab = () => {
                         <div className="text-center text-sm text-muted-foreground py-8">
                             <Sparkles className="mx-auto h-8 w-8 mb-2" />
                             <p>This is a brainstorming space.</p>
-                            <p>Content generated here will not be added to your document.</p>
+                            <p>Type <code className="bg-muted px-1.5 py-1 rounded-sm">/</code> to ask about your document.</p>
                         </div>
                     )}
                     {messages.map((message, index) => (
@@ -338,7 +359,7 @@ const BrainstormTab = () => {
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleBrainstorm()}
-                        placeholder="Ask for ideas..."
+                        placeholder="Ask for ideas, or type '/' for document context..."
                         disabled={isLoading}
                     />
                     <Button onClick={handleBrainstorm} disabled={isLoading || !inputValue}><Send className="h-4 w-4" /></Button>
@@ -390,7 +411,7 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
             </TabsContent>
 
             <TabsContent value="brainstorm" className="m-0 p-0">
-                <BrainstormTab />
+                <BrainstormTab editor={editor} />
             </TabsContent>
         </Tabs>
       </DialogContent>
