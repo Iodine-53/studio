@@ -127,4 +127,18 @@
     margin-left: 0;
     margin-right: auto;
   }
+
+  /* Styling for the new two-column layout block */
+  .layout-block {
+    @apply flex flex-col sm:flex-row gap-4 my-4;
+  }
+
+  .layout-block > .layout-column {
+    @apply flex-1 min-w-0; /* min-w-0 prevents content overflow issues */
+  }
+
+  /* When editing, add a visual indicator */
+  .ProseMirror-selectednode .layout-block {
+    @apply p-2 border-2 border-dashed border-primary;
+  }
 }

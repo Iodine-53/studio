@@ -28,6 +28,7 @@ const ACTIONABLE_NODE_TYPES = [
     'interactiveTable',
     'embed',
     'progressBarBlock',
+    'layoutBlock',
 ];
 
 // List of node types that support resizing controls
