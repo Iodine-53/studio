@@ -57,27 +57,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-const CustomLegend = (props: any) => {
-    const { payload } = props;
-    return (
-        <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 p-2 bg-background/50 rounded-lg text-xs">
-            {payload.map((entry: any, index: number) => {
-                 // For Pie charts, color is in entry.payload.fill
-                 // For other charts, it's in entry.color
-                 const color = entry.color || entry.payload.fill;
-                 const label = entry.value;
-
-                 return (
-                    <div key={`item-${index}`} className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-                        <span className="text-muted-foreground">{label}</span>
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
-
 // Truncate label to 11 characters + ellipsis if longer
 const truncateLabel = (value: string) => {
     if (typeof value !== 'string') return value;
@@ -89,13 +68,13 @@ const truncateLabel = (value: string) => {
 
 // Custom tick component for X-axis that applies smart truncation
 const CustomAxisTick = (props: any) => {
-    const { x, y, payload, angle, textAnchor } = props;
+    const { x, y, payload } = props;
     
     const truncatedText = truncateLabel(payload.value);
     
     return (
         <g transform={`translate(${x},${y})`}>
-            <text x={0} y={0} dy={16} textAnchor={textAnchor} fill="#6B7280" transform={`rotate(${angle})`} fontSize={12}>
+            <text x={0} y={0} dy={16} textAnchor="end" fill="hsl(var(--muted-foreground))" transform={`rotate(-45)`} fontSize={12}>
                 {truncatedText}
             </text>
         </g>
@@ -325,8 +304,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         fontSize: 12,
         tickLine: false,
         axisLine: false,
-        angle: -45,
-        textAnchor: "end",
         height: 80,
         interval: 0,
         tick: <CustomAxisTick />
@@ -364,7 +341,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             <XAxis {...commonXAxisProps} />
             <YAxis {...commonYAxisProps} />
             {vc.tooltip && <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--accent))", opacity: 0.3 }} />}
-            {vc.legend && <Legend content={<CustomLegend />} />}
+            {vc.legend && <Legend />}
             {dataKeys.map((key, index) => (
               <Bar key={key} dataKey={key} fill={COLORS[index % COLORS.length]} radius={[4, 4, 0, 0]} filter="url(#shadow)" />
             ))}
@@ -388,7 +365,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             <XAxis {...commonXAxisProps} />
             <YAxis {...commonYAxisProps} />
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
-            {vc.legend && <Legend content={<CustomLegend />} />}
+            {vc.legend && <Legend />}
             {dataKeys.map((key, index) => (
               <Line key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3}
                   dot={{ fill: COLORS[index % COLORS.length], strokeWidth: 2, stroke: '#FFFFFF', r: 6, filter: 'url(#shadow)' }}
@@ -415,7 +392,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             <XAxis {...commonXAxisProps} />
             <YAxis {...commonYAxisProps} />
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
-            {vc.legend && <Legend content={<CustomLegend />} />}
+            {vc.legend && <Legend />}
             {dataKeys.map((key, index) => (
               <Area key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3}
                 fill={`url(#gradient-${key})`} filter="url(#shadow)" />
@@ -425,10 +402,9 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         );
       }
       case 'pie': {
-        const pieData = data.map((d, index) => ({
+        const pieData = data.map((d) => ({
           ...d,
           [valueKey || '']: Number(d[valueKey || '']),
-          fill: COLORS[index % COLORS.length] // Add fill color to each data point
         })).filter(d => !isNaN(d[valueKey || '']) && d[valueKey || ''] > 0);
 
         return (
@@ -437,18 +413,21 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
               <filter id="pieShadow">
                 <feDropShadow dx="2" dy="2" stdDeviation="4" floodColor="#000" floodOpacity="0.1"/>
               </filter>
-              {pieData.map((entry, index) => (
-                <linearGradient key={`gradient-${index}`} id={`pieGradient-${index}`} x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor={entry.fill} stopOpacity={1} />
-                  <stop offset="100%" stopColor={entry.fill} stopOpacity={0.7} />
-                </linearGradient>
-              ))}
+              {pieData.map((_entry, index) => {
+                const color = COLORS[index % COLORS.length];
+                return (
+                  <linearGradient key={`gradient-${index}`} id={`pieGradient-${index}`} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={1} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.7} />
+                  </linearGradient>
+                )
+              })}
             </defs>
             <Pie data={pieData} dataKey={valueKey} nameKey={nameKey} cx="50%" cy="50%" innerRadius="60%" outerRadius="80%" paddingAngle={2} filter="url(#pieShadow)">
               {pieData.map((_entry, index) => <Cell key={`cell-${index}`} fill={`url(#pieGradient-${index})`} stroke="#FFFFFF" strokeWidth={2} />)}
             </Pie>
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
-            {vc.legend && <Legend content={<CustomLegend />} />}
+            {vc.legend && <Legend dataKey={nameKey} />}
           </PieChart>
         );
       }
