@@ -138,8 +138,8 @@ export default function PrintPage() {
               table {
                 page-break-inside: auto !important;
                 border-collapse: collapse !important;
-                /* Let table take its natural width, don't force 100% */
-                width: auto;
+                width: 100% !important;
+                table-layout: fixed;
                 margin: 15px 0 !important;
               }
               
@@ -155,6 +155,7 @@ export default function PrintPage() {
                 padding: 8px !important;
                 border: 1px solid #333 !important;
                 font-size: 11pt !important;
+                word-wrap: break-word; /* Ensure long text wraps */
               }
               
               th {
