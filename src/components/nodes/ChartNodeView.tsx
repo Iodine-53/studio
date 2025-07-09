@@ -334,7 +334,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             {vc.tooltip && <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--accent))", opacity: 0.3 }} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
             {dataKeys.map((key, index) => (
-              <Bar key={key} dataKey={key} fill={`url(#gradient-${key})`} radius={[4, 4, 0, 0]} filter="url(#shadow)" />
+              <Bar key={key} dataKey={key} fill={COLORS[index % COLORS.length]} radius={[4, 4, 0, 0]} filter="url(#shadow)" />
             ))}
             {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
           </BarChart>
