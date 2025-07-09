@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { generateAudio } from '@/ai/flows/generate-audio-flow';
 import { saveAs } from 'file-saver';
@@ -26,7 +27,8 @@ const VOICES = [
   'Algenib', 'Achernar', 'Enif', 'Hadar', 'Regulus', 'Spica', 'Sirius', 'Vega'
 ];
 
-const MAX_CHARS = 5000; // Gemini TTS character limit
+const MAX_CHARS = 20000; // Increased overall limit, as we now handle chunking
+const CHUNK_SIZE = 4500; // Safe chunk size for each API call
 
 // Helper function to convert raw PCM audio data to a WAV file buffer.
 function toWav(
@@ -70,13 +72,40 @@ function toWav(
     return buffer;
 }
 
+// Helper to split text into sentences.
+const splitIntoSentences = (text: string): string[] => {
+  // This regex splits by sentence-ending punctuation followed by whitespace.
+  const sentences = text.match(/[^.!?]+[.!?\s]*/g) || [text];
+  return sentences.map(s => s.trim()).filter(s => s.length > 0);
+};
+
+// Helper to group sentences into chunks of a maximum size.
+const chunkSentences = (sentences: string[], maxChunkSize: number): string[] => {
+  const chunks: string[] = [];
+  let currentChunk = '';
+  for (const sentence of sentences) {
+    if (currentChunk.length + sentence.length + 1 > maxChunkSize) {
+      if (currentChunk) chunks.push(currentChunk);
+      // If a single sentence is too long, it becomes its own chunk.
+      currentChunk = sentence;
+    } else {
+      currentChunk = currentChunk ? `${currentChunk} ${sentence}` : sentence;
+    }
+  }
+  if (currentChunk) chunks.push(currentChunk);
+  return chunks;
+};
+
+
 export default function TextToAudioPage() {
   const [inputText, setInputText] = useState(
-    'Hello, welcome to ToolboxAI. I can convert this text into natural-sounding speech with different voices.'
+    'Hello, welcome to ToolboxAI. I can convert this text into natural-sounding speech with different voices. This is a much longer text to demonstrate the new chunking feature. By splitting the text into smaller pieces, we can process very long inputs without causing server timeouts. Each chunk is converted to audio individually, and then all the audio clips are seamlessly stitched together right here in your browser. This makes the tool much more robust and reliable for longer articles, scripts, or documents. Let\'s see how it works!'
   );
   const [isLoading, setIsLoading] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState('Algenib');
+  const [progress, setProgress] = useState(0);
+  const [progressText, setProgressText] = useState('');
   const { toast } = useToast();
   const { getApiKey } = useUserApiKey();
 
@@ -101,28 +130,49 @@ export default function TextToAudioPage() {
 
     setIsLoading(true);
     setAudioSrc(null);
+    setProgress(0);
+    setProgressText('Preparing text...');
+
     try {
       const apiKey = getApiKey() || undefined;
       if (!apiKey) {
         throw new Error("A Gemini API key is required. Please set it in the settings.");
       }
-      const isMultiSpeaker = /Speaker\s*\d+:/i.test(inputText);
       
-      const result = await generateAudio({
-        query: inputText,
-        apiKey,
-        voice: isMultiSpeaker ? undefined : selectedVoice,
-      });
+      const sentences = splitIntoSentences(inputText);
+      const chunks = chunkSentences(sentences, CHUNK_SIZE);
+      const totalChunks = chunks.length;
+      const allPcmBuffers: Buffer[] = [];
+      
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = chunks[i];
+        const progressPercentage = Math.round(((i + 1) / totalChunks) * 90);
+        setProgress(progressPercentage);
+        setProgressText(`Generating audio... (Chunk ${i + 1} of ${totalChunks})`);
+        
+        const isMultiSpeaker = /Speaker\s*\d+:/i.test(chunk);
+        const result = await generateAudio({
+          query: chunk,
+          apiKey,
+          voice: isMultiSpeaker ? undefined : selectedVoice,
+        });
+        
+        const pcmBase64 = result.pcmDataUri.substring(result.pcmDataUri.indexOf(',') + 1);
+        allPcmBuffers.push(Buffer.from(pcmBase64, 'base64'));
+      }
+      
+      setProgress(95);
+      setProgressText('Merging audio clips...');
+      await new Promise(resolve => setTimeout(resolve, 50)); // Short delay for UI update
 
-      // The flow now returns raw PCM data; we convert it to WAV on the client.
-      const pcmBase64 = result.pcmDataUri.substring(result.pcmDataUri.indexOf(',') + 1);
-      const pcmBuffer = Buffer.from(pcmBase64, 'base64');
-      
-      const wavBuffer = toWav(pcmBuffer);
+      const mergedPcmBuffer = Buffer.concat(allPcmBuffers);
+      const wavBuffer = toWav(mergedPcmBuffer);
       const wavBase64 = wavBuffer.toString('base64');
       const wavDataUri = 'data:audio/wav;base64,' + wavBase64;
-
+      
       setAudioSrc(wavDataUri);
+      setProgress(100);
+      setProgressText('Generation Complete!');
       toast({
         title: 'Success!',
         description: 'Your audio has been generated.',
@@ -135,6 +185,8 @@ export default function TextToAudioPage() {
         title: 'Generation Failed',
         description: errorMessage,
       });
+      setProgress(0);
+      setProgressText('');
     } finally {
       setIsLoading(false);
     }
@@ -168,7 +220,7 @@ export default function TextToAudioPage() {
             <Voicemail className="w-12 h-12 mx-auto text-primary" />
             <CardTitle className="text-3xl font-bold font-headline mt-4">AI-Powered Text to Speech</CardTitle>
             <CardDescription>
-              Convert text into high-quality audio. Very long texts may take a moment to process.
+              Convert long articles, scripts, or documents into high-quality audio.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-6 pb-8 space-y-6">
@@ -215,12 +267,19 @@ export default function TextToAudioPage() {
                     ) : (
                         <Wand2 className="mr-2 h-5 w-5" />
                     )}
-                    {isLoading ? 'Generating Audio...' : 'Generate Audio'}
+                    {isLoading ? 'Generating...' : 'Generate Audio'}
                     </Button>
                 </div>
             </div>
+            
+            {isLoading && (
+              <div className="pt-4 space-y-2">
+                <Progress value={progress} className="w-full" />
+                <p className="text-sm text-muted-foreground text-center">{progressText}</p>
+              </div>
+            )}
 
-            {audioSrc && (
+            {audioSrc && !isLoading && (
               <Card className="bg-primary/5 border-primary/20">
                 <CardHeader>
                   <CardTitle className="text-xl text-center">Your Audio is Ready</CardTitle>
