@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
-import { CommandList } from "./CommandList";
+import { CommandList } from "@/components/editor/CommandList";
 import type { ComponentProps } from 'react';
 import Suggestion from '@tiptap/suggestion';
 
@@ -45,7 +45,7 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Accordion", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertAccordion().run(); } },
   { title: "Todo List", icon: ListTodo, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTodoList().run(); } },
   { title: "Embed", icon: Film, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setEmbed({ src: '' }).run(); } },
-  { title: "Bar Chart / Progress", icon: SlidersHorizontal, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertProgressBarBlock().run(); } },
+  { title: "Progress Bars", icon: SlidersHorizontal, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertProgressBarBlock().run(); } },
 ];
 
 const renderItems = () => {
