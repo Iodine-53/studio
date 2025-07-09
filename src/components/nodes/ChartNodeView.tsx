@@ -46,7 +46,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <div className="bg-background p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold text-foreground">{`${label}`}</p>
           {payload.map((p: any, index: number) => (
-             <p key={index} style={{ color: p.color }}>{`${p.name}: ${p.value}`}</p>
+             <p key={index} style={{ color: p.color || p.payload.fill, fontWeight: '500' }}>
+              {`${p.name}: ${p.value.toLocaleString()}`}
+             </p>
           ))}
         </div>
       );
@@ -68,10 +70,33 @@ const CustomLegend = (props: any) => {
     );
 };
 
-// Helper to truncate text
-const truncateLabel = (value: string, maxLength = 15) => {
+// Helper to intelligently truncate text to fit a given width.
+const truncateLabel = (value: string, width: number) => {
     if (typeof value !== 'string') return value;
-    return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value;
+    
+    // A rough approximation of character width. Adjust if needed.
+    const avgCharWidth = 7;
+    const maxChars = Math.floor(width / avgCharWidth);
+
+    if (value.length > maxChars) {
+      return value.substring(0, maxChars) + '...';
+    }
+    return value;
+};
+
+// Custom tick component for X-axis that applies smart truncation
+const CustomAxisTick = (props: any) => {
+    const { x, y, payload, angle, textAnchor, width } = props;
+    
+    const truncatedText = truncateLabel(payload.value, width);
+    
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <text x={0} y={0} dy={16} textAnchor={textAnchor} fill="#6B7280" transform={`rotate(${angle})`} fontSize={12}>
+                {truncatedText}
+            </text>
+        </g>
+    );
 };
 
 
@@ -290,7 +315,9 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         fontSize: 12,
         tickLine: false,
         axisLine: false,
-        tickFormatter: truncateLabel,
+    };
+    const commonYAxisProps = {
+        ...commonAxisProps
     };
     const commonXAxisProps = {
         ...commonAxisProps,
@@ -298,6 +325,8 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         angle: -45,
         textAnchor: "end",
         height: 80,
+        interval: 0,
+        tick: <CustomAxisTick />
     };
     const commonGrid = <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.8} />;
 
@@ -330,13 +359,13 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             {defs}
             {vc.grid && commonGrid}
             <XAxis {...commonXAxisProps} />
-            <YAxis {...commonAxisProps} />
+            <YAxis {...commonYAxisProps} />
             {vc.tooltip && <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--accent))", opacity: 0.3 }} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
             {dataKeys.map((key, index) => (
               <Bar key={key} dataKey={key} fill={COLORS[index % COLORS.length]} radius={[4, 4, 0, 0]} filter="url(#shadow)" />
             ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value, 30)} />}
           </BarChart>
         );
       }
@@ -354,7 +383,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             {defs}
             {vc.grid && commonGrid}
             <XAxis {...commonXAxisProps} />
-            <YAxis {...commonAxisProps} />
+            <YAxis {...commonYAxisProps} />
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
             {dataKeys.map((key, index) => (
@@ -363,7 +392,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                   activeDot={{ r: 8, fill: COLORS[index % COLORS.length], stroke: '#FFFFFF', strokeWidth: 2, filter: 'url(#shadow)' }}
               />
             ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value, 30)}/>}
           </LineChart>
         );
       }
@@ -381,14 +410,14 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             {defs}
             {vc.grid && commonGrid}
             <XAxis {...commonXAxisProps} />
-            <YAxis {...commonAxisProps} />
+            <YAxis {...commonYAxisProps} />
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
             {vc.legend && <Legend content={<CustomLegend />} />}
             {dataKeys.map((key, index) => (
               <Area key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3}
                 fill={`url(#gradient-${key})`} filter="url(#shadow)" />
             ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" />}
+            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value, 30)}/>}
           </AreaChart>
         );
       }
