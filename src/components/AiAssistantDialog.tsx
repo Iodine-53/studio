@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   Dialog,
@@ -14,7 +14,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
-import { Loader2, Wand2, Sparkles, Send, FileText, Trash2, Index, CheckCircle } from 'lucide-react';
+import { Loader2, Wand2, Sparkles, Send, FileText, Trash2, CheckCircle } from 'lucide-react';
 import { generateText } from '@/ai/flows/generate-text-flow';
 import { brainstormIdeas } from '@/ai/flows/brainstorm-ideas';
 import { generateDocument } from '@/ai/flows/generate-document-flow';
@@ -24,7 +24,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUserApiKey } from '@/hooks/use-user-api-key';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { createRagService, type RagService } from '@/lib/rag-service';
+import { performRagAction } from '@/ai/flows/rag-flow';
 
 type Props = {
   editor: Editor | null;
@@ -206,40 +206,42 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<BrainstormMessage[]>([]);
-    const [ragService, setRagService] = useState<RagService | null>(null);
-    const [isIndexing, setIsIndexing] = useState(false);
+    const [isIndexing, setIsIndexing] = useState(true);
 
     const { toast } = useToast();
     const { getApiKey } = useUserApiKey('gemini');
     const isInitialMount = useRef(true);
     
-    // Initialize the RAG service when the component mounts or editor becomes available
+    // Index the document when the component mounts or editor becomes available
     useEffect(() => {
         const apiKey = getApiKey();
-        if (editor && apiKey && !ragService) {
-            const service = createRagService(apiKey);
-            setRagService(service);
-
-            // Index the document immediately
+        if (editor && apiKey) {
             const handleIndex = async () => {
                 setIsIndexing(true);
                 try {
                     const docText = editor.getText({ blockSeparator: '\n\n' });
-                    await service.indexDocument(docText);
+                    if (docText.trim().length < 10) {
+                         toast({ title: "Document is too short for Q&A.", description: "Add more content to enable this feature.", duration: 5000 });
+                         setIsIndexing(false);
+                         return;
+                    }
+                    await performRagAction({ action: 'index', apiKey, documentText: docText });
                     toast({
                         title: "Document Indexed",
                         description: "The AI is ready to answer questions about this document.",
                     });
                 } catch(e) {
                     console.error("Indexing failed", e);
-                    toast({ variant: 'destructive', title: "Indexing Failed", description: "Could not prepare the document for context questions." });
+                    toast({ variant: 'destructive', title: "Indexing Failed", description: "Could not prepare the document for Q&A." });
                 } finally {
                     setIsIndexing(false);
                 }
             };
             handleIndex();
+        } else {
+            setIsIndexing(false);
         }
-    }, [editor, getApiKey, ragService, toast]);
+    }, [editor, getApiKey, toast]);
 
     // Load messages from localStorage on initial render
     useEffect(() => {
@@ -304,10 +306,14 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
             }
             
             // Check if it's a context-aware query
-            if (userPrompt.startsWith('/') && ragService) {
-                userPrompt = userPrompt.substring(1).trim();
-                // Retrieve relevant chunks from the document
-                const contextChunks = await ragService.query(userPrompt, 3);
+            if (userPrompt.startsWith('/')) {
+                const queryText = userPrompt.substring(1).trim();
+                // Retrieve relevant chunks from the document via the server flow
+                const contextChunks = await performRagAction({
+                    action: 'query',
+                    apiKey,
+                    queryText
+                }) as string[];
                 documentContext = contextChunks.join('\n\n---\n\n');
             }
             
