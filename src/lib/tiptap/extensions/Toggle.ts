@@ -39,6 +39,7 @@ export const Toggle = Node.create({
     return [
       {
         tag: 'div[data-type="toggle-block"]',
+        contentElement: (el) => el.querySelector('.toggle-content'),
         getAttrs: dom => ({
           title: (dom as HTMLElement).getAttribute('data-title'),
           isOpen: (dom as HTMLElement).getAttribute('data-is-open') === 'true',
