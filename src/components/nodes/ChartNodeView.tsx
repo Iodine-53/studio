@@ -171,7 +171,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   }, [isEditing, node.attrs]);
 
   
-  useMemo(() => {
+  useEffect(() => {
     if (chartData.length > 0) {
       const allKeys = chartData.reduce((keys, row) => {
         Object.keys(row).forEach(key => {
@@ -342,8 +342,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     const { xAxisKey, yAxisKey, zAxisKey, dataKeys = [], nameKey, valueKey, childrenKey, mixedChartTypes = {} } = config;
     const isHorizontal = type === 'horizontalBar';
     
-    const numericDataKeys = data.length > 0 ? Object.keys(data[0]).filter(k => typeof data[0][k] === 'number') : [];
-
     // Common Axis and Grid components
     const YAxisComponent = <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} type={isHorizontal ? 'category' : 'number'} dataKey={isHorizontal ? yAxisKey : undefined} />;
     const XAxisComponent = <XAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} type={isHorizontal ? 'number' : 'category'} dataKey={isHorizontal ? undefined : xAxisKey} height={80} interval={0} tick={<CustomAxisTick />} />;
@@ -475,18 +473,20 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       default: return null;
     }
   }, []);
+  
+  const numericDataKeys = useMemo(() => {
+    if (chartData.length === 0) return [];
+    return Object.keys(chartData[0]).filter(key => 
+        chartData.every(row => typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key]))))
+    );
+  }, [chartData]);
+
 
   if (isEditing) {
       const currentChartInfo = CHART_TYPES.find(c => c.name === chartType);
       const isHierarchical = currentChartInfo?.isHierarchical;
       const isAxisBased = currentChartInfo?.isAxisBased;
-      const numericDataKeys = useMemo(() => {
-        if (chartData.length === 0) return [];
-        return Object.keys(chartData[0]).filter(key => 
-            chartData.every(row => typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key]))))
-        );
-      }, [chartData]);
-
+      
       return (
           <>
             <NodeViewWrapper 
