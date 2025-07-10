@@ -32,6 +32,7 @@ import { Embed } from '@/lib/tiptap/extensions/Embed';
 import { Callout } from '@/lib/tiptap/extensions/Callout';
 import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
+import { GeoGebra } from '@/lib/tiptap/extensions/GeoGebra';
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
@@ -95,7 +96,8 @@ export default function EditorPage() {
           'todoList',
           'embed',
           'interactiveTable',
-          'progressBarBlock'
+          'progressBarBlock',
+          'geogebra',
         ] 
       }),
       SlashCommand,
@@ -117,6 +119,7 @@ export default function EditorPage() {
       Callout,
       PasteHandler,
       ProgressBarBlock,
+      GeoGebra,
     ],
     editorProps: {
       attributes: {
