@@ -107,7 +107,7 @@ export default function TextToAudioPage() {
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
   const { toast } = useToast();
-  const { getApiKey } = useUserApiKey();
+  const { getApiKey } = useUserApiKey('gemini');
 
   const handleGenerate = async () => {
     if (!inputText.trim()) {

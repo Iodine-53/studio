@@ -23,64 +23,50 @@ interface ApiKeyDialogProps {
 }
 
 export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
-  const [keyInput, setKeyInput] = useState('');
-  const { getApiKey, setApiKey, clearApiKey } = useUserApiKey();
+  const [geminiKey, setGeminiKey] = useState('');
+  const { getApiKey, setApiKey } = useUserApiKey('gemini');
   const { toast } = useToast();
 
-  // When the dialog opens, load the current key from localStorage into the input field.
   useEffect(() => {
     if (open) {
-      setKeyInput(getApiKey() || '');
+      setGeminiKey(getApiKey() || '');
     }
   }, [open, getApiKey]);
 
   const handleSave = () => {
-    setApiKey(keyInput);
+    setApiKey(geminiKey);
     toast({
       title: 'API Key Saved',
-      description: 'Your Gemini API key has been stored in your browser.',
+      description: 'Your Gemini key has been stored securely in your browser.',
     });
     onOpenChange(false);
   };
-
-  const handleClear = () => {
-    clearApiKey();
-    setKeyInput('');
-    toast({
-      title: 'API Key Cleared',
-      description: 'Your Gemini API key has been removed.',
-    });
-    onOpenChange(false);
-  };
-
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Set Your Gemini API Key</DialogTitle>
+          <DialogTitle>Set Gemini API Key</DialogTitle>
           <DialogDescription>
-            Your API key is stored only in this browser's local storage and is never sent to our servers.
+            Your Gemini API key is stored only in your browser and is required for all AI features.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="relative">
-            <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="api-key-input"
-              type="password"
-              placeholder="Enter your API key..."
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        <div className="py-4">
+            <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                    id="gemini-api-key"
+                    type="password"
+                    placeholder="Enter your Gemini API key..."
+                    value={geminiKey}
+                    onChange={(e) => setGeminiKey(e.target.value)}
+                    className="pl-10"
+                />
+            </div>
         </div>
-        <DialogFooter className="sm:justify-between">
-          <Button type="button" variant="outline" onClick={handleClear}>
-            Clear Key
-          </Button>
-          <Button type="button" onClick={handleSave} disabled={!keyInput}>
-            Save
+        <DialogFooter>
+          <Button type="button" onClick={handleSave} disabled={!geminiKey}>
+            Save Key
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -23,7 +23,7 @@ export function GenerateProgressBarDataDialog({ open, onOpenChange, onGenerate }
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { getApiKey } = useUserApiKey();
+  const { getApiKey } = useUserApiKey('gemini');
 
   const handleGenerate = async () => {
     if (!prompt) return;

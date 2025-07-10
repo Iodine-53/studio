@@ -52,31 +52,19 @@ const brainstormIdeasFlow = ai.defineFlow(
     }
 
     let systemPrompt = "You are a helpful AI assistant for brainstorming and creative writing.";
+    
     if (documentContext) {
-        systemPrompt = `You are an expert writing assistant. The user is currently working on a document. You will be provided with the document's content as a JSON object, following the Tiptap editor's format. Use this document structure as the primary context to answer their questions.
+        systemPrompt = `You are an expert writing assistant. The user has provided context from their document. Use this information as the primary source to answer their questions.
 
-The document is composed of a \`content\` array of nodes. Each node has a \`type\`.
-
-Here are the important node types and their attributes (\`attrs\`):
-- 'paragraph': Contains 'content' with text.
-- 'heading': Contains 'content' with text and 'attrs.level'.
-- 'image': Represents an image. Use its 'attrs.caption' to understand its content. The 'src' is a data URI and should be ignored.
-- 'interactiveTable': Represents a table. Its 'attrs.title', 'attrs.headers' (a JSON string of an array), and 'attrs.data' (a JSON string of a 2D array) describe the table.
-- 'chartBlock': Represents a chart. Its 'attrs.title', 'attrs.chartType', and 'attrs.chartData' (a JSON string of data points) describe the chart.
-- 'progressBarBlock': Represents a set of progress bars. Its 'attrs.title' and 'attrs.items' (an array of objects with 'label', 'value', 'color') describe the content.
-- 'todoList': A list of tasks with a 'title' and an array of 'tasks' (objects with 'text' and 'completed' status).
-- 'accordion': A series of collapsible items. Look at 'attrs.title', 'attrs.subtitle', and the 'attrs.items' array (objects with 'title' and 'content').
-
-Analyze this JSON structure to understand the full document, including text, tables, charts, and other elements, to provide a comprehensive answer to the user's question.
-
-## Document JSON
+## Document Context
 ${documentContext}
-## End of Document JSON`;
+## End Document Context
+`;
     }
 
     const lastMessage = history[history.length - 1];
     const historyForModel = history.slice(0, -1);
-
+    
     const response = await runner.generate({
         model: 'googleai/gemini-1.5-flash-latest',
         system: systemPrompt,

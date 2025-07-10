@@ -16,8 +16,8 @@ import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { Loader2, Wand2, Sparkles, Send, FileText, Trash2 } from 'lucide-react';
 import { generateText } from '@/ai/flows/generate-text-flow';
-import { brainstormIdeas, type BrainstormIdeasOutput } from '@/ai/flows/brainstorm-ideas';
-import { generateDocument, type GenerateDocumentOutput } from '@/ai/flows/generate-document-flow';
+import { brainstormIdeas } from '@/ai/flows/brainstorm-ideas';
+import { generateDocument } from '@/ai/flows/generate-document-flow';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from './ui/scroll-area';
@@ -48,14 +48,14 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
-    const { getApiKey } = useUserApiKey();
+    const { getApiKey } = useUserApiKey('gemini');
 
     const handleGenerate = async () => {
         if (!editor || !prompt) return;
 
         setIsLoading(true);
         try {
-            const apiKey = getApiKey();
+            const apiKey = getApiKey() || undefined;
             if (!apiKey) {
               throw new Error("A Gemini API key is required. Please set it in the settings.");
             }
@@ -111,14 +111,14 @@ const ListTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
-    const { getApiKey } = useUserApiKey();
+    const { getApiKey } = useUserApiKey('gemini');
 
     const handleGenerateList = async () => {
         if (!editor || !prompt) return;
 
         setIsLoading(true);
         try {
-            const apiKey = getApiKey();
+            const apiKey = getApiKey() || undefined;
             if (!apiKey) {
               throw new Error("A Gemini API key is required. Please set it in the settings.");
             }
@@ -231,7 +231,7 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<BrainstormMessage[]>([]);
     const { toast } = useToast();
-    const { getApiKey } = useUserApiKey();
+    const { getApiKey } = useUserApiKey('gemini');
     const isInitialMount = useRef(true);
 
     // Load messages from localStorage on initial render
@@ -243,16 +243,13 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
                 const now = new Date().getTime();
                 const twentyFourHours = 24 * 60 * 60 * 1000;
 
-                // Check if the stored data is less than 24 hours old
                 if (now - timestamp < twentyFourHours) {
-                    // Sanitize messages to handle legacy data structures
                     const sanitizedMessages = storedMessages.map((msg: any) => ({
                         role: msg.role === 'ai' ? 'model' : msg.role,
                         content: Array.isArray(msg.content) ? msg.content.join('\n\n') : String(msg.content),
                     }));
                     setMessages(sanitizedMessages);
                 } else {
-                    // If it's expired, remove it from storage
                     localStorage.removeItem(BRAINSTORM_STORAGE_KEY);
                 }
             } catch (error) {
@@ -260,9 +257,9 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
                 localStorage.removeItem(BRAINSTORM_STORAGE_KEY);
             }
         }
-    }, []); // Empty dependency array ensures this runs only once on mount
+    }, []);
 
-    // Save messages to localStorage whenever they change, skipping the initial render
+    // Save messages to localStorage whenever they change
     useEffect(() => {
         if (isInitialMount.current) {
             isInitialMount.current = false;
@@ -276,7 +273,6 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
             };
             localStorage.setItem(BRAINSTORM_STORAGE_KEY, JSON.stringify(dataToStore));
         } else {
-            // If the chat becomes empty, clear it from storage
             localStorage.removeItem(BRAINSTORM_STORAGE_KEY);
         }
     }, [messages]);
@@ -291,7 +287,6 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
         if (userPrompt.startsWith('/')) {
             if (editor) {
                 const fullJson = editor.getJSON();
-                // Create a deep copy to avoid mutating the editor's state directly
                 const jsonToSanitize = JSON.parse(JSON.stringify(fullJson));
                 const sanitizedJson = sanitizeDocumentJson(jsonToSanitize);
                 documentContext = JSON.stringify(sanitizedJson);
@@ -302,7 +297,6 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
                     description: 'Could not access document context.',
                 });
             }
-            // Remove the slash and any leading space from the prompt
             userPrompt = userPrompt.substring(1).trim();
         }
 
@@ -318,7 +312,6 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
               throw new Error("A Gemini API key is required. Please set it in the settings.");
             }
             
-            // The history for the model is everything in the conversation.
             const historyForModel = updatedMessages.map(msg => ({
                 role: msg.role,
                 content: msg.content,
@@ -327,7 +320,7 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
             const response = await brainstormIdeas({ 
                 history: historyForModel, 
                 apiKey,
-                documentContext 
+                documentContext,
             });
 
             setMessages([...updatedMessages, { role: 'model', content: response.response }]);
@@ -339,7 +332,6 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
                 title: 'Error',
                 description: errorMessage,
             });
-            // remove the user message if it fails
             setMessages(messages);
         } finally {
             setIsLoading(false);
@@ -355,20 +347,20 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
     };
     
     return (
-        <div className="flex flex-col h-[400px]">
+        <div className="flex flex-col h-[450px]">
             <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
                     {messages.length === 0 && (
                         <div className="text-center text-sm text-muted-foreground py-8">
                             <Sparkles className="mx-auto h-8 w-8 mb-2" />
-                            <p>This is a brainstorming space.</p>
-                            <p>Type <code className="bg-muted px-1.5 py-1 rounded-sm">/</code> to ask about your document.</p>
+                            <p>Ask a question, or use <code className="bg-muted px-1.5 py-1 rounded-sm">/</code> at the start of your prompt</p>
+                            <p>to include the content of your document for context.</p>
                         </div>
                     )}
                     {messages.map((message, index) => (
                         <div key={index} className={cn("flex", message.role === 'user' ? 'justify-end' : 'justify-start')}>
                              <div className={cn("rounded-lg px-4 py-2 max-w-sm", message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
-                                 <p>{message.content}</p>
+                                 <p className="whitespace-pre-wrap">{message.content}</p>
                             </div>
                         </div>
                     ))}
@@ -388,7 +380,7 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleBrainstorm()}
-                        placeholder="Ask for ideas, or type '/' for document context..."
+                        placeholder="Ask anything..."
                         disabled={isLoading}
                     />
                     <Button onClick={handleBrainstorm} disabled={isLoading || !inputValue}><Send className="h-4 w-4" /></Button>
@@ -418,18 +410,22 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl p-0">
-         <Tabs defaultValue="write" className="w-full">
+         <Tabs defaultValue="brainstorm" className="w-full">
             <DialogHeader className="p-6 pb-0">
                  <DialogTitle>AI Assistant</DialogTitle>
                  <DialogDescription>
-                    Use AI to write new content, generate lists, or brainstorm ideas.
+                    Use AI to write new content, generate structured lists, or brainstorm ideas.
                  </DialogDescription>
                  <TabsList className="grid w-full grid-cols-3 mt-4">
+                    <TabsTrigger value="brainstorm">Brainstorm</TabsTrigger>
                     <TabsTrigger value="write">Write</TabsTrigger>
                     <TabsTrigger value="list">List</TabsTrigger>
-                    <TabsTrigger value="brainstorm">Brainstorm</TabsTrigger>
                  </TabsList>
             </DialogHeader>
+            
+            <TabsContent value="brainstorm" className="m-0 p-0">
+                <BrainstormTab editor={editor} />
+            </TabsContent>
 
             <TabsContent value="write" className="p-6 pt-0">
                 <WriteTab editor={editor} onOpenChange={onOpenChange}/>
@@ -437,10 +433,6 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
             
             <TabsContent value="list" className="p-6 pt-0">
                 <ListTab editor={editor} onOpenChange={onOpenChange}/>
-            </TabsContent>
-
-            <TabsContent value="brainstorm" className="m-0 p-0">
-                <BrainstormTab editor={editor} />
             </TabsContent>
         </Tabs>
       </DialogContent>
