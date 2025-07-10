@@ -122,6 +122,7 @@ const CustomAxisTick = (props: any) => {
 const CustomizedTreemapContent = (props: any) => {
     const { root, depth, x, y, width, height, index, payload, rank, name } = props;
     
+    // Add a check for payload to prevent errors
     if (!payload || !payload.name) {
         return null;
     }
@@ -172,7 +173,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   const [viewConfig, setViewConfig] = useState({ legend: true, tooltip: true, grid: true, brush: true });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -197,6 +197,16 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     }
   }, [isEditing, node.attrs]);
 
+  const numericDataKeys = useMemo(() => {
+    if (!chartData || chartData.length === 0) return [];
+    const firstRow = chartData[0];
+    if (!firstRow) return [];
+    return Object.keys(firstRow).filter(key => 
+        chartData.every(row => row && (typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key])))))
+    );
+  }, [chartData]);
+  
+  const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   
   useEffect(() => {
     if (chartData.length > 0) {
@@ -355,16 +365,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     setChartConfig({ ...chartConfig, mixedChartTypes: newTypes });
   };
 
-  const numericDataKeys = useMemo(() => {
-    if (!chartData || chartData.length === 0) return [];
-    const firstRow = chartData[0];
-    if (!firstRow) return [];
-    return Object.keys(firstRow).filter(key => 
-        chartData.every(row => row && (typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key])))))
-    );
-  }, [chartData]);
-
-
   const renderChart = useCallback((data: any[], type: ChartType, config: ChartConfig, vc: any) => {
     if (data.length === 0) {
       return (
@@ -456,7 +456,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                     background
                     dataKey={valueKey}
                 />
-                {vc.legend && <Legend iconSize={10} layout="vertical" verticalAlign="middle" wrapperStyle={{ right: -10, top: '50%', transform: 'translateY(-50%)' }}/>}
+                {vc.legend && <Legend iconSize={10} layout="vertical" verticalAlign="middle" wrapperStyle={{ right: -10, top: '50%', transform: 'translateY(-50%)' }} formatter={(value, entry) => <span style={{ color: entry.color }}>{entry.payload[nameKey]}</span>} />}
                 {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
             </RadialBarChart>
         );
@@ -478,7 +478,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
         const funnelData = (data || []).map((item, index, arr) => ({
             ...item,
             fill: COLORS[index % COLORS.length],
-            percentOfPrevious: index > 0 ? (item[valueKey] / arr[index - 1][valueKey]) * 100 : 100,
+            percentOfPrevious: index > 0 && arr[index - 1][valueKey] > 0 ? (item[valueKey] / arr[index - 1][valueKey]) * 100 : 100,
         }));
         return (
             <FunnelChart>
