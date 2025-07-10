@@ -24,7 +24,6 @@ import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUserApiKey } from '@/hooks/use-user-api-key';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { performRagAction } from '@/ai/flows/rag-flow';
 
 type Props = {
   editor: Editor | null;
@@ -206,43 +205,11 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<BrainstormMessage[]>([]);
-    const [isIndexing, setIsIndexing] = useState(true);
-
+    
     const { toast } = useToast();
     const { getApiKey } = useUserApiKey('gemini');
     const isInitialMount = useRef(true);
     
-    // Index the document when the component mounts or editor becomes available
-    useEffect(() => {
-        const apiKey = getApiKey();
-        if (editor && apiKey) {
-            const handleIndex = async () => {
-                setIsIndexing(true);
-                try {
-                    const docText = editor.getText({ blockSeparator: '\n\n' });
-                    if (docText.trim().length < 10) {
-                         toast({ title: "Document is too short for Q&A.", description: "Add more content to enable this feature.", duration: 5000 });
-                         setIsIndexing(false);
-                         return;
-                    }
-                    await performRagAction({ action: 'index', apiKey, documentText: docText });
-                    toast({
-                        title: "Document Indexed",
-                        description: "The AI is ready to answer questions about this document.",
-                    });
-                } catch(e) {
-                    console.error("Indexing failed", e);
-                    toast({ variant: 'destructive', title: "Indexing Failed", description: "Could not prepare the document for Q&A." });
-                } finally {
-                    setIsIndexing(false);
-                }
-            };
-            handleIndex();
-        } else {
-            setIsIndexing(false);
-        }
-    }, [editor, getApiKey, toast]);
-
     // Load messages from localStorage on initial render
     useEffect(() => {
         const storedData = localStorage.getItem(BRAINSTORM_STORAGE_KEY);
@@ -290,11 +257,8 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
     const handleBrainstorm = async () => {
         if (!inputValue) return;
 
-        let userPrompt = inputValue;
-        let documentContext: string | undefined = undefined;
-
         setIsLoading(true);
-        const newUserMessage: BrainstormMessage = { role: 'user', content: userPrompt };
+        const newUserMessage: BrainstormMessage = { role: 'user', content: inputValue };
         const updatedMessages = [...messages, newUserMessage];
         setMessages(updatedMessages);
         setInputValue('');
@@ -305,18 +269,6 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
               throw new Error("A Gemini API key is required. Please set it in the settings.");
             }
             
-            // Check if it's a context-aware query
-            if (userPrompt.startsWith('/')) {
-                const queryText = userPrompt.substring(1).trim();
-                // Retrieve relevant chunks from the document via the server flow
-                const contextChunks = await performRagAction({
-                    action: 'query',
-                    apiKey,
-                    queryText
-                }) as string[];
-                documentContext = contextChunks.join('\n\n---\n\n');
-            }
-            
             const historyForModel = updatedMessages.map(msg => ({
                 role: msg.role,
                 content: msg.content,
@@ -324,8 +276,7 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
 
             const response = await brainstormIdeas({ 
                 history: historyForModel, 
-                apiKey,
-                documentContext,
+                apiKey
             });
 
             setMessages([...updatedMessages, { role: 'model', content: response.response }]);
@@ -353,20 +304,13 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
     
     return (
         <div className="flex flex-col h-[450px]">
-            <div className="p-2 border-b text-center text-xs text-muted-foreground bg-muted/50">
-                {isIndexing ? (
-                    <span className="flex items-center justify-center gap-2"><Loader2 className="h-3 w-3 animate-spin"/> Indexing document for Q&A...</span>
-                ) : (
-                    <span className="flex items-center justify-center gap-2"><CheckCircle className="h-3 w-3 text-green-500"/> Ready to answer questions about this document.</span>
-                )}
-            </div>
             <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
                     {messages.length === 0 && (
                         <div className="text-center text-sm text-muted-foreground py-8">
                             <Sparkles className="mx-auto h-8 w-8 mb-2" />
-                            <p>Ask a question, or start your prompt with <code className="bg-muted px-1.5 py-1 rounded-sm">/</code></p>
-                            <p>to ask about the content of your document.</p>
+                            <p>Ask a question, or start a creative session.</p>
+                            <p>Your chat history is saved for 24 hours.</p>
                         </div>
                     )}
                     {messages.map((message, index) => (
@@ -393,9 +337,9 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleBrainstorm()}
                         placeholder="Ask anything..."
-                        disabled={isLoading || isIndexing}
+                        disabled={isLoading}
                     />
-                    <Button onClick={handleBrainstorm} disabled={isLoading || !inputValue || isIndexing}><Send className="h-4 w-4" /></Button>
+                    <Button onClick={handleBrainstorm} disabled={isLoading || !inputValue}><Send className="h-4 w-4" /></Button>
                     {messages.length > 0 && !isLoading && (
                         <TooltipProvider>
                             <Tooltip>
