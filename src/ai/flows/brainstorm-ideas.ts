@@ -22,7 +22,7 @@ const MessageSchema = z.object({
 const BrainstormIdeasInputSchema = z.object({
   history: z.array(MessageSchema).describe('The conversation history.'),
   apiKey: z.string().optional().describe('Optional API key for Gemini.'),
-  documentContext: z.string().optional().describe('Optional text content of the document being edited.'),
+  documentContext: z.string().optional().describe('Optional context from the document, pre-filtered for relevance.'),
 });
 export type BrainstormIdeasInput = z.infer<typeof BrainstormIdeasInputSchema>;
 
@@ -53,12 +53,15 @@ const brainstormIdeasFlow = ai.defineFlow(
 
     let systemPrompt = "You are a helpful AI assistant for brainstorming and creative writing.";
     
+    // If relevant document context is provided, use a more specific system prompt.
     if (documentContext) {
-        systemPrompt = `You are an expert writing assistant. The user has provided context from their document. Use this information as the primary source to answer their questions.
+        systemPrompt = `You are an expert writing assistant. The user has provided relevant context from their document.
+Use this information as the primary source to answer their questions.
+Do not mention that you are using provided context. Simply answer the question.
 
-## Document Context
+## Relevant Context
 ${documentContext}
-## End Document Context
+## End Context
 `;
     }
 

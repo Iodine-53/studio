@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   Dialog,
@@ -14,7 +14,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
-import { Loader2, Wand2, Sparkles, Send, FileText, Trash2 } from 'lucide-react';
+import { Loader2, Wand2, Sparkles, Send, FileText, Trash2, Index, CheckCircle } from 'lucide-react';
 import { generateText } from '@/ai/flows/generate-text-flow';
 import { brainstormIdeas } from '@/ai/flows/brainstorm-ideas';
 import { generateDocument } from '@/ai/flows/generate-document-flow';
@@ -24,6 +24,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUserApiKey } from '@/hooks/use-user-api-key';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { createRagService, type RagService } from '@/lib/rag-service';
 
 type Props = {
   editor: Editor | null;
@@ -200,39 +201,45 @@ const ListTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'
     )
 }
 
-// Helper function to recursively remove large data from Tiptap JSON.
-const sanitizeDocumentJson = (node: any): any => {
-    if (!node) return null;
-
-    // Sanitize the current node's attributes
-    if (node.attrs) {
-        // Omit image data URLs
-        if (node.attrs.src && node.attrs.src.startsWith('data:image')) {
-            node.attrs.src = '[Image data omitted for brevity]';
-        }
-        // Omit drawing paths
-        if (node.attrs.paths) {
-            node.attrs.paths = '[Drawing data omitted for brevity]';
-        }
-    }
-
-    // Recursively sanitize child nodes if they exist
-    if (node.content && Array.isArray(node.content)) {
-        node.content = node.content.map(sanitizeDocumentJson).filter(Boolean);
-    }
-    
-    return node;
-};
-
-
 // Brainstorm Tab Component
-const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
+const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpenChange: (open: boolean) => void }) => {
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<BrainstormMessage[]>([]);
+    const [ragService, setRagService] = useState<RagService | null>(null);
+    const [isIndexing, setIsIndexing] = useState(false);
+
     const { toast } = useToast();
     const { getApiKey } = useUserApiKey('gemini');
     const isInitialMount = useRef(true);
+    
+    // Initialize the RAG service when the component mounts or editor becomes available
+    useEffect(() => {
+        const apiKey = getApiKey();
+        if (editor && apiKey && !ragService) {
+            const service = createRagService(apiKey);
+            setRagService(service);
+
+            // Index the document immediately
+            const handleIndex = async () => {
+                setIsIndexing(true);
+                try {
+                    const docText = editor.getText({ blockSeparator: '\n\n' });
+                    await service.indexDocument(docText);
+                    toast({
+                        title: "Document Indexed",
+                        description: "The AI is ready to answer questions about this document.",
+                    });
+                } catch(e) {
+                    console.error("Indexing failed", e);
+                    toast({ variant: 'destructive', title: "Indexing Failed", description: "Could not prepare the document for context questions." });
+                } finally {
+                    setIsIndexing(false);
+                }
+            };
+            handleIndex();
+        }
+    }, [editor, getApiKey, ragService, toast]);
 
     // Load messages from localStorage on initial render
     useEffect(() => {
@@ -284,32 +291,24 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
         let userPrompt = inputValue;
         let documentContext: string | undefined = undefined;
 
-        if (userPrompt.startsWith('/')) {
-            if (editor) {
-                const fullJson = editor.getJSON();
-                const jsonToSanitize = JSON.parse(JSON.stringify(fullJson));
-                const sanitizedJson = sanitizeDocumentJson(jsonToSanitize);
-                documentContext = JSON.stringify(sanitizedJson);
-            } else {
-                toast({
-                    variant: 'destructive',
-                    title: 'Editor not available',
-                    description: 'Could not access document context.',
-                });
-            }
-            userPrompt = userPrompt.substring(1).trim();
-        }
-
+        setIsLoading(true);
         const newUserMessage: BrainstormMessage = { role: 'user', content: userPrompt };
         const updatedMessages = [...messages, newUserMessage];
         setMessages(updatedMessages);
         setInputValue('');
-        setIsLoading(true);
-
+        
         try {
             const apiKey = getApiKey();
             if (!apiKey) {
               throw new Error("A Gemini API key is required. Please set it in the settings.");
+            }
+            
+            // Check if it's a context-aware query
+            if (userPrompt.startsWith('/') && ragService) {
+                userPrompt = userPrompt.substring(1).trim();
+                // Retrieve relevant chunks from the document
+                const contextChunks = await ragService.query(userPrompt, 3);
+                documentContext = contextChunks.join('\n\n---\n\n');
             }
             
             const historyForModel = updatedMessages.map(msg => ({
@@ -348,13 +347,20 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
     
     return (
         <div className="flex flex-col h-[450px]">
+            <div className="p-2 border-b text-center text-xs text-muted-foreground bg-muted/50">
+                {isIndexing ? (
+                    <span className="flex items-center justify-center gap-2"><Loader2 className="h-3 w-3 animate-spin"/> Indexing document for Q&A...</span>
+                ) : (
+                    <span className="flex items-center justify-center gap-2"><CheckCircle className="h-3 w-3 text-green-500"/> Ready to answer questions about this document.</span>
+                )}
+            </div>
             <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
                     {messages.length === 0 && (
                         <div className="text-center text-sm text-muted-foreground py-8">
                             <Sparkles className="mx-auto h-8 w-8 mb-2" />
-                            <p>Ask a question, or use <code className="bg-muted px-1.5 py-1 rounded-sm">/</code> at the start of your prompt</p>
-                            <p>to include the content of your document for context.</p>
+                            <p>Ask a question, or start your prompt with <code className="bg-muted px-1.5 py-1 rounded-sm">/</code></p>
+                            <p>to ask about the content of your document.</p>
                         </div>
                     )}
                     {messages.map((message, index) => (
@@ -381,9 +387,9 @@ const BrainstormTab = ({ editor }: { editor: Editor | null }) => {
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleBrainstorm()}
                         placeholder="Ask anything..."
-                        disabled={isLoading}
+                        disabled={isLoading || isIndexing}
                     />
-                    <Button onClick={handleBrainstorm} disabled={isLoading || !inputValue}><Send className="h-4 w-4" /></Button>
+                    <Button onClick={handleBrainstorm} disabled={isLoading || !inputValue || isIndexing}><Send className="h-4 w-4" /></Button>
                     {messages.length > 0 && !isLoading && (
                         <TooltipProvider>
                             <Tooltip>
@@ -424,7 +430,7 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
             </DialogHeader>
             
             <TabsContent value="brainstorm" className="m-0 p-0">
-                <BrainstormTab editor={editor} />
+                <BrainstormTab editor={editor} onOpenChange={onOpenChange} />
             </TabsContent>
 
             <TabsContent value="write" className="p-6 pt-0">
