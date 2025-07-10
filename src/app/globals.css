@@ -129,13 +129,17 @@
   }
 
   .glassmorphism {
-    background-color: hsla(var(--card), 0.6);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    @apply border-white/20;
+    /* White glassmorphism with a subtle radial gradient for texture */
+    background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2));
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    /* A slightly more pronounced border */
+    @apply border border-solid border-white/30;
   }
 
   .dark .glassmorphism {
-    background-color: hsla(var(--card), 0.2);
+    /* A darker version for dark mode, still maintaining the white/light feel */
+    background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+    @apply border-white/20;
   }
 }
