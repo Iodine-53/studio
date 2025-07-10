@@ -1,7 +1,16 @@
 
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-import { MathQuillNodeView } from '@/components/nodes/MathQuillNodeView';
+import dynamic from 'next/dynamic';
+
+const MathQuillNodeView = dynamic(
+  () => import('@/components/nodes/MathQuillNodeView').then(mod => mod.MathQuillNodeView),
+  {
+    ssr: false,
+    loading: () => <div className="p-2">Loading Math Editor...</div>
+  }
+);
+
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
