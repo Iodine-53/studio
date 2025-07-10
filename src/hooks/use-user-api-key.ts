@@ -4,12 +4,11 @@
 // A simple hook to manage various user API keys in localStorage.
 import { useCallback } from 'react';
 
-type ApiService = 'gemini' | 'tavily';
+type ApiService = 'gemini';
 const API_KEY_PREFIX = 'user_api_key';
 
 const keyMap: Record<ApiService, string> = {
   gemini: `${API_KEY_PREFIX}_gemini`,
-  tavily: `${API_KEY_PREFIX}_tavily`,
 };
 
 
