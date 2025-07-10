@@ -4,8 +4,10 @@
 
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import {
-  Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart,
-  CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis, Brush
+  Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, ComposedChart,
+  Scatter, ScatterChart, Radar, RadarChart, RadialBar, RadialBarChart, Treemap, Funnel, FunnelChart,
+  CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis, ZAxis, Brush,
+  PolarAngleAxis, PolarGrid, PolarRadiusAxis, RadarGrid
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,27 +18,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
-import { AreaChart as AreaChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon, PieChart as PieChartIcon, Upload, X, Plus, Trash2, Settings, Check as CheckIcon, Settings2, GripVertical, Wand2 } from 'lucide-react';
+import { 
+    AreaChart as AreaChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon, PieChart as PieChartIcon, Upload, X, Plus, Trash2, Settings, Check as CheckIcon, Settings2, GripVertical, Wand2,
+    BarChartHorizontal, Shapes, Radar as RadarIcon, Target, LayoutGrid, Filter, GitMerge
+} from 'lucide-react';
 import { useState, useMemo, useRef, ChangeEvent, useCallback, useEffect } from 'react';
 import Papa from 'papaparse';
 import { cn } from '@/lib/utils';
 import { GenerateChartDataDialog } from '../GenerateChartDataDialog';
 import { useToast } from '@/hooks/use-toast';
 
-type ChartType = 'bar' | 'line' | 'area' | 'pie';
+type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'horizontalBar' | 'scatter' | 'radar' | 'radialBar' | 'treemap' | 'funnel' | 'mixed';
 
 type ChartConfig = {
   xAxisKey?: string;
+  yAxisKey?: string;
+  zAxisKey?: string;
   dataKeys?: string[];
   nameKey?: string;
   valueKey?: string;
+  childrenKey?: string;
+  mixedChartTypes?: { [key: string]: 'line' | 'bar' | 'area' };
 };
 
-const CHART_TYPES: { name: ChartType, icon: React.FC<any> }[] = [
-  { name: 'bar', icon: BarChartIcon },
-  { name: 'line', icon: LineChartIcon },
-  { name: 'area', icon: AreaChartIcon },
-  { name: 'pie', icon: PieChartIcon },
+const CHART_TYPES: { name: ChartType, icon: React.FC<any>, isAxisBased: boolean, isHierarchical?: boolean }[] = [
+  { name: 'bar', icon: BarChartIcon, isAxisBased: true },
+  { name: 'line', icon: LineChartIcon, isAxisBased: true },
+  { name: 'area', icon: AreaChartIcon, isAxisBased: true },
+  { name: 'mixed', icon: GitMerge, isAxisBased: true },
+  { name: 'horizontalBar', icon: BarChartHorizontal, isAxisBased: true },
+  { name: 'scatter', icon: Shapes, isAxisBased: true },
+  { name: 'radar', icon: RadarIcon, isAxisBased: false },
+  { name: 'pie', icon: PieChartIcon, isAxisBased: false },
+  { name: 'radialBar', icon: Target, isAxisBased: false },
+  { name: 'treemap', icon: LayoutGrid, isAxisBased: false, isHierarchical: true },
+  { name: 'funnel', icon: Filter, isAxisBased: false },
 ];
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16', '#EC4899', '#6B7280'];
@@ -81,6 +97,34 @@ const CustomAxisTick = (props: any) => {
     );
 };
 
+const CustomizedTreemapContent = (props: any) => {
+    const { root, depth, x, y, width, height, index, payload, rank, name } = props;
+    const item = payload.children ? payload.children[index] : payload;
+    
+    return (
+      <g>
+        <rect
+          x={x}
+          y={y}
+          width={width}
+          height={height}
+          style={{
+            fill: COLORS[index % COLORS.length],
+            stroke: '#fff',
+            strokeWidth: 2 / (depth + 1e-10),
+            strokeOpacity: 1 / (depth + 1e-10),
+          }}
+        />
+        <text x={x + width / 2} y={y + height / 2} textAnchor="middle" fill="#fff" fontSize={14}>
+          {item.name}
+        </text>
+        <text x={x + 4} y={y + 18} fill="#fff" fontSize={12} fillOpacity={0.7}>
+          {item.size}
+        </text>
+      </g>
+    );
+  };
+
 
 export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: NodeViewProps) => {
   const { textAlign, layout } = node.attrs;
@@ -93,7 +137,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   
   // States for edit mode content
   const [title, setTitle] = useState(node.attrs.title);
-  const [chartType, setChartType] = useState(node.attrs.chartType);
+  const [chartType, setChartType] = useState<ChartType>(node.attrs.chartType);
   const [chartData, setChartData] = useState<any[]>([]);
   const [chartConfig, setChartConfig] = useState<ChartConfig>({});
   const [viewConfig, setViewConfig] = useState({ legend: true, tooltip: true, grid: true, brush: true });
@@ -277,8 +321,14 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     const newKeys = checked ? [...currentKeys, key] : currentKeys.filter(k => k !== key);
     setChartConfig({ ...chartConfig, dataKeys: newKeys });
   };
+  
+  const handleMixedChartTypeChange = (key: string, type: 'line' | 'bar' | 'area') => {
+    const currentTypes = chartConfig.mixedChartTypes || {};
+    const newTypes = { ...currentTypes, [key]: type };
+    setChartConfig({ ...chartConfig, mixedChartTypes: newTypes });
+  };
 
-  const renderChart = useCallback((data: any[], type: string, config: ChartConfig, vc: any) => {
+  const renderChart = useCallback((data: any[], type: ChartType, config: ChartConfig, vc: any) => {
     if (data.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center p-8">
@@ -289,118 +339,109 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       );
     }
     
-    const { xAxisKey, dataKeys = [], nameKey, valueKey } = config;
+    const { xAxisKey, yAxisKey, zAxisKey, dataKeys = [], nameKey, valueKey, childrenKey, mixedChartTypes = {} } = config;
+    const isHorizontal = type === 'horizontalBar';
+    
+    const numericDataKeys = data.length > 0 ? Object.keys(data[0]).filter(k => typeof data[0][k] === 'number') : [];
 
     // Common Axis and Grid components
-    const commonYAxisProps = {
-        stroke: "hsl(var(--muted-foreground))",
-        fontSize: 12,
-        tickLine: false,
-        axisLine: false,
-    };
-    const commonXAxisProps = {
-        dataKey: xAxisKey,
-        stroke: "hsl(var(--muted-foreground))",
-        fontSize: 12,
-        tickLine: false,
-        axisLine: false,
-        height: 80,
-        interval: 0,
-        tick: <CustomAxisTick />
-    };
+    const YAxisComponent = <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} type={isHorizontal ? 'category' : 'number'} dataKey={isHorizontal ? yAxisKey : undefined} />;
+    const XAxisComponent = <XAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} type={isHorizontal ? 'number' : 'category'} dataKey={isHorizontal ? undefined : xAxisKey} height={80} interval={0} tick={<CustomAxisTick />} />;
     const commonGrid = <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.8} />;
-
-    const defs = (
-        <defs>
-          {dataKeys.map((key, index) => (
-             <linearGradient key={`gradient-${key}`} id={`gradient-${key}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.8} />
-              <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.2} />
-            </linearGradient>
-          ))}
-          <filter id="shadow">
-            <feDropShadow dx="2" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.1"/>
-          </filter>
-        </defs>
-    );
+    const defs = ( <defs> {dataKeys.map((key, index) => ( <linearGradient key={`gradient-${key}`} id={`gradient-${key}`} x1="0" y1="0" x2="0" y2="1"> <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.8} /> <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.2} /> </linearGradient> ))} <filter id="shadow"> <feDropShadow dx="2" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.1"/> </filter> </defs> );
+    const brushComponent = <Brush dataKey={xAxisKey || nameKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value)} />;
 
     switch (type) {
-      case 'bar': {
-        const processedData = data.map(row => {
-            const newRow: {[key:string]: any} = { ...row };
-            dataKeys.forEach(key => {
-              const value = parseFloat(row[key]);
-              if (!isNaN(value)) newRow[key] = value;
-            });
-            return newRow;
-        });
+      case 'bar':
+      case 'line':
+      case 'area':
+      case 'mixed': {
+        const ChartComponent = type === 'mixed' ? ComposedChart : type === 'bar' ? BarChart : type === 'line' ? LineChart : AreaChart;
         return (
-          <BarChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <ChartComponent data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             {defs}
             {vc.grid && commonGrid}
-            <XAxis {...commonXAxisProps} />
-            <YAxis {...commonYAxisProps} />
+            {XAxisComponent}
+            {YAxisComponent}
             {vc.tooltip && <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--accent))", opacity: 0.3 }} />}
             {vc.legend && <Legend />}
-            {dataKeys.map((key, index) => (
-              <Bar key={key} dataKey={key} fill={COLORS[index % COLORS.length]} radius={[4, 4, 0, 0]} filter="url(#shadow)" />
-            ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value)} />}
-          </BarChart>
+            {dataKeys.map((key, index) => {
+              const seriesType = type === 'mixed' ? (mixedChartTypes[key] || 'bar') : type;
+              if (seriesType === 'bar') return <Bar key={key} dataKey={key} fill={COLORS[index % COLORS.length]} radius={[4, 4, 0, 0]} filter="url(#shadow)" />;
+              if (seriesType === 'line') return <Line key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3} dot={{ fill: COLORS[index % COLORS.length], strokeWidth: 2, stroke: '#FFFFFF', r: 6, filter: 'url(#shadow)' }} activeDot={{ r: 8, fill: COLORS[index % COLORS.length], stroke: '#FFFFFF', strokeWidth: 2, filter: 'url(#shadow)' }} />;
+              if (seriesType === 'area') return <Area key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3} fill={`url(#gradient-${key})`} filter="url(#shadow)" />;
+              return null;
+            })}
+            {vc.brush && brushComponent}
+          </ChartComponent>
         );
       }
-      case 'line': {
-        const processedData = data.map(row => {
-            const newRow: {[key:string]: any} = { ...row };
-            dataKeys.forEach(key => {
-              const value = parseFloat(row[key]);
-              if (!isNaN(value)) newRow[key] = value;
-            });
-            return newRow;
-        });
-         return (
-          <LineChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            {defs}
-            {vc.grid && commonGrid}
-            <XAxis {...commonXAxisProps} />
-            <YAxis {...commonYAxisProps} />
-            {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
-            {vc.legend && <Legend />}
-            {dataKeys.map((key, index) => (
-              <Line key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3}
-                  dot={{ fill: COLORS[index % COLORS.length], strokeWidth: 2, stroke: '#FFFFFF', r: 6, filter: 'url(#shadow)' }}
-                  activeDot={{ r: 8, fill: COLORS[index % COLORS.length], stroke: '#FFFFFF', strokeWidth: 2, filter: 'url(#shadow)' }}
-              />
-            ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value)}/>}
-          </LineChart>
-        );
-      }
-      case 'area': {
-        const processedData = data.map(row => {
-            const newRow: {[key:string]: any} = { ...row };
-            dataKeys.forEach(key => {
-              const value = parseFloat(row[key]);
-              if (!isNaN(value)) newRow[key] = value;
-            });
-            return newRow;
-        });
+      case 'horizontalBar':
         return (
-          <AreaChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            {defs}
-            {vc.grid && commonGrid}
-            <XAxis {...commonXAxisProps} />
-            <YAxis {...commonYAxisProps} />
-            {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
-            {vc.legend && <Legend />}
-            {dataKeys.map((key, index) => (
-              <Area key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} strokeWidth={3}
-                fill={`url(#gradient-${key})`} filter="url(#shadow)" />
-            ))}
-            {vc.brush && <Brush dataKey={xAxisKey} height={30} stroke="#3B82F6" tickFormatter={(value) => truncateLabel(value)}/>}
-          </AreaChart>
+            <BarChart data={data} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                {vc.grid && commonGrid}
+                <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey={nameKey} stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} width={80} />
+                {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
+                {vc.legend && <Legend />}
+                {dataKeys.map((key, index) => <Bar key={key} dataKey={key} fill={COLORS[index % COLORS.length]} radius={[0, 4, 4, 0]} />)}
+            </BarChart>
         );
-      }
+      case 'scatter':
+        return (
+            <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                {vc.grid && <CartesianGrid />}
+                <XAxis type="number" dataKey={xAxisKey} name={xAxisKey} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis type="number" dataKey={yAxisKey} name={yAxisKey} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                {zAxisKey && <ZAxis type="number" dataKey={zAxisKey} range={[60, 400]} name={zAxisKey} />}
+                {vc.tooltip && <Tooltip cursor={{ strokeDasharray: '3 3' }} />}
+                {vc.legend && <Legend />}
+                <Scatter name="Data Points" data={data} fill="#8884d8" />
+            </ScatterChart>
+        );
+      case 'radar':
+          return (
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+                  {vc.grid && <PolarGrid />}
+                  <PolarAngleAxis dataKey={nameKey} />
+                  <PolarRadiusAxis />
+                  {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
+                  {vc.legend && <Legend />}
+                  {dataKeys.map((key, index) => <Radar key={key} name={key} dataKey={key} stroke={COLORS[index % COLORS.length]} fill={COLORS[index % COLORS.length]} fillOpacity={0.6} />)}
+              </RadarChart>
+          );
+      case 'radialBar':
+          return (
+              <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="80%" barSize={10} data={data}>
+                  <RadialBar background dataKey={valueKey}>
+                      {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                  </RadialBar>
+                  {vc.legend && <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" />}
+                  {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
+              </RadialBarChart>
+          );
+      case 'treemap':
+          return (
+              <Treemap
+                  data={data}
+                  dataKey={valueKey}
+                  nameKey={nameKey}
+                  childrenDataKey={childrenKey}
+                  aspectRatio={4 / 3}
+                  stroke="#fff"
+                  fill="#8884d8"
+                  content={<CustomizedTreemapContent />}
+              />
+          );
+      case 'funnel':
+          return (
+              <FunnelChart>
+                  {vc.tooltip && <Tooltip />}
+                  <Funnel dataKey={valueKey} data={data} isAnimationActive>
+                      {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                  </Funnel>
+              </FunnelChart>
+          );
       case 'pie': {
         const pieData = data.map((d) => ({
           ...d,
@@ -436,6 +477,10 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   }, []);
 
   if (isEditing) {
+      const currentChartInfo = CHART_TYPES.find(c => c.name === chartType);
+      const isHierarchical = currentChartInfo?.isHierarchical;
+      const isAxisBased = currentChartInfo?.isAxisBased;
+
       return (
           <>
             <NodeViewWrapper 
@@ -470,10 +515,39 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                       </TabsContent>
                       <TabsContent value="appearance" className="mt-4 space-y-4">
                           <div className="flex items-end gap-4">
-                              <div className="flex-grow"><Label>Chart Type</Label><div className="flex items-center gap-2 mt-1">{CHART_TYPES.map(type => (<Button key={type.name} variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => setChartType(type.name)}><type.icon className="h-4 w-4"/><span className="sr-only">{type.name} chart</span></Button>))}</div></div>
+                              <div className="flex-grow"><Label>Chart Type</Label><div className="flex items-center gap-1 flex-wrap mt-1">{CHART_TYPES.map(type => (<Button key={type.name} variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => setChartType(type.name)} title={type.name}><type.icon className="h-4 w-4"/><span className="sr-only">{type.name} chart</span></Button>))}</div></div>
                               <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline"><Settings2 className="mr-2 h-4 w-4" /> View Options</Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuLabel>Display Elements</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuCheckboxItem checked={viewConfig.legend} onCheckedChange={(checked) => setViewConfig(v => ({...v, legend: checked}))}>Show Legend</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.tooltip} onCheckedChange={(checked) => setViewConfig(v => ({...v, tooltip: checked}))}>Show Tooltip</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.grid && chartType !== 'pie'} onCheckedChange={(checked) => setViewConfig(v => ({...v, grid: checked}))} disabled={chartType === 'pie'}>Show Grid</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.brush && chartType !== 'pie'} onCheckedChange={(checked) => setViewConfig(v => ({...v, brush: checked}))} disabled={chartType === 'pie'}>Show Brush</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>
                           </div>
-                          {chartType === 'pie' ? (<div className="grid sm:grid-cols-2 gap-4"><div><Label>Name Key</Label><Select value={chartConfig.nameKey} onValueChange={key => setChartConfig({ ...chartConfig, nameKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Value Key</Label><Select value={chartConfig.valueKey} onValueChange={key => setChartConfig({ ...chartConfig, valueKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div></div>) : (<><div><Label>X-Axis</Label><Select value={chartConfig.xAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, xAxisKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div><div><Label>Series (Y-Axis)</Label><div className="space-y-2 rounded-md border p-4 max-h-40 overflow-y-auto">{availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (<div key={key} className="flex items-center space-x-2"><Checkbox id={`key-${key}`} checked={chartConfig.dataKeys?.includes(key)} onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)} /><label htmlFor={`key-${key}`} className="text-sm font-medium leading-none">{key}</label></div>))}{availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (<p className="text-sm text-muted-foreground">Select an X-Axis key or add more columns.</p>)}</div></div></>)}
+                          
+                          {isAxisBased ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {chartType === 'scatter' ? (
+                                      <>
+                                      <div><Label>X-Axis (Numeric)</Label><Select value={chartConfig.xAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, xAxisKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{numericDataKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div>
+                                      <div><Label>Y-Axis (Numeric)</Label><Select value={chartConfig.yAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, yAxisKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{numericDataKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div>
+                                      <div><Label>Z-Axis (Bubble Size)</Label><Select value={chartConfig.zAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, zAxisKey: key })}><SelectTrigger><SelectValue placeholder="Optional..." /></SelectTrigger><SelectContent>{numericDataKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div>
+                                      </>
+                                  ) : (
+                                      <>
+                                        <div><Label>{chartType === 'horizontalBar' ? 'Category Axis' : 'X-Axis'}</Label><Select value={chartConfig.xAxisKey} onValueChange={key => setChartConfig({ ...chartConfig, xAxisKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div>
+                                        <div>
+                                            <Label>Series (Y-Axis)</Label>
+                                            <div className="space-y-2 rounded-md border p-4 max-h-40 overflow-y-auto">{availableKeys.filter(k => k !== chartConfig.xAxisKey).map(key => (<div key={key} className="flex items-center space-x-2"><Checkbox id={`key-${key}`} checked={chartConfig.dataKeys?.includes(key)} onCheckedChange={(checked) => handleDataKeyChange(key, !!checked)} /><label htmlFor={`key-${key}`} className="text-sm font-medium leading-none">{key}</label>
+                                            {chartType === 'mixed' && chartConfig.dataKeys?.includes(key) && (
+                                                <div className="ml-auto"><Select value={chartConfig.mixedChartTypes?.[key] || 'bar'} onValueChange={(type: 'line' | 'bar' | 'area') => handleMixedChartTypeChange(key, type)}><SelectTrigger className="h-7 w-24"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="bar">Bar</SelectItem><SelectItem value="line">Line</SelectItem><SelectItem value="area">Area</SelectItem></SelectContent></Select></div>
+                                            )}
+                                            </div>))}{availableKeys.filter(k => k !== chartConfig.xAxisKey).length === 0 && (<p className="text-sm text-muted-foreground">Select an X-Axis key or add more columns.</p>)}</div>
+                                        </div>
+                                      </>
+                                  )}
+                              </div>
+                          ) : (
+                             <div className="grid sm:grid-cols-2 gap-4">
+                                <div><Label>Name Key</Label><Select value={chartConfig.nameKey} onValueChange={key => setChartConfig({ ...chartConfig, nameKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div>
+                                <div><Label>Value Key</Label><Select value={chartConfig.valueKey} onValueChange={key => setChartConfig({ ...chartConfig, valueKey: key })}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent>{numericDataKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div>
+                                {isHierarchical && <div><Label>Children Key</Label><Select value={chartConfig.childrenKey} onValueChange={key => setChartConfig({ ...chartConfig, childrenKey: key })}><SelectTrigger><SelectValue placeholder="Optional..." /></SelectTrigger><SelectContent>{availableKeys.map(key => <SelectItem key={key} value={key}>{key}</SelectItem>)}</SelectContent></Select></div>}
+                            </div>
+                          )}
                       </TabsContent>
                     </Tabs>
                     <div style={{ height: `${height}px` }} className="w-full mt-6 bg-muted/30 rounded-lg p-2">
@@ -494,14 +568,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   }
 
   // View Mode
-  const savedChartData = JSON.parse(node.attrs.chartData || '[]').map((d: any) => {
-    const dataPoint = {...d};
-    Object.keys(dataPoint).forEach(key => {
-        const num = parseFloat(dataPoint[key]);
-        if (!isNaN(num)) dataPoint[key] = num;
-    });
-    return dataPoint;
-  });
+  const savedChartData = JSON.parse(node.attrs.chartData || '[]');
   const savedChartConfig = JSON.parse(node.attrs.chartConfig || '{}');
   const savedViewConfig = JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}');
 
