@@ -480,6 +480,12 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       const currentChartInfo = CHART_TYPES.find(c => c.name === chartType);
       const isHierarchical = currentChartInfo?.isHierarchical;
       const isAxisBased = currentChartInfo?.isAxisBased;
+      const numericDataKeys = useMemo(() => {
+        if (chartData.length === 0) return [];
+        return Object.keys(chartData[0]).filter(key => 
+            chartData.every(row => typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key]))))
+        );
+      }, [chartData]);
 
       return (
           <>
