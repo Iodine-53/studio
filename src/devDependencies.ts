@@ -5,6 +5,7 @@
   "@types/html2canvas": "^1.0.0",
   "@types/jspdf": "^2.0.0",
   "@types/jszip": "^3.4.1",
+  "@types/katex": "^0.16.7",
   "@types/node": "^20",
   "@types/papaparse": "^5.3.14",
   "@types/react": "^18",
