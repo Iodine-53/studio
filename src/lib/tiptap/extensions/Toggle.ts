@@ -7,9 +7,9 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     toggle: {
       /**
-       * Set a toggle block
+       * Set a toggle block with a specific template
        */
-      setToggle: () => ReturnType;
+      setToggle: (attributes?: { type?: string }) => ReturnType;
     };
   }
 }
@@ -29,6 +29,9 @@ export const Toggle = Node.create({
       isOpen: {
         default: false,
       },
+      type: { // For templating
+        default: 'blank',
+      }
     };
   },
 
@@ -39,6 +42,7 @@ export const Toggle = Node.create({
         getAttrs: dom => ({
           title: (dom as HTMLElement).getAttribute('data-title'),
           isOpen: (dom as HTMLElement).getAttribute('data-is-open') === 'true',
+          type: (dom as HTMLElement).getAttribute('data-toggle-type'),
         }),
       },
     ];
@@ -51,9 +55,10 @@ export const Toggle = Node.create({
         'data-type': 'toggle-block',
         'data-title': node.attrs.title,
         'data-is-open': node.attrs.isOpen,
+        'data-toggle-type': node.attrs.type,
       }),
       ['div', { class: 'toggle-header' }, node.attrs.title],
-      ['div', { class: 'toggle-content', style: `display: ${node.attrs.isOpen ? 'block' : 'none'};` }, 0], // Content hole
+      ['div', { class: 'toggle-content' }, 0], // Content hole
     ];
   },
 
@@ -64,13 +69,29 @@ export const Toggle = Node.create({
   addCommands() {
     return {
       setToggle:
-        () =>
+        (attributes = { type: 'blank' }) =>
         ({ commands }) => {
+          const { type } = attributes;
+          
+          const templates = {
+            blank: { title: '📝 Blank Toggle', content: [{ type: 'paragraph' }] },
+            checklist: { title: '✅ Checklist', content: [{ type: 'taskList', content: [ { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task 1'}] }] }, { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task 2'}] }] } ] }] },
+            notes: { title: '📋 Notes', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Add your notes here...' }] }] },
+            links: { title: '🔗 Links & Resources', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Link 1' }] }] }] }] },
+            ideas: { title: '💡 Ideas', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Idea 1' }] }] }] }] },
+            goals: { title: '🎯 Goals', content: [{ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Goal 1'}] }] }] }] },
+          };
+          
+          const template = templates[type as keyof typeof templates] || templates.blank;
+
           return commands.insertContent({
             type: this.name,
-            content: [{
-              type: 'paragraph', // Add a default paragraph inside
-            }]
+            attrs: {
+              title: template.title,
+              isOpen: true,
+              type: type
+            },
+            content: template.content,
           });
         },
     };
