@@ -99,6 +99,12 @@ const CustomAxisTick = (props: any) => {
 
 const CustomizedTreemapContent = (props: any) => {
     const { root, depth, x, y, width, height, index, payload, rank, name } = props;
+    
+    // Defensive check to prevent crash if payload is not what we expect
+    if (!payload || !payload.name) {
+        return null;
+    }
+
     const item = payload.children ? payload.children[index] : payload;
     
     return (
@@ -115,12 +121,17 @@ const CustomizedTreemapContent = (props: any) => {
             strokeOpacity: 1 / (depth + 1e-10),
           }}
         />
-        <text x={x + width / 2} y={y + height / 2} textAnchor="middle" fill="#fff" fontSize={14}>
-          {item.name}
-        </text>
-        <text x={x + 4} y={y + 18} fill="#fff" fontSize={12} fillOpacity={0.7}>
-          {item.size}
-        </text>
+        {/* Only render text if the box is large enough */}
+        {width > 30 && height > 30 && (
+            <>
+                <text x={x + width / 2} y={y + height / 2} textAnchor="middle" fill="#fff" fontSize={14} className="pointer-events-none">
+                    {item.name}
+                </text>
+                <text x={x + 4} y={y + 18} fill="#fff" fontSize={12} fillOpacity={0.7} className="pointer-events-none">
+                    {item.size}
+                </text>
+            </>
+        )}
       </g>
     );
   };
@@ -466,7 +477,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
               {pieData.map((_entry, index) => <Cell key={`cell-${index}`} fill={`url(#pieGradient-${index})`} stroke="#FFFFFF" strokeWidth={2} />)}
             </Pie>
             {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
-            {vc.legend && <Legend dataKey={nameKey} />}
+            {vc.legend && <Legend />}
           </PieChart>
         );
       }
