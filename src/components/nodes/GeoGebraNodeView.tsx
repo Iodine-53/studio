@@ -1,8 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useState, useEffect, useRef } from 'react';
 import type { NodeViewProps } from '@tiptap/react';
 import { NodeViewWrapper } from '@tiptap/react';
 import { Button } from '@/components/ui/button';
@@ -13,17 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Check as CheckIcon, Loader, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '../ui/skeleton';
-
-// Lazy load the GeoGebra component and specify the named export
-const Geogebra = dynamic(
-  () => import('geogebra-apps-react').then((mod) => mod.Geogebra),
-  {
-    ssr: false,
-    loading: () => <div className="flex items-center justify-center h-full w-full bg-muted"><Loader className="h-8 w-8 animate-spin text-primary"/></div>,
-  }
-);
-
+import Script from 'next/script';
 
 // Simple debounce function
 function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
@@ -34,12 +23,17 @@ function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
   };
 }
 
+const GEOGEBRA_SCRIPT_ID = 'geogebra-script';
+const GEOGEBRA_API_URL = 'https://www.geogebra.org/apps/deployggb.js';
+
 export const GeoGebraNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
   const { ggbBase64, appName, width, height, showToolBar, showMenuBar, showAlgebraInput, textAlign, layout } = node.attrs;
   
+  const ggbContainerRef = useRef<HTMLDivElement>(null);
+  const appletInstanceRef = useRef<any>(null);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [instance, setInstance] = useState<any>(null);
-  
+
   // Local state for the settings panel
   const [currentAppName, setCurrentAppName] = useState(appName);
   const [currentWidth, setCurrentWidth] = useState(width);
@@ -48,9 +42,49 @@ export const GeoGebraNodeView = ({ node, updateAttributes, selected }: NodeViewP
   const [currentShowMenuBar, setCurrentShowMenuBar] = useState(showMenuBar);
   const [currentShowAlgebraInput, setCurrentShowAlgebraInput] = useState(showAlgebraInput);
 
+  const debouncedUpdate = React.useMemo(() => debounce((base64: string) => {
+    if (updateAttributes) {
+      updateAttributes({ ggbBase64: base64 });
+    }
+  }, 1000), [updateAttributes]);
+
+  const createGeoGebraApplet = () => {
+    if (!isScriptLoaded || !ggbContainerRef.current || !window.GGBApplet) return;
+
+    const parameters = {
+        appName, width, height, showToolBar, showMenuBar, showAlgebraInput,
+        "useBrowserForJS": true,
+        "allowStyleBar": true,
+        "appletOnLoad": (api: any) => {
+            appletInstanceRef.current = api;
+            if (ggbBase64) {
+              api.setBase64(ggbBase64);
+            }
+            api.registerUpdateListener(() => {
+                debouncedUpdate(api.getGGBBase64());
+            });
+        }
+    };
+
+    const applet = new window.GGBApplet(parameters, true);
+    applet.inject(ggbContainerRef.current);
+  };
+
+  useEffect(() => {
+    if (isScriptLoaded) {
+      createGeoGebraApplet();
+    }
+
+    return () => {
+      if (ggbContainerRef.current) {
+        ggbContainerRef.current.innerHTML = '';
+      }
+      appletInstanceRef.current = null;
+    };
+  }, [isScriptLoaded, appName, width, height, showToolBar, showMenuBar, showAlgebraInput]);
+  
   useEffect(() => {
     if (selected) {
-      // Sync local state when selected
       setCurrentAppName(appName);
       setCurrentWidth(width);
       setCurrentHeight(height);
@@ -73,23 +107,10 @@ export const GeoGebraNodeView = ({ node, updateAttributes, selected }: NodeViewP
     });
     setIsEditing(false);
   };
-
-  const debouncedUpdate = useMemo(() => debounce((base64: string) => {
-    if (updateAttributes) {
-      updateAttributes({ ggbBase64: base64 });
-    }
-  }, 1000), [updateAttributes]);
-
-  const handleOnReady = (applet: any) => {
-    setInstance(applet);
-    applet.registerUpdateListener(() => {
-      debouncedUpdate(applet.getGGBBase64());
-    });
-  };
-
+  
   const handleReset = () => {
-    if (instance) {
-      instance.reset();
+    if (appletInstanceRef.current) {
+      appletInstanceRef.current.reset();
     }
   };
   
@@ -127,7 +148,7 @@ export const GeoGebraNodeView = ({ node, updateAttributes, selected }: NodeViewP
                 </Select>
               </div>
               <div className="space-y-2">
-                 <Label>Dimensions</Label>
+                 <Label>Dimensions (px)</Label>
                  <div className="flex gap-2">
                     <Input type="number" value={currentWidth} onChange={e => setCurrentWidth(Number(e.target.value))} placeholder="Width"/>
                     <Input type="number" value={currentHeight} onChange={e => setCurrentHeight(Number(e.target.value))} placeholder="Height"/>
@@ -151,25 +172,26 @@ export const GeoGebraNodeView = ({ node, updateAttributes, selected }: NodeViewP
       data-align={textAlign}
       style={{ width: `${blockWidth}%` }}
     >
+      <Script
+        id={GEOGEBRA_SCRIPT_ID}
+        src={GEOGEBRA_API_URL}
+        onLoad={() => setIsScriptLoaded(true)}
+      />
       <div 
         className={cn("relative group border rounded-lg overflow-hidden bg-card", selected && "ring-2 ring-primary")}
         data-drag-handle
       >
-        <div style={{ width: `${width}px`, height: `${height}px`, margin: '0 auto' }}>
-          <Geogebra
-            key={`${appName}-${width}-${height}-${showToolBar}-${showMenuBar}-${showAlgebraInput}`}
-            appName={appName}
-            width={width}
-            height={height}
-            showToolBar={showToolBar}
-            showMenuBar={showMenuBar}
-            showAlgebraInput={showAlgebraInput}
-            ggbBase64={ggbBase64}
-            onAppletReady={handleOnReady}
-            LoadComponent={Skeleton}
-          />
+        <div style={{ width: '100%', maxWidth: `${width}px`, height: `${height}px`, margin: '0 auto' }}>
+          {isScriptLoaded ? (
+            <div ref={ggbContainerRef} className="w-full h-full" />
+          ) : (
+            <div className="flex items-center justify-center h-full w-full bg-muted">
+                <Loader className="h-8 w-8 animate-spin text-primary"/>
+                <span className="ml-2 text-muted-foreground">Loading GeoGebra...</span>
+            </div>
+          )}
         </div>
-        {selected && (
+        {selected && isScriptLoaded && (
           <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button variant="secondary" size="icon" className="h-8 w-8" onClick={handleReset} title="Reset Applet">
               <RefreshCw className="h-4 w-4"/>
@@ -183,3 +205,10 @@ export const GeoGebraNodeView = ({ node, updateAttributes, selected }: NodeViewP
     </NodeViewWrapper>
   );
 };
+
+// Add this to your global types or a specific d.ts file
+declare global {
+  interface Window {
+    GGBApplet: any;
+  }
+}
