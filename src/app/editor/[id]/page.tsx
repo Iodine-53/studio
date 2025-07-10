@@ -32,6 +32,9 @@ import { Embed } from '@/lib/tiptap/extensions/Embed';
 import { Callout } from '@/lib/tiptap/extensions/Callout';
 import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
+import { FunctionPlot } from '@/lib/tiptap/extensions/FunctionPlot';
+import { MathQuill } from '@/lib/tiptap/extensions/MathQuill';
+import { Calculator } from '@/lib/tiptap/extensions/Calculator';
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
@@ -117,6 +120,9 @@ export default function EditorPage() {
       Callout,
       PasteHandler,
       ProgressBarBlock,
+      FunctionPlot,
+      MathQuill,
+      Calculator,
     ],
     editorProps: {
       attributes: {

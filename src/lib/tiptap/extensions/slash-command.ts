@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Quote
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, SigmaSquare, Calculator as CalculatorIcon
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -46,6 +46,9 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Todo List", icon: ListTodo, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTodoList().run(); } },
   { title: "Embed", icon: Film, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setEmbed({ src: '' }).run(); } },
   { title: "Progress Bars", icon: SlidersHorizontal, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertProgressBarBlock().run(); } },
+  { title: "Function Plot", icon: FunctionSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'functionPlot' }).run(); } },
+  { title: "Math Equation", icon: SigmaSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'mathQuill' }).run(); } },
+  { title: "Calculator", icon: CalculatorIcon, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'calculator' }).run(); } },
 ];
 
 const renderItems = () => {
