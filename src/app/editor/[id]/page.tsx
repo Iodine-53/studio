@@ -26,7 +26,6 @@ import html from 'highlight.js/lib/languages/xml'; // for HTML
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import { Chart } from '@/lib/tiptap/extensions/Chart';
 import { Drawing } from '@/lib/tiptap/extensions/Drawing';
-import { Accordion } from '@/lib/tiptap/extensions/Accordion';
 import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
 import { Embed } from '@/lib/tiptap/extensions/Embed';
 import { Callout } from '@/lib/tiptap/extensions/Callout';
@@ -95,7 +94,6 @@ export default function EditorPage() {
           'image',
           'chartBlock',
           'drawing',
-          'accordion',
           'todoList',
           'embed',
           'interactiveTable',
@@ -115,7 +113,6 @@ export default function EditorPage() {
       HorizontalRule,
       Chart,
       Drawing,
-      Accordion,
       TodoListExtension,
       Embed,
       Callout,

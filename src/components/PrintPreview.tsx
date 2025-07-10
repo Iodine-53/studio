@@ -161,7 +161,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       // to prevent an invalid HTML structure like <p><div>...</div></p>, which causes hydration errors.
       const hasBlockChild = (node.content || []).some(childNode =>
         [
-          'image', 'chartBlock', 'drawing', 'accordion', 'todoList', 'callout',
+          'image', 'chartBlock', 'drawing', 'todoList', 'callout',
           'horizontalRule', 'interactiveTable', 'embed', 'progressBarBlock',
           'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote'
         ].includes(childNode.type)
@@ -300,27 +300,6 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       } catch(e) {
         return <div className="my-4 p-4 border rounded-lg text-center text-destructive">[Invalid Chart Data]</div>
       }
-    }
-    
-    case 'accordion': {
-        return (
-            <div style={wrapperStyle}>
-                <div className="my-4 p-4 border rounded-lg not-prose">
-                    <h3 className="font-bold text-xl">{node.attrs?.title}</h3>
-                    <p className="text-muted-foreground mb-4">{node.attrs?.subtitle}</p>
-                    <div className="space-y-3">
-                        {(node.attrs?.items || []).map((item: any) => (
-                            <div key={item.id} className="border-t pt-2">
-                                <h4 className="font-semibold">{item.title}</h4>
-                                <div className="text-sm text-foreground/80 leading-relaxed prose prose-sm max-w-none">
-                                    {(item.content || '').split('\n').map((line: string, i: number) => <p key={i}>{line}</p>)}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        )
     }
 
     case 'todoList': {

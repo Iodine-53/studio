@@ -11,7 +11,6 @@ const trailingNodeTypes: string[] = [
     'image', 
     'chartBlock', 
     'drawing', 
-    'accordion', 
     'todoList', 
     'callout', 
     'horizontalRule', 

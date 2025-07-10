@@ -535,41 +535,6 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
         })];
     }
     
-    case 'accordion': {
-        const accordionElements: Paragraph[] = [];
-        accordionElements.push(new Paragraph({
-            children: [new TextRun({ text: node.attrs?.title || 'Accordion', bold: true })],
-            heading: HeadingLevel.HEADING_3,
-            spacing: { after: 100 }
-        }));
-        for (const item of (node.attrs?.items || [])) {
-            accordionElements.push(new Paragraph({
-                children: [new TextRun({ text: item.title, bold: true })],
-                spacing: { before: 150 },
-            }));
-            accordionElements.push(new Paragraph({
-                children: [new TextRun(item.content)],
-            }));
-        }
-        // Wrap in a styled table cell
-        return [new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [new TableRow({
-                children: [new TableCell({
-                    children: accordionElements,
-                    shading: { fill: 'F5F5F5', type: ShadingType.CLEAR },
-                    borders: {
-                      top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-                      bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-                      left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-                      right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-                    },
-                    margins: { top: 200, bottom: 200, left: 200, right: 200 }
-                })]
-            })]
-        })];
-      }
-
     case 'todoList': {
         const todoElements: Paragraph[] = [];
         todoElements.push(new Paragraph({
