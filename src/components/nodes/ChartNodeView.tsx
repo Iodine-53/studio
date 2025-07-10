@@ -7,7 +7,7 @@ import {
   Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, ComposedChart,
   Scatter, ScatterChart, Radar, RadarChart, RadialBar, RadialBarChart, Treemap, Funnel, FunnelChart,
   CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis, ZAxis, Brush,
-  PolarAngleAxis, PolarGrid, PolarRadiusAxis, RadarGrid
+  PolarAngleAxis, PolarGrid, PolarRadiusAxis, RadarGrid, LabelList
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,6 +74,27 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
+// Tooltip for Funnel Chart
+const FunnelTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        return (
+            <div className="bg-background p-3 border border-border rounded-lg shadow-lg text-sm">
+                <p className="font-semibold text-foreground mb-1">{data.name}</p>
+                <p style={{ color: data.fill }}>
+                    Value: {data.value.toLocaleString()}
+                </p>
+                {data.percentOfPrevious !== undefined && (
+                    <p className="text-muted-foreground">
+                        {data.percentOfPrevious.toFixed(1)}% of previous stage
+                    </p>
+                )}
+            </div>
+        );
+    }
+    return null;
+};
+
 // Truncate label to 11 characters + ellipsis if longer
 const truncateLabel = (value: string) => {
     if (typeof value !== 'string') return value;
@@ -105,7 +126,7 @@ const CustomizedTreemapContent = (props: any) => {
         return null;
     }
 
-    const item = payload.children ? payload.children[index] : payload;
+    const item = root.children && root.children[index] ? root.children[index] : payload;
     
     return (
       <g>
@@ -335,11 +356,14 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   };
 
   const numericDataKeys = useMemo(() => {
-    if (chartData.length === 0) return [];
-    return Object.keys(chartData[0]).filter(key => 
-        chartData.every(row => typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key]))))
+    if (!chartData || chartData.length === 0) return [];
+    const firstRow = chartData[0];
+    if (!firstRow) return [];
+    return Object.keys(firstRow).filter(key => 
+        chartData.every(row => row && (typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key])))))
     );
   }, [chartData]);
+
 
   const renderChart = useCallback((data: any[], type: ChartType, config: ChartConfig, vc: any) => {
     if (data.length === 0) {
@@ -420,16 +444,23 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                   {dataKeys.map((key, index) => <Radar key={key} name={key} dataKey={key} stroke={COLORS[index % COLORS.length]} fill={COLORS[index % COLORS.length]} fillOpacity={0.6} />)}
               </RadarChart>
           );
-      case 'radialBar':
-          return (
-              <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="80%" barSize={10} data={data}>
-                  <RadialBar background dataKey={valueKey}>
-                      {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                  </RadialBar>
-                  {vc.legend && <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" />}
-                  {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
-              </RadialBarChart>
-          );
+      case 'radialBar': {
+        const radialData = (data || []).map(item => ({
+            ...item,
+            fill: COLORS[data.indexOf(item) % COLORS.length]
+        }));
+        return (
+            <RadialBarChart cx="50%" cy="50%" innerRadius="10%" outerRadius="80%" barSize={10} data={radialData}>
+                <RadialBar
+                    label={{ position: 'insideStart', fill: '#fff', fontSize: '12px' }}
+                    background
+                    dataKey={valueKey}
+                />
+                {vc.legend && <Legend iconSize={10} layout="vertical" verticalAlign="middle" wrapperStyle={{ right: -10, top: '50%', transform: 'translateY(-50%)' }}/>}
+                {vc.tooltip && <Tooltip content={<CustomTooltip />} />}
+            </RadialBarChart>
+        );
+      }
       case 'treemap':
           return (
               <Treemap
@@ -443,15 +474,22 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                   content={<CustomizedTreemapContent />}
               />
           );
-      case 'funnel':
-          return (
-              <FunnelChart>
-                  {vc.tooltip && <Tooltip />}
-                  <Funnel dataKey={valueKey} data={data} isAnimationActive>
-                      {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                  </Funnel>
-              </FunnelChart>
-          );
+      case 'funnel': {
+        const funnelData = (data || []).map((item, index, arr) => ({
+            ...item,
+            fill: COLORS[index % COLORS.length],
+            percentOfPrevious: index > 0 ? (item[valueKey] / arr[index - 1][valueKey]) * 100 : 100,
+        }));
+        return (
+            <FunnelChart>
+                {vc.tooltip && <Tooltip content={<FunnelTooltip />} />}
+                <Funnel dataKey={valueKey} data={funnelData} isAnimationActive>
+                    <LabelList position="right" fill="#000" stroke="none" dataKey={nameKey} />
+                    <LabelList position="center" fill="#fff" stroke="none" dataKey={valueKey} formatter={(value: number) => value.toLocaleString()} />
+                </Funnel>
+            </FunnelChart>
+        );
+      }
       case 'pie': {
         const pieData = data.map((d) => ({
           ...d,
