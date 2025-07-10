@@ -1,5 +1,3 @@
-
-'use server';
 /**
  * @fileoverview A client-side service for Retrieval-Augmented Generation (RAG).
  * This service handles chunking text, generating embeddings, and performing
@@ -63,6 +61,7 @@ export interface RagService {
  * @returns An object with methods to index and query documents.
  */
 export function createRagService(apiKey: string): RagService {
+  // Initialize a Genkit runner instance specifically for this service.
   const runner = genkit({ plugins: [googleAI({ apiKey })] });
   let indexedChunks: Chunk[] = [];
 
@@ -76,10 +75,9 @@ export function createRagService(apiKey: string): RagService {
       const textChunks = chunkText(documentText);
       
       const embeddingRequests = textChunks.map(chunk => 
-        embed({
+        runner.embed({
           embedder: 'googleai/text-embedding-004',
           content: chunk,
-          runner,
         })
       );
       
@@ -103,10 +101,9 @@ export function createRagService(apiKey: string): RagService {
         return [];
       }
       
-      const queryEmbedding = await embed({
+      const queryEmbedding = await runner.embed({
         embedder: 'googleai/text-embedding-004',
         content: queryText,
-        runner,
       });
 
       const similarities = indexedChunks.map(chunk => ({
