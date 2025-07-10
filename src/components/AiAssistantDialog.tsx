@@ -43,6 +43,18 @@ type StoredBrainstormChat = {
 
 const BRAINSTORM_STORAGE_KEY = 'brainstormChatHistory';
 
+// Helper to extract plain text from Tiptap JSON content
+const getTextFromTiptap = (node: any): string => {
+  if (node.type === 'text' && node.text) {
+    return node.text;
+  }
+  if (node.content && Array.isArray(node.content)) {
+    return node.content.map(getTextFromTiptap).join(' ');
+  }
+  return '';
+};
+
+
 // Write Tab Component
 const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'>) => {
     const [prompt, setPrompt] = useState('');
@@ -268,6 +280,9 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
             if (!apiKey) {
               throw new Error("A Gemini API key is required. Please set it in the settings.");
             }
+
+            // Get document context if the user asks a question about it.
+            const documentContext = editor ? getTextFromTiptap(editor.getJSON()) : undefined;
             
             const historyForModel = updatedMessages.map(msg => ({
                 role: msg.role,
@@ -276,7 +291,8 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
 
             const response = await brainstormIdeas({ 
                 history: historyForModel, 
-                apiKey
+                apiKey,
+                documentContext,
             });
 
             setMessages([...updatedMessages, { role: 'model', content: response.response }]);
@@ -309,7 +325,7 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
                     {messages.length === 0 && (
                         <div className="text-center text-sm text-muted-foreground py-8">
                             <Sparkles className="mx-auto h-8 w-8 mb-2" />
-                            <p>Ask a question, or start a creative session.</p>
+                            <p>Ask a question about your document, or start a creative session.</p>
                             <p>Your chat history is saved for 24 hours.</p>
                         </div>
                     )}

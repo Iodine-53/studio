@@ -22,6 +22,7 @@ const MessageSchema = z.object({
 const BrainstormIdeasInputSchema = z.object({
   history: z.array(MessageSchema).describe('The conversation history.'),
   apiKey: z.string().optional().describe('Optional API key for Gemini.'),
+  documentContext: z.string().optional().describe('Optional text content of the document to provide context for the chat.'),
 });
 export type BrainstormIdeasInput = z.infer<typeof BrainstormIdeasInputSchema>;
 
@@ -40,7 +41,7 @@ const brainstormIdeasFlow = ai.defineFlow(
     inputSchema: BrainstormIdeasInputSchema,
     outputSchema: BrainstormIdeasOutputSchema,
   },
-  async ({ history, apiKey }) => {
+  async ({ history, apiKey, documentContext }) => {
     if (!apiKey) {
       throw new Error("A Gemini API key is required. Please set it in the settings.");
     }
@@ -50,7 +51,23 @@ const brainstormIdeasFlow = ai.defineFlow(
         throw new Error("Cannot generate response for an empty history.");
     }
 
-    const systemPrompt = "You are a helpful AI assistant for brainstorming and creative writing.";
+    let systemPrompt: string;
+
+    if (documentContext) {
+      // If document context is provided, act as a document-aware assistant.
+      systemPrompt = `You are an AI assistant helping a user with their document. Your task is to answer the user's questions based *only* on the provided document context.
+
+If the answer is not present in the document, state that the information is not available in the provided text. Do not use outside knowledge.
+
+Here is the document context:
+---
+${documentContext}
+---
+`;
+    } else {
+      // Default behavior: act as a creative assistant.
+      systemPrompt = "You are a helpful AI assistant for brainstorming and creative writing.";
+    }
     
     const lastMessage = history[history.length - 1];
     const historyForModel = history.slice(0, -1);
