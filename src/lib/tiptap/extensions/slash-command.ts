@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Sigma
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -35,7 +35,6 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Blockquote", icon: Quote, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).toggleBlockquote().run(); } },
   { title: "Image", icon: Image, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setImage({ src: null }).run(); } },
   { title: "Table", icon: Table, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertInteractiveTable().run(); } },
-  { title: "Math Equation", icon: Sigma, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setKatexBlock().run() } },
   { title: "Code Block", icon: CodeSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCodeBlock().run(); } },
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   

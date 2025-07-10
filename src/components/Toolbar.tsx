@@ -20,7 +20,6 @@ import {
   Plus,
   Wand2,
   Quote,
-  Sigma,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -45,8 +44,6 @@ const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
     return null;
   }
 
-  const [mathValue, setMathValue] = React.useState('');
-  
   const handleAddBlock = () => {
     // Insert a new paragraph, then insert the slash, then focus.
     // This is more reliable than using .enter()
@@ -83,13 +80,6 @@ const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
       { name: 'Monospace', value: 'monospace' },
       { name: 'Cursive', value: 'cursive' },
   ];
-
-  const handleMathSubmit = () => {
-    if (mathValue) {
-      editor.chain().focus().setKatexInline({ text: mathValue }).run();
-      setMathValue('');
-    }
-  };
 
   return (
     <TooltipProvider>
@@ -251,34 +241,6 @@ const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
                         Reset to Default
                     </Button>
                 </div>
-            </PopoverContent>
-          </Popover>
-
-          <Popover>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Insert Math Equation">
-                    <Sigma className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-              </TooltipTrigger>
-              <TooltipContent><p>Math Equation</p></TooltipContent>
-            </Tooltip>
-            <PopoverContent className="w-80 p-4">
-              <div className="space-y-2">
-                <Label htmlFor="math-input">Enter LaTeX</Label>
-                <Input
-                  id="math-input"
-                  placeholder="\frac{a}{b}"
-                  value={mathValue}
-                  onChange={(e) => setMathValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleMathSubmit();
-                  }}
-                />
-                <Button onClick={handleMathSubmit} className="w-full">Insert Math</Button>
-              </div>
             </PopoverContent>
           </Popover>
           
