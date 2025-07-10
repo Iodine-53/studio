@@ -6,9 +6,10 @@
  * It is designed to be called from client components.
  */
 
-import { genkit, embed, ai } from 'genkit';
+import { genkit, embed } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'zod';
+import { ai } from '@/ai/genkit';
 
 // Define the structure of a text chunk with its embedding
 interface Chunk {
