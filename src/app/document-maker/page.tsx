@@ -23,7 +23,7 @@ export default function DocumentMakerPage() {
       <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
         
         {/* Wrapper to control the width and visual appearance of the editor's container */}
-        <div className="w-full max-w-4xl bg-card rounded-xl shadow-lg overflow-hidden border">
+        <div className="w-full max-w-4xl glassmorphism rounded-2xl shadow-2xl overflow-hidden border">
           
           {/* Our Tiptap editor component is rendered here */}
           <TiptapEditor />
