@@ -11,46 +11,12 @@ declare module '@tiptap/core' {
   }
 }
 
-
-// TipTap Node Definition
 export const DualBlockNode = Node.create({
   name: 'layoutBlock',
   group: 'block',
-  content: 'block block', // Expects two block content nodes for the two columns
+  content: 'block block', // THIS IS THE KEY: it expects two separate block nodes as content
   draggable: true,
-  isolating: true,
-
-  addAttributes() {
-    return {
-      leftWidth: {
-        default: 50,
-      },
-      textAlign: {
-        default: 'center',
-        parseHTML: element => element.getAttribute('data-text-align'),
-        renderHTML: attributes => {
-          if (attributes.textAlign) {
-            return { 'data-text-align': attributes.textAlign }
-          }
-          return {}
-        }
-      },
-      layout: {
-        default: { width: 100 },
-        parseHTML: (element) => {
-          const layoutAttr = element.getAttribute('data-layout');
-          try {
-            return layoutAttr ? JSON.parse(layoutAttr) : { width: 100 };
-          } catch {
-            return { width: 100 };
-          }
-        },
-        renderHTML: (attributes) => ({
-          'data-layout': JSON.stringify(attributes.layout),
-        }),
-      },
-    }
-  },
+  isolating: true, // Prevents content from being accidentally moved out of the columns
 
   parseHTML() {
     return [
@@ -61,6 +27,7 @@ export const DualBlockNode = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
+    // The '0' is the content hole where Tiptap will render the child nodes.
     return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'layout-block' }), 0]
   },
 
@@ -74,7 +41,7 @@ export const DualBlockNode = Node.create({
         return commands.insertContent({
           type: this.name,
           attrs: attributes,
-          // Start with two empty paragraphs, one for each column
+          // When creating the block, we must provide two empty paragraphs for the content.
           content: [
             { type: 'paragraph' },
             { type: 'paragraph' },

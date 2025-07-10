@@ -136,6 +136,11 @@
   .layout-block > .layout-column {
     @apply flex-1 min-w-0; /* min-w-0 prevents content overflow issues */
   }
+  
+  .layout-block > .layout-column > .block-content {
+    @apply h-full;
+  }
+
 
   /* When editing, add a visual indicator */
   .ProseMirror-selectednode > .layout-block > .layout-column {
