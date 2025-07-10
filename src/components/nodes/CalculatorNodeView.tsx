@@ -91,26 +91,26 @@ export const CalculatorNodeView: React.FC<NodeViewProps> = ({ node, updateAttrib
           <div className="grid grid-cols-4 gap-2">
             <Button onClick={handleClear} className={cn(buttonClasses, "col-span-2 bg-destructive text-destructive-foreground hover:bg-destructive/90")}>AC</Button>
             <Button className={buttonClasses} onClick={() => setDisplay(String(parseFloat(display) * -1))}>+/-</Button>
-            <Button className={operatorButtonClasses} onClick={() => handleOperatorClick('/')}>÷</Button>
+            <Button className={cn(operatorButtonClasses, buttonClasses)} onClick={() => handleOperatorClick('/')}>÷</Button>
 
             <Button className={buttonClasses} onClick={() => handleDigitClick('7')}>7</Button>
             <Button className={buttonClasses} onClick={() => handleDigitClick('8')}>8</Button>
             <Button className={buttonClasses} onClick={() => handleDigitClick('9')}>9</Button>
-            <Button className={operatorButtonClasses} onClick={() => handleOperatorClick('*')}>×</Button>
+            <Button className={cn(operatorButtonClasses, buttonClasses)} onClick={() => handleOperatorClick('*')}>×</Button>
 
             <Button className={buttonClasses} onClick={() => handleDigitClick('4')}>4</Button>
             <Button className={buttonClasses} onClick={() => handleDigitClick('5')}>5</Button>
             <Button className={buttonClasses} onClick={() => handleDigitClick('6')}>6</Button>
-            <Button className={operatorButtonClasses} onClick={() => handleOperatorClick('-')}>-</Button>
+            <Button className={cn(operatorButtonClasses, buttonClasses)} onClick={() => handleOperatorClick('-')}>-</Button>
 
             <Button className={buttonClasses} onClick={() => handleDigitClick('1')}>1</Button>
             <Button className={buttonClasses} onClick={() => handleDigitClick('2')}>2</Button>
             <Button className={buttonClasses} onClick={() => handleDigitClick('3')}>3</Button>
-            <Button className={operatorButtonClasses} onClick={() => handleOperatorClick('+')}>+</Button>
+            <Button className={cn(operatorButtonClasses, buttonClasses)} onClick={() => handleOperatorClick('+')}>+</Button>
 
             <Button className={cn(buttonClasses, "col-span-2")} onClick={() => handleDigitClick('0')}>0</Button>
             <Button className={buttonClasses} onClick={handleDecimalClick}>.</Button>
-            <Button className={operatorButtonClasses} onClick={handleEqualsClick}>=</Button>
+            <Button className={cn(operatorButtonClasses, buttonClasses)} onClick={handleEqualsClick}>=</Button>
           </div>
         </CardContent>
       </Card>
