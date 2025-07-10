@@ -27,6 +27,7 @@ import Papa from 'papaparse';
 import { cn } from '@/lib/utils';
 import { GenerateChartDataDialog } from '../GenerateChartDataDialog';
 import { useToast } from '@/hooks/use-toast';
+import { TooltipProvider, Tooltip as UiTooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'horizontalBar' | 'scatter' | 'radar' | 'radialBar' | 'treemap' | 'funnel' | 'mixed';
 
@@ -41,18 +42,18 @@ type ChartConfig = {
   mixedChartTypes?: { [key: string]: 'line' | 'bar' | 'area' };
 };
 
-const CHART_TYPES: { name: ChartType, icon: React.FC<any>, isAxisBased: boolean, isHierarchical?: boolean }[] = [
-  { name: 'bar', icon: BarChartIcon, isAxisBased: true },
-  { name: 'line', icon: LineChartIcon, isAxisBased: true },
-  { name: 'area', icon: AreaChartIcon, isAxisBased: true },
-  { name: 'mixed', icon: GitMerge, isAxisBased: true },
-  { name: 'horizontalBar', icon: BarChartHorizontal, isAxisBased: true },
-  { name: 'scatter', icon: Shapes, isAxisBased: true },
-  { name: 'radar', icon: RadarIcon, isAxisBased: false },
-  { name: 'pie', icon: PieChartIcon, isAxisBased: false },
-  { name: 'radialBar', icon: Target, isAxisBased: false },
-  { name: 'treemap', icon: LayoutGrid, isAxisBased: false, isHierarchical: true },
-  { name: 'funnel', icon: Filter, isAxisBased: false },
+const CHART_TYPES: { name: ChartType, label: string, icon: React.FC<any>, isAxisBased: boolean, isHierarchical?: boolean }[] = [
+  { name: 'bar', label: 'Bar Chart', icon: BarChartIcon, isAxisBased: true },
+  { name: 'line', label: 'Line Chart', icon: LineChartIcon, isAxisBased: true },
+  { name: 'area', label: 'Area Chart', icon: AreaChartIcon, isAxisBased: true },
+  { name: 'mixed', label: 'Mixed Chart', icon: GitMerge, isAxisBased: true },
+  { name: 'horizontalBar', label: 'Horizontal Bar', icon: BarChartHorizontal, isAxisBased: true },
+  { name: 'scatter', label: 'Scatter Plot', icon: Shapes, isAxisBased: true },
+  { name: 'radar', label: 'Radar Chart', icon: RadarIcon, isAxisBased: false },
+  { name: 'pie', label: 'Pie Chart', icon: PieChartIcon, isAxisBased: false },
+  { name: 'radialBar', label: 'Radial Bar', icon: Target, isAxisBased: false },
+  { name: 'treemap', label: 'Treemap', icon: LayoutGrid, isAxisBased: false, isHierarchical: true },
+  { name: 'funnel', label: 'Funnel Chart', icon: Filter, isAxisBased: false },
 ];
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16', '#EC4899', '#6B7280'];
@@ -100,7 +101,6 @@ const CustomAxisTick = (props: any) => {
 const CustomizedTreemapContent = (props: any) => {
     const { root, depth, x, y, width, height, index, payload, rank, name } = props;
     
-    // Defensive check to prevent crash if payload is not what we expect
     if (!payload || !payload.name) {
         return null;
     }
@@ -121,7 +121,6 @@ const CustomizedTreemapContent = (props: any) => {
             strokeOpacity: 1 / (depth + 1e-10),
           }}
         />
-        {/* Only render text if the box is large enough */}
         {width > 30 && height > 30 && (
             <>
                 <text x={x + width / 2} y={y + height / 2} textAnchor="middle" fill="#fff" fontSize={14} className="pointer-events-none">
@@ -142,11 +141,9 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   const width = layout?.width || 100;
   const height = layout?.height || 400;
 
-  // State for the component's own editing mode
   const [isEditing, setIsEditing] = useState(false);
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   
-  // States for edit mode content
   const [title, setTitle] = useState(node.attrs.title);
   const [chartType, setChartType] = useState<ChartType>(node.attrs.chartType);
   const [chartData, setChartData] = useState<any[]>([]);
@@ -157,14 +154,12 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   const { toast } = useToast();
   
-  // When Tiptap selection changes, close the editor if the node is no longer selected
   useEffect(() => {
     if (!selected) {
       setIsEditing(false);
     }
   }, [selected]);
   
-  // When entering edit mode, load the current node attributes into local state
   useEffect(() => {
     if (isEditing) {
       setTitle(node.attrs.title);
@@ -204,7 +199,7 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       chartConfig: JSON.stringify(chartConfig),
       viewConfig: JSON.stringify(viewConfig),
     });
-    setIsEditing(false); // Close the editor UI
+    setIsEditing(false);
   };
 
   const handleAiGenerate = (generatedData: any[]) => {
@@ -339,6 +334,13 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     setChartConfig({ ...chartConfig, mixedChartTypes: newTypes });
   };
 
+  const numericDataKeys = useMemo(() => {
+    if (chartData.length === 0) return [];
+    return Object.keys(chartData[0]).filter(key => 
+        chartData.every(row => typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key]))))
+    );
+  }, [chartData]);
+
   const renderChart = useCallback((data: any[], type: ChartType, config: ChartConfig, vc: any) => {
     if (data.length === 0) {
       return (
@@ -353,7 +355,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
     const { xAxisKey, yAxisKey, zAxisKey, dataKeys = [], nameKey, valueKey, childrenKey, mixedChartTypes = {} } = config;
     const isHorizontal = type === 'horizontalBar';
     
-    // Common Axis and Grid components
     const YAxisComponent = <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} type={isHorizontal ? 'category' : 'number'} dataKey={isHorizontal ? yAxisKey : undefined} />;
     const XAxisComponent = <XAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} type={isHorizontal ? 'number' : 'category'} dataKey={isHorizontal ? undefined : xAxisKey} height={80} interval={0} tick={<CustomAxisTick />} />;
     const commonGrid = <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.8} />;
@@ -484,14 +485,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       default: return null;
     }
   }, []);
-  
-  const numericDataKeys = useMemo(() => {
-    if (chartData.length === 0) return [];
-    return Object.keys(chartData[0]).filter(key => 
-        chartData.every(row => typeof row[key] === 'number' || (typeof row[key] === 'string' && !isNaN(parseFloat(row[key]))))
-    );
-  }, [chartData]);
-
 
   if (isEditing) {
       const currentChartInfo = CHART_TYPES.find(c => c.name === chartType);
@@ -532,7 +525,21 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
                       </TabsContent>
                       <TabsContent value="appearance" className="mt-4 space-y-4">
                           <div className="flex items-end gap-4">
-                              <div className="flex-grow"><Label>Chart Type</Label><div className="flex items-center gap-1 flex-wrap mt-1">{CHART_TYPES.map(type => (<Button key={type.name} variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => setChartType(type.name)} title={type.name}><type.icon className="h-4 w-4"/><span className="sr-only">{type.name} chart</span></Button>))}</div></div>
+                              <div className="flex-grow">
+                                <Label>Chart Type</Label>
+                                <TooltipProvider>
+                                  <div className="flex items-center gap-1 flex-wrap mt-1">
+                                    {CHART_TYPES.map(type => (
+                                      <UiTooltip key={type.name}>
+                                        <TooltipTrigger asChild>
+                                          <Button variant={chartType === type.name ? 'default' : 'outline'} size="icon" onClick={() => setChartType(type.name)}><type.icon className="h-4 w-4"/><span className="sr-only">{type.label}</span></Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent><p>{type.label}</p></TooltipContent>
+                                      </UiTooltip>
+                                    ))}
+                                  </div>
+                                </TooltipProvider>
+                              </div>
                               <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline"><Settings2 className="mr-2 h-4 w-4" /> View Options</Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuLabel>Display Elements</DropdownMenuLabel><DropdownMenuSeparator /><DropdownMenuCheckboxItem checked={viewConfig.legend} onCheckedChange={(checked) => setViewConfig(v => ({...v, legend: checked}))}>Show Legend</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.tooltip} onCheckedChange={(checked) => setViewConfig(v => ({...v, tooltip: checked}))}>Show Tooltip</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.grid && chartType !== 'pie'} onCheckedChange={(checked) => setViewConfig(v => ({...v, grid: checked}))} disabled={chartType === 'pie'}>Show Grid</DropdownMenuCheckboxItem><DropdownMenuCheckboxItem checked={viewConfig.brush && chartType !== 'pie'} onCheckedChange={(checked) => setViewConfig(v => ({...v, brush: checked}))} disabled={chartType === 'pie'}>Show Brush</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>
                           </div>
                           
@@ -584,7 +591,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
       );
   }
 
-  // View Mode
   const savedChartData = JSON.parse(node.attrs.chartData || '[]');
   const savedChartConfig = JSON.parse(node.attrs.chartConfig || '{}');
   const savedViewConfig = JSON.parse(node.attrs.viewConfig || '{"legend":true,"tooltip":true,"grid":true}');
