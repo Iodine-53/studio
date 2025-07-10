@@ -34,6 +34,9 @@ import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
 import { FunctionPlot } from '@/lib/tiptap/extensions/FunctionPlot';
 import { Calculator } from '@/lib/tiptap/extensions/Calculator';
 import { Toggle } from '@/lib/tiptap/extensions/Toggle';
+import { Placeholder } from '@/lib/tiptap/extensions/Placeholder';
+import { AdvancedTask } from '@/lib/tiptap/extensions/AdvancedTask';
+
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
@@ -122,6 +125,8 @@ export default function EditorPage() {
       FunctionPlot,
       Calculator,
       Toggle,
+      Placeholder,
+      AdvancedTask,
     ],
     editorProps: {
       attributes: {

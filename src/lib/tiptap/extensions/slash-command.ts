@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, Rows, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, ListChecks, FileText, Link, Lightbulb, Target
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, ListChecks, FileText, Link, Lightbulb, Target
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -40,7 +40,7 @@ const getCommandItems = (): CommandItem[] => [
   
   // Custom Node Blocks
   { title: "Blank Toggle", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'blank' }).run(); } },
-  { title: "Checklist Toggle", icon: ListChecks, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'checklist' }).run(); } },
+  { title: "Checklist", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'placeholder', attrs: { type: 'advancedTask' } }).run() } },
   { title: "Notes Toggle", icon: FileText, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'notes' }).run(); } },
   { title: "Links Toggle", icon: Link, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'links' }).run(); } },
   { title: "Ideas Toggle", icon: Lightbulb, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'ideas' }).run(); } },

@@ -39,7 +39,7 @@ export const Toggle = Node.create({
     return [
       {
         tag: 'div[data-type="toggle-block"]',
-        contentElement: (el) => el.querySelector('.toggle-content'),
+        contentElement: 'div.toggle-content',
         getAttrs: dom => ({
           title: (dom as HTMLElement).getAttribute('data-title'),
           isOpen: (dom as HTMLElement).getAttribute('data-is-open') === 'true',
@@ -76,7 +76,6 @@ export const Toggle = Node.create({
           
           const templates = {
             blank: { title: '📝 Blank Toggle', content: [{ type: 'paragraph' }] },
-            checklist: { title: '✅ Checklist', content: [{ type: 'taskList', content: [ { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task 1'}] }] }, { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task 2'}] }] } ] }] },
             notes: { title: '📋 Notes', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Add your notes here...' }] }] },
             links: { title: '🔗 Links & Resources', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Link 1' }] }] }] }] },
             ideas: { title: '💡 Ideas', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Idea 1' }] }] }] }] },
