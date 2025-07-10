@@ -3,12 +3,22 @@ import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { DualBlockNodeView } from '@/components/nodes/DualBlockNodeView'
 
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    dualBlock: {
+      insertDualBlock: () => ReturnType;
+    };
+  }
+}
+
+
 // TipTap Node Definition
 export const DualBlockNode = Node.create({
   name: 'layoutBlock',
   group: 'block',
   content: 'block block', // Expects two block content nodes for the two columns
   draggable: true,
+  isolating: true,
 
   addAttributes() {
     return {
