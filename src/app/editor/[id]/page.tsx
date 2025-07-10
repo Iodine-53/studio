@@ -120,7 +120,7 @@ export default function EditorPage() {
       PasteHandler,
       ProgressBarBlock,
       FunctionPlot,
-      Calculator,
+      Calculator
     ],
     editorProps: {
       attributes: {
