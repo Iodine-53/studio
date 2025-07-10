@@ -34,6 +34,7 @@ import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
 import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
 import { FunctionPlot } from '@/lib/tiptap/extensions/FunctionPlot';
 import { Calculator } from '@/lib/tiptap/extensions/Calculator';
+import { Katex } from '@tiptap/extension-katex';
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
@@ -84,6 +85,13 @@ export default function EditorPage() {
             linkOnPaste: false,
             openOnClick: 'whenNotEditable',
         },
+        // Enable katex here
+        katex: {},
+      }),
+      // This is now imported from @tiptap/extension-katex
+      Katex.configure({
+        // Tiptap's Katex extension configuration
+        // You can add options here if needed in the future
       }),
       Underline,
       TextAlign.configure({ 
