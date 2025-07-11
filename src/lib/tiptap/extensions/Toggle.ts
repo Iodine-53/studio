@@ -55,7 +55,7 @@ export const Toggle = Node.create({
       mergeAttributes(HTMLAttributes, {
         'data-type': 'toggle-block',
         'data-title': node.attrs.title,
-        'data-is-open': node.attrs.isOpen,
+        'data-is-open': String(node.attrs.isOpen),
         'data-toggle-type': node.attrs.type,
       }),
       ['div', { class: 'toggle-header' }, node.attrs.title],
@@ -80,6 +80,7 @@ export const Toggle = Node.create({
             links: { title: '🔗 Links & Resources', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Link 1' }] }] }] }] },
             ideas: { title: '💡 Ideas', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Idea 1' }] }] }] }] },
             goals: { title: '🎯 Goals', content: [{ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Goal 1'}] }] }] }] },
+            checklist: { title: '✅ Checklist', content: [{ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task 1'}] }] }] }] },
           };
           
           const template = templates[type as keyof typeof templates] || templates.blank;
