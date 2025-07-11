@@ -4,7 +4,7 @@
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { useEffect, useRef } from 'react';
 import { Network } from 'vis-network';
-import 'vis-network/dist/vis-network.min.css';
+import 'vis-network/styles/vis-network.css';
 
 const MindMapComponent = ({ node, updateAttributes, editor }: NodeViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,15 +24,14 @@ const MindMapComponent = ({ node, updateAttributes, editor }: NodeViewProps) => 
           dragView: true,
         },
         manipulation: {
-          // A simple way to add nodes/edges without a complex UI
           enabled: true,
           addNode: (nodeData: any, callback: (data: any) => void) => {
             nodeData.label = window.prompt("Enter node label", "New Idea") || "New Idea";
-            callback(nodeData); // Add the node to the network
+            callback(nodeData); 
             updateState();
           },
           addEdge: (edgeData: any, callback: (data: any) => void) => {
-            callback(edgeData); // Add the edge
+            callback(edgeData);
             updateState();
           },
           editNode: (nodeData: any, callback: (data: any) => void) => {
@@ -68,11 +67,9 @@ const MindMapComponent = ({ node, updateAttributes, editor }: NodeViewProps) => 
       const network = new Network(containerRef.current, data, options);
       networkRef.current = network;
 
-      // Helper function to get current data and save it to Tiptap
       const updateState = () => {
         if (networkRef.current) {
           const networkData = (networkRef.current as any).body.data;
-          // Generate a data URL of the canvas to save for exporting
           const imageBase64 = networkRef.current.canvas.getContext().canvas.toDataURL();
 
           updateAttributes({
@@ -87,7 +84,6 @@ const MindMapComponent = ({ node, updateAttributes, editor }: NodeViewProps) => 
     }
     
     return () => {
-        // Cleanup on unmount
         if (networkRef.current) {
             networkRef.current.destroy();
             networkRef.current = null;
