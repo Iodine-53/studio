@@ -39,6 +39,7 @@ import { TaskItem } from '@tiptap/extension-task-item';
 import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
 import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 import { MindMap } from "@/lib/tiptap/extensions/MindMap";
+import 'vis-network/styles/vis-network.css';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
