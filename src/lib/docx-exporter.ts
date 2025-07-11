@@ -650,6 +650,10 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
         return [new Paragraph({ children: [ new TextRun({ text: `[Progress Bar block failed to load]` }) ]})];
       }
     }
+    
+    case 'mindMap': {
+      return [new Paragraph({ text: '[Mind Map cannot be exported to DOCX]' })];
+    }
 
     default:
       if (node.content) {

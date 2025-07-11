@@ -38,6 +38,7 @@ import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
 import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
 import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
+import { MindMap } from "@/lib/tiptap/extensions/MindMap";
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -142,6 +143,7 @@ export default function EditorPage() {
       }),
       ColumnsExtension,
       ColumnExtension,
+      MindMap,
     ],
     editorProps: {
       attributes: {

@@ -1,1 +1,58 @@
-DELETE
+
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import MindMapComponent from '@/components/nodes/MindMapComponent';
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    mindMap: {
+      insertMindMap: () => ReturnType;
+    }
+  }
+}
+
+export const MindMap = Node.create({
+  name: 'mindMap',
+  group: 'block',
+  atom: true,
+  draggable: true,
+
+  addAttributes() {
+    return {
+      nodes: {
+        default: [],
+      },
+      edges: {
+        default: [],
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'div[data-type="mind-map"]' }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    // We only store data; rendering is done by the Node View.
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'mind-map' })];
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(MindMapComponent);
+  },
+
+  addCommands() {
+    return {
+      insertMindMap: () => ({ commands }) => {
+        // Insert a mind map with a single root node to start.
+        return commands.insertContent({
+          type: this.name,
+          attrs: {
+            nodes: [{ id: 1, label: 'Central Idea' }],
+            edges: [],
+          },
+        });
+      },
+    };
+  },
+});
