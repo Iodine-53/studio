@@ -42,8 +42,9 @@ import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileText } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, FileText, Download, Braces } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
@@ -223,6 +224,14 @@ export default function EditorPage() {
         setIsExportingDocx(false);
     }
   };
+  
+  const handleJsonExport = () => {
+      if (!editor) return;
+      const json = editor.getJSON();
+      const jsonString = JSON.stringify(json, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      saveAs(blob, `${doc?.title || 'Document'}.json`);
+  };
 
   if (isLoading || !editor) {
     return (
@@ -254,10 +263,30 @@ export default function EditorPage() {
                 <Eye className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Preview</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={handleDocxExport} disabled={isExportingDocx} className="relative">
-                {isExportingDocx ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 md:mr-2" />}
-                <span className="hidden md:inline">{isExportingDocx ? 'Exporting...' : 'Export DOCX'}</span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={isExportingDocx} className="relative w-[135px]">
+                        {isExportingDocx ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <>
+                                <Download className="h-4 w-4 md:mr-2" />
+                                <span className="hidden md:inline">Export</span>
+                            </>
+                        )}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleDocxExport}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Export as DOCX
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleJsonExport}>
+                        <Braces className="mr-2 h-4 w-4" />
+                        Export as JSON
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </nav>
         </header>
