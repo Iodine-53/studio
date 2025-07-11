@@ -128,7 +128,13 @@ export const SlashCommand = Extension.create({
     addOptions() {
         return {
             openToggleModal: () => {},
-            suggestion: {
+        }
+    },
+
+    addProseMirrorPlugins() {
+        return [
+            Suggestion({
+                editor: this.editor,
                 char: '/',
                 command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
                     props.command({ editor, range });
@@ -139,15 +145,6 @@ export const SlashCommand = Extension.create({
                         .slice(0, 10);
                 },
                 render: renderItems,
-            },
-        }
-    },
-
-    addProseMirrorPlugins() {
-        return [
-            Suggestion({
-                editor: this.editor,
-                ...this.options.suggestion
             })
         ]
     }
