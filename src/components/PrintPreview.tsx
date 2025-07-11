@@ -193,7 +193,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'bulletList':
         return <ul className="list-disc pl-6">{children}</ul>;
     case 'orderedList':
-        return <ol className="list-decimal pl-6">{children}</ul>;
+        return <ol className="list-decimal pl-6">{children}</ol>;
     case 'listItem':
         return <li style={hasStyle ? style : undefined}>{children}</li>;
     case 'codeBlock':
@@ -207,7 +207,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'table':
         return <table className="w-full my-4 border-collapse prose"><tbody>{children}</tbody></table>;
     case 'tableRow':
-        return tr>{children}</tr>;
+        return <tr>{children}</tr>;
     case 'tableHeader':
         return <th className="border p-2 font-bold text-left bg-muted">{children}</th>;
     case 'tableCell':
