@@ -36,6 +36,8 @@ import { Calculator } from '@/lib/tiptap/extensions/Calculator';
 import { ToggleExtension } from '@/lib/tiptap/extensions/Toggle';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
+import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
+import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -134,6 +136,8 @@ export default function EditorPage() {
       TaskItem.configure({
         nested: true,
       }),
+      ColumnsExtension,
+      ColumnExtension,
     ],
     editorProps: {
       attributes: {

@@ -91,6 +91,17 @@
 }
 
 @layer components {
+  /* Styles for the new column layout */
+  [data-type="columns"] {
+    display: flex;
+    gap: 1rem; /* Adjust the gap between columns as needed */
+  }
+
+  [data-type="column"] {
+    flex: 1; /* This gives a 50/50 split for two columns */
+    min-width: 0; /* Important for flexbox to handle nested content correctly */
+  }
+
   callout-block {
     @apply my-4 rounded-lg border p-4;
   }
