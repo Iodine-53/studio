@@ -20,6 +20,7 @@ const trailingNodeTypes: string[] = [
     'toggle',
     'columns',
     'mindMap',
+    'mathBlock',
 ];
 
 export const TrailingNode = Extension.create({
