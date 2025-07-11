@@ -42,7 +42,7 @@ import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, FileMarkdown } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrintPreview } from "@/components/PrintPreview";
@@ -307,7 +307,7 @@ export default function EditorPage() {
                         Export as HTML
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleMarkdownExport}>
-                        <FileMarkdown className="mr-2 h-4 w-4" />
+                        <BookOpen className="mr-2 h-4 w-4" />
                         Export as Markdown
                     </DropdownMenuItem>
                 </DropdownMenuContent>
