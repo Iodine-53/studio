@@ -42,12 +42,13 @@ import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2 } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, FileMarkdown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
+import TurndownService from 'turndown';
 import { AiAssistantDialog } from "@/components/AiAssistantDialog";
 import { ToggleTemplateModal } from "@/components/modals/ToggleTemplateModal";
 
@@ -240,6 +241,15 @@ export default function EditorPage() {
       saveAs(blob, `${doc?.title || 'Document'}.html`);
   };
 
+  const handleMarkdownExport = () => {
+      if (!editor) return;
+      const html = editor.getHTML();
+      const turndownService = new TurndownService();
+      const markdown = turndownService.turndown(html);
+      const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+      saveAs(blob, `${doc?.title || 'Document'}.md`);
+  };
+
   if (isLoading || !editor) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -295,6 +305,10 @@ export default function EditorPage() {
                     <DropdownMenuItem onClick={handleHtmlExport}>
                         <FileCode2 className="mr-2 h-4 w-4" />
                         Export as HTML
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleMarkdownExport}>
+                        <FileMarkdown className="mr-2 h-4 w-4" />
+                        Export as Markdown
                     </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
