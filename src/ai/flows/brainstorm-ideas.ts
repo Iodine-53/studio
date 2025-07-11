@@ -55,9 +55,9 @@ const brainstormIdeasFlow = ai.defineFlow(
 
     if (documentContext) {
       // If document context is provided, act as a document-aware assistant.
-      systemPrompt = `You are an AI assistant helping a user with their document. Your task is to answer the user's questions based *only* on the provided document context.
+      systemPrompt = `You are an AI assistant helping a user with their document. Your task is to answer the user's questions based on the provided document context. The context is a markdown-like representation of the document's structure and content.
 
-If the answer is not present in the document, state that the information is not available in the provided text. Do not use outside knowledge.
+If the answer is not present in the document, state that the information is not available in the provided text. Do not use outside knowledge unless the user explicitly asks for it.
 
 Here is the document context:
 ---

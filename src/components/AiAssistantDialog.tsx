@@ -43,15 +43,76 @@ type StoredBrainstormChat = {
 
 const BRAINSTORM_STORAGE_KEY = 'brainstormChatHistory';
 
-// Helper to extract plain text from Tiptap JSON content
-const getTextFromTiptap = (node: any): string => {
-  if (node.type === 'text' && node.text) {
-    return node.text;
+// Helper to generate a structured text representation of the document for AI context
+const getDocumentContext = (node: any): string => {
+  let text = '';
+  if (!node || !node.type) return '';
+
+  const getNodeText = (n: any): string => {
+    return n.content?.map(getNodeText).join('') || (n.text || '');
+  };
+
+  switch (node.type) {
+    case 'doc':
+      return node.content?.map(getDocumentContext).join('\n\n') || '';
+    
+    case 'heading':
+      const level = node.attrs?.level || 1;
+      return `${'#'.repeat(level)} ${getNodeText(node)}`;
+      
+    case 'paragraph':
+      const contentText = getNodeText(node);
+      // Don't render empty paragraphs in the context
+      return contentText.trim() ? contentText : '';
+
+    case 'bulletList':
+    case 'orderedList':
+      return node.content?.map((li: any, index: number) => {
+        const prefix = node.type === 'bulletList' ? '- ' : `${index + 1}. `;
+        return prefix + getDocumentContext(li);
+      }).join('\n') || '';
+
+    case 'listItem':
+      return node.content?.map(getDocumentContext).join('\n') || '';
+
+    case 'image':
+      return `[An Image: ${node.attrs?.caption || 'No caption'}]`;
+    case 'chartBlock':
+      return `[A Chart titled: "${node.attrs?.title || 'Untitled Chart'}"]`;
+    case 'drawing':
+      return `[A Drawing]`;
+    case 'interactiveTable':
+      return `[A Table titled: "${node.attrs?.title || 'Untitled Table'}"]`;
+    case 'mindMap':
+        return `[A Mind Map]`;
+    case 'functionPlot':
+        return `[A Function Plot for: f(x) = ${node.attrs?.fn}]`;
+    case 'horizontalRule':
+      return '---';
+    case 'blockquote':
+      const quoteText = node.content?.map(getDocumentContext).join('\n') || '';
+      return `> ${quoteText.replace(/\n/g, '\n> ')}`; // Add quote marker to each line
+    
+    case 'codeBlock':
+      return `\`\`\`\n${getNodeText(node)}\n\`\`\``;
+
+    case 'taskList':
+      return node.content?.map((taskItem: any) => getDocumentContext(taskItem)).join('\n') || '';
+      
+    case 'taskItem':
+      const checked = node.attrs?.checked ? '[x]' : '[ ]';
+      return `${checked} ${getNodeText(node)}`;
+      
+    case 'callout':
+      return `[Callout (${node.attrs?.type || 'info'}): ${getNodeText(node)}]`;
+
+    // Default case for any other node type
+    default:
+      if (node.content) {
+        return node.content.map(getDocumentContext).join('');
+      }
+      return node.text || '';
   }
-  if (node.content && Array.isArray(node.content)) {
-    return node.content.map(getTextFromTiptap).join(' ');
-  }
-  return '';
 };
 
 
@@ -281,8 +342,8 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
               throw new Error("A Gemini API key is required. Please set it in the settings.");
             }
 
-            // Get document context if the user asks a question about it.
-            const documentContext = editor ? getTextFromTiptap(editor.getJSON()) : undefined;
+            // Get document context using our new structured helper function
+            const documentContext = editor ? getDocumentContext(editor.getJSON()) : undefined;
             
             const historyForModel = updatedMessages.map(msg => ({
                 role: msg.role,
