@@ -1,7 +1,7 @@
 
 "use client";
 
-import { X, CheckSquare, Square, AlertTriangle, Download, Video, Info, CheckCircle, AlertCircle } from "lucide-react";
+import { X, CheckSquare, Square, AlertTriangle, Download, Video, Info, CheckCircle, AlertCircle, ChevronRight } from "lucide-react";
 import React, { type FC, useRef, useEffect, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -163,7 +163,8 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         [
           'image', 'chartBlock', 'drawing', 'todoList', 'callout',
           'horizontalRule', 'interactiveTable', 'embed', 'progressBarBlock',
-          'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote'
+          'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote',
+          'toggle'
         ].includes(childNode.type)
       );
 
@@ -400,6 +401,23 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
               ))}
             </div>
           </div>
+        </div>
+      );
+    }
+
+    case 'toggle': {
+      const { title, isOpen } = node.attrs;
+      return (
+        <div className="my-2 border rounded-lg">
+          <div className="flex items-center gap-1 p-2 bg-muted/50 rounded-t-lg">
+            <ChevronRight className={cn("h-5 w-5 text-muted-foreground transition-transform", isOpen && 'rotate-90')} />
+            <span className="font-bold">{title}</span>
+          </div>
+          {isOpen && (
+            <div className="p-2 pl-8 border-l-2 ml-3">
+              {children}
+            </div>
+          )}
         </div>
       );
     }

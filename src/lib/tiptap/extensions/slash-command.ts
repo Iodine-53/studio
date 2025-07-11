@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, FileText, Link, Lightbulb, Target
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -39,11 +39,7 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   
   // Custom Node Blocks
-  { title: "Blank Toggle", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'blank' }).run(); } },
-  { title: "Notes Toggle", icon: FileText, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'notes' }).run(); } },
-  { title: "Links Toggle", icon: Link, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'links' }).run(); } },
-  { title: "Ideas Toggle", icon: Lightbulb, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'ideas' }).run(); } },
-  { title: "Goals Toggle", icon: Target, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'goals' }).run(); } },
+  { title: "Toggle List", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle().run(); } },
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCallout().run(); } },
   { title: "Chart", icon: AreaChart, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'chartBlock' }).run(); } },
   { title: "Drawing", icon: PenSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'drawing' }).run(); } },
