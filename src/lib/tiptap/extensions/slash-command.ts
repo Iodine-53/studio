@@ -40,7 +40,6 @@ const getCommandItems = (): CommandItem[] => [
   
   // Custom Node Blocks
   { title: "Blank Toggle", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'blank' }).run(); } },
-  { title: "Checklist Toggle", icon: CheckSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'checklist' }).run(); } },
   { title: "Notes Toggle", icon: FileText, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'notes' }).run(); } },
   { title: "Links Toggle", icon: Link, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'links' }).run(); } },
   { title: "Ideas Toggle", icon: Lightbulb, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle({ type: 'ideas' }).run(); } },
