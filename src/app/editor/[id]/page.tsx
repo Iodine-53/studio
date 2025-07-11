@@ -48,6 +48,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
+import { exportToHtml } from '@/lib/html-exporter';
 import TurndownService from 'turndown';
 import { AiAssistantDialog } from "@/components/AiAssistantDialog";
 import { ToggleTemplateModal } from "@/components/modals/ToggleTemplateModal";
@@ -65,7 +66,7 @@ export default function EditorPage() {
   const [doc, setDoc] = useState<Document | null>(null);
   const [currentContent, setCurrentContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isExportingDocx, setIsExportingDocx] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
@@ -214,7 +215,7 @@ export default function EditorPage() {
         alert("Cannot export an empty document.");
         return;
     }
-    setIsExportingDocx(true);
+    setIsExporting(true);
     try {
         const blob = await exportToDocx(currentContent);
         saveAs(blob, `${doc?.title || 'Document'}.docx`);
@@ -222,7 +223,7 @@ export default function EditorPage() {
         console.error("Failed to export DOCX", error);
         alert("An error occurred while exporting to DOCX. Please check the console for details.");
     } finally {
-        setIsExportingDocx(false);
+        setIsExporting(false);
     }
   };
   
@@ -234,11 +235,18 @@ export default function EditorPage() {
       saveAs(blob, `${doc?.title || 'Document'}.json`);
   };
 
-  const handleHtmlExport = () => {
+  const handleHtmlExport = async () => {
       if (!editor) return;
-      const html = editor.getHTML();
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-      saveAs(blob, `${doc?.title || 'Document'}.html`);
+      setIsExporting(true);
+      try {
+        const htmlBlob = await exportToHtml(editor);
+        saveAs(htmlBlob, `${doc?.title || 'Document'}.html`);
+      } catch (error) {
+        console.error("Failed to export HTML", error);
+        alert("An error occurred while exporting to HTML. Please check the console for details.");
+      } finally {
+        setIsExporting(false);
+      }
   };
 
   const handleMarkdownExport = () => {
@@ -282,8 +290,8 @@ export default function EditorPage() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={isExportingDocx} className="relative w-[135px]">
-                        {isExportingDocx ? (
+                    <Button variant="outline" size="sm" disabled={isExporting} className="relative w-[135px]">
+                        {isExporting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                             <>
