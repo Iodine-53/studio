@@ -20,7 +20,7 @@ export interface CommandItem {
 // Type for the props of the CommandList component
 type CommandListProps = ComponentProps<typeof CommandList>;
 
-const getCommandItems = (): CommandItem[] => [
+const getCommandItems = (openToggleModal: () => void): CommandItem[] => [
   // Basic Text Formatting
   { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
   { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
@@ -39,7 +39,7 @@ const getCommandItems = (): CommandItem[] => [
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   
   // Custom Node Blocks
-  { title: "Toggle List", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setToggle().run(); } },
+  { title: "Toggle List", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).run(); openToggleModal(); } },
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCallout().run(); } },
   { title: "Chart", icon: AreaChart, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'chartBlock' }).run(); } },
   { title: "Drawing", icon: PenSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'drawing' }).run(); } },
@@ -127,13 +127,14 @@ export const SlashCommand = Extension.create({
 
     addOptions() {
         return {
+            openToggleModal: () => {},
             suggestion: {
                 char: '/',
                 command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
                     props.command({ editor, range });
                 },
                 items: ({ query }: { query: string }) => {
-                    return getCommandItems()
+                    return getCommandItems(this.options.openToggleModal)
                         .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
                         .slice(0, 10);
                 },

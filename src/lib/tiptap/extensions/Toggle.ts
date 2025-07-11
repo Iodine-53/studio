@@ -3,10 +3,37 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import ToggleComponent from '@/components/nodes/ToggleComponent';
 
+const getTemplateContent = (type: string) => {
+  switch (type) {
+    case 'checklist':
+      return [{
+        type: 'taskList',
+        content: [
+          { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task 1' }] }] },
+          { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task 2' }] }] },
+        ],
+      }];
+    case 'notes':
+      return [{ type: 'paragraph', content: [{ type: 'text', text: 'Add your notes here...' }] }];
+    case 'goals':
+       return [{ type: 'paragraph', content: [{ type: 'text', text: '🎯 Goal: ' }] }];
+    default: // 'blank'
+      return [{ type: 'paragraph' }];
+  }
+};
+
+const TEMPLATE_TITLES: { [key: string]: string } = {
+  checklist: '✅ Checklist',
+  notes: '📋 Notes',
+  goals: '🎯 Goals',
+  blank: '📝 Toggle',
+};
+
+
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     toggle: {
-      setToggle: () => ReturnType;
+      setToggle: (options?: { type: string }) => ReturnType;
     }
   }
 }
@@ -39,12 +66,15 @@ export const ToggleExtension = Node.create({
 
   addCommands() {
     return {
-      setToggle: () => ({ commands }) => {
-        // When inserting, create a toggle with an empty paragraph inside.
+      setToggle: (options) => ({ commands }) => {
+        const type = options?.type || 'blank';
         return commands.insertContent({
           type: this.name,
-          attrs: { isOpen: true },
-          content: [{ type: 'paragraph' }],
+          attrs: { 
+            isOpen: true,
+            title: TEMPLATE_TITLES[type] || 'Toggle',
+          },
+          content: getTemplateContent(type),
         });
       },
     };

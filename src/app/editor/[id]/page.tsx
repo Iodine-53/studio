@@ -34,6 +34,8 @@ import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
 import { FunctionPlot } from '@/lib/tiptap/extensions/FunctionPlot';
 import { Calculator } from '@/lib/tiptap/extensions/Calculator';
 import { ToggleExtension } from '@/lib/tiptap/extensions/Toggle';
+import { TaskList } from '@tiptap/extension-task-list';
+import { TaskItem } from '@tiptap/extension-task-item';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -44,6 +46,7 @@ import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
 import { AiAssistantDialog } from "@/components/AiAssistantDialog";
+import { ToggleTemplateModal } from "@/components/modals/ToggleTemplateModal";
 
 // Register languages for code block syntax highlighting
 lowlight.registerLanguage('html', html);
@@ -61,11 +64,17 @@ export default function EditorPage() {
   const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+  const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   
   const idFromParams = Array.isArray(params.id) ? params.id[0] : params.id;
   const docId = Number(idFromParams);
+  
+  const handleSelectToggle = (templateId: string) => {
+    editor?.chain().focus().setToggle({ type: templateId }).run();
+    setIsToggleModalOpen(false);
+  };
   
   const editor = useEditor({
     extensions: [
@@ -100,7 +109,9 @@ export default function EditorPage() {
           'progressBarBlock',
         ] 
       }),
-      SlashCommand,
+      SlashCommand.configure({
+        openToggleModal: () => setIsToggleModalOpen(true),
+      }),
       TrailingNode,
       LineHeight,
       TextStyle, 
@@ -121,6 +132,10 @@ export default function EditorPage() {
       FunctionPlot,
       Calculator,
       ToggleExtension,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
     ],
     editorProps: {
       attributes: {
@@ -259,6 +274,11 @@ export default function EditorPage() {
         open={isAiAssistantOpen} 
         onOpenChange={setIsAiAssistantOpen} 
         editor={editor}
+      />
+      <ToggleTemplateModal
+        isOpen={isToggleModalOpen}
+        onClose={() => setIsToggleModalOpen(false)}
+        onSelect={handleSelectToggle}
       />
     </>
   );
