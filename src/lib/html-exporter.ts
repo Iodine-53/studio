@@ -23,15 +23,19 @@ export const exportToHtml = async (editor: Editor): Promise<Blob> => {
   // 2. Collect all CSS styles from the current page
   const styleSheets = Array.from(document.styleSheets);
   const cssPromises = styleSheets.map(sheet => {
-    // Cross-origin stylesheets may have null href and can't be accessed, so we add a check.
-    if (sheet.href && sheet.href.startsWith(window.location.origin)) {
-      // It's a <link> stylesheet from the same origin, fetch its content
+    // For external stylesheets (e.g., Google Fonts, or our own via <link>), fetch their content.
+    if (sheet.href) {
       return fetchCss(sheet.href);
-    } else if (sheet.cssRules) {
-      // It's an inline <style> tag or an accessible stylesheet
+    } 
+    // For inline <style> tags, try to read the rules.
+    else {
       try {
-        return Promise.resolve(Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n'));
+        if (sheet.cssRules) {
+            return Promise.resolve(Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n'));
+        }
       } catch (e) {
+        // This catch block will handle security errors for cross-origin stylesheets
+        // that somehow don't have an href but are still protected.
         console.warn('Could not read CSS rules from stylesheet, possibly due to CORS.', sheet);
         return Promise.resolve('');
       }
