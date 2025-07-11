@@ -20,6 +20,7 @@ import {
   Plus,
   Wand2,
   Quote,
+  Rows,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -36,9 +37,10 @@ import React from 'react';
 type Props = {
   editor: Editor | null;
   onAiAssistantClick: () => void;
+  onAddToggleClick: () => void;
 };
 
-const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
+const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick }: Props) => {
 
   if (!editor) {
     return null;
@@ -413,6 +415,20 @@ const Toolbar = ({ editor, onAiAssistantClick }: Props) => {
           </Tooltip>
           
           <Separator orientation="vertical" className="h-8 mx-1" />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onAddToggleClick}
+                  aria-label="Add Toggle"
+                >
+                  <Rows className="h-4 w-4" />
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>Add Toggle</p></TooltipContent>
+          </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>

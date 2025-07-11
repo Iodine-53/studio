@@ -259,7 +259,11 @@ export default function EditorPage() {
         </header>
         <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 overflow-hidden">
             <div className="w-full max-w-6xl glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col flex-grow">
-                <TiptapEditor editor={editor} onAiAssistantClick={() => setIsAiAssistantOpen(true)} />
+                <TiptapEditor 
+                  editor={editor} 
+                  onAiAssistantClick={() => setIsAiAssistantOpen(true)}
+                  onAddToggleClick={() => setIsToggleModalOpen(true)}
+                />
             </div>
         </main>
       </div>
