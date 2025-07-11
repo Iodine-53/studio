@@ -1,20 +1,23 @@
 
 "use client";
 
-import { X } from "lucide-react";
+import { X, Pencil, CheckSquare, FileText, Link as LinkIcon, Lightbulb, Target } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type Template = {
   id: string;
   title: string;
   description: string;
+  icon: React.ReactNode;
 };
 
 const TOGGLE_TEMPLATES: Template[] = [
-  { id: 'blank', title: '📝 Blank Toggle', description: 'Start with an empty toggle.' },
-  { id: 'checklist', title: '✅ Checklist', description: 'A list with interactive checkboxes.' },
-  { id: 'notes', title: '📋 Notes', description: 'A simple paragraph for notes.' },
-  { id: 'goals', title: '🎯 Goals', description: 'Track your objectives.' },
+  { id: 'blank', title: 'Blank Toggle', description: 'Start with empty content.', icon: <Pencil size={20} /> },
+  { id: 'checklist', title: 'Checklist', description: 'A list with interactive checkboxes.', icon: <CheckSquare size={20} /> },
+  { id: 'notes', title: 'Notes', description: 'A simple paragraph for notes.', icon: <FileText size={20} /> },
+  { id: 'links', title: 'Links & Resources', description: 'A bullet list for links.', icon: <LinkIcon size={20} /> },
+  { id: 'ideas', title: 'Ideas', description: 'A paragraph for brainstorming.', icon: <Lightbulb size={20} /> },
+  { id: 'goals', title: 'Goals', description: 'A paragraph to track objectives.', icon: <Target size={20} /> },
 ];
 
 type Props = {
@@ -24,10 +27,10 @@ type Props = {
 };
 
 export const ToggleTemplateModal = ({ isOpen, onClose, onSelect }: Props) => {
+  if (!isOpen) return null;
 
   const handleSelect = (templateId: string) => {
     onSelect(templateId);
-    onClose();
   }
 
   return (
@@ -41,10 +44,13 @@ export const ToggleTemplateModal = ({ isOpen, onClose, onSelect }: Props) => {
                 <button
                   key={template.id}
                   onClick={() => handleSelect(template.id)}
-                  className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors"
+                  className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors flex items-center gap-4"
                 >
-                  <div className="font-medium">{template.title}</div>
-                  <div className="text-sm text-muted-foreground">{template.description}</div>
+                    <div className="p-2 bg-muted rounded-md">{template.icon}</div>
+                    <div>
+                        <div className="font-medium">{template.title}</div>
+                        <div className="text-sm text-muted-foreground">{template.description}</div>
+                    </div>
                 </button>
               ))}
             </div>

@@ -92,8 +92,6 @@ export default function EditorPage() {
             linkOnPaste: false,
             openOnClick: 'whenNotEditable',
         },
-        // Enable katex here
-        katex: {},
       }),
       Underline,
       TextAlign.configure({ 

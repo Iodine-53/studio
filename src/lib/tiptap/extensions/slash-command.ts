@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CheckSquare, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -102,7 +102,6 @@ const renderItems = () => {
           return true;
         }
         
-        // Add a guard to ensure component and its ref exist before calling onKeyDown
         if (!component?.ref) {
             return false;
         }
@@ -115,7 +114,6 @@ const renderItems = () => {
         if (component) {
             component.destroy();
         }
-        // Reset component to avoid stale references
         component = undefined;
         popup = undefined;
       },
@@ -128,6 +126,12 @@ export const SlashCommand = Extension.create({
     addOptions() {
         return {
             openToggleModal: () => {},
+            suggestion: {
+                char: '/',
+                command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
+                    props.command({ editor, range });
+                },
+            },
         }
     },
 
@@ -135,10 +139,7 @@ export const SlashCommand = Extension.create({
         return [
             Suggestion({
                 editor: this.editor,
-                char: '/',
-                command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
-                    props.command({ editor, range });
-                },
+                ...this.options.suggestion,
                 items: ({ query }: { query: string }) => {
                     return getCommandItems(this.options.openToggleModal)
                         .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
