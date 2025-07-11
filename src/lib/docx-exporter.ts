@@ -33,6 +33,7 @@ import {
   Title,
 } from 'chart.js';
 import html2canvas from 'html2canvas';
+import functionPlot from 'function-plot';
 
 
 // Register all the components you use in your charts
@@ -239,6 +240,43 @@ const renderBarChartToImage = (title: string, items: any[]): Promise<string> => 
         resolve(canvas.toDataURL('image/png'));
     }, 100);
   });
+};
+
+// Helper to render function-plot to an image
+const renderFunctionPlotToImage = (nodeAttrs: any): Promise<string> => {
+    return new Promise((resolve) => {
+        const container = document.createElement('div');
+        // Hide it from view
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.width = `${nodeAttrs.width || 500}px`;
+        container.style.height = `${nodeAttrs.height || 300}px`;
+        document.body.appendChild(container);
+
+        try {
+            functionPlot({
+                target: container,
+                ...nodeAttrs,
+                data: [{ fn: nodeAttrs.fn, graphType: 'polyline' }],
+            });
+
+            // Use html2canvas to capture the plot
+            setTimeout(() => {
+                html2canvas(container).then(canvas => {
+                    document.body.removeChild(container);
+                    resolve(canvas.toDataURL('image/png'));
+                }).catch(err => {
+                    console.error('html2canvas failed:', err);
+                    document.body.removeChild(container);
+                    resolve('');
+                });
+            }, 200); // Give it time to render
+        } catch (e) {
+            console.error("Failed to render function plot for export", e);
+            document.body.removeChild(container);
+            resolve('');
+        }
+    });
 };
 
 function createTextRuns(node: TiptapNode): TextRun[] {
@@ -651,8 +689,38 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
       }
     }
     
+    case 'functionPlot': {
+      try {
+        const imageBase64 = await renderFunctionPlotToImage(node.attrs);
+        if (!imageBase64) throw new Error("Function plot rendering failed.");
+        const imageBuffer = await getImageBuffer(imageBase64);
+        const imageRun = new ImageRun({
+            data: imageBuffer,
+            transformation: { width: 450, height: 270 },
+        });
+        return [new Paragraph({ children: [imageRun], alignment: AlignmentType.CENTER })];
+      } catch (e) {
+        console.error("Error exporting functionPlot to DOCX", e);
+        return [new Paragraph({ text: '[Function Plot could not be exported]' })];
+      }
+    }
+
     case 'mindMap': {
-      return [new Paragraph({ text: '[Mind Map cannot be exported to DOCX]' })];
+        const { imageBase64 } = node.attrs;
+        if (imageBase64) {
+            try {
+                const imageBuffer = await getImageBuffer(imageBase64);
+                const imageRun = new ImageRun({
+                    data: imageBuffer,
+                    transformation: { width: 480, height: 400 },
+                });
+                return [new Paragraph({ children: [imageRun], alignment: AlignmentType.CENTER })];
+            } catch (e) {
+                console.error("Error exporting mindMap to DOCX", e);
+                return [new Paragraph({ text: '[Mind Map image was invalid]' })];
+            }
+        }
+        return [new Paragraph({ text: '[Mind Map Preview Unavailable]' })];
     }
 
     default:

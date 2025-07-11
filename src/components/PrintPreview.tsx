@@ -6,6 +6,7 @@ import React, { type FC, useRef, useEffect, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ReactSketchCanvas, type ReactSketchCanvasRef } from 'react-sketch-canvas';
+import functionPlot from 'function-plot';
 
 type TiptapMark = {
     type: 'bold' | 'italic' | 'underline' | 'strike' | 'link' | 'textStyle';
@@ -163,7 +164,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
           'image', 'chartBlock', 'drawing', 'todoList', 'callout',
           'horizontalRule', 'interactiveTable', 'embed', 'progressBarBlock',
           'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote',
-          'toggle', 'columns', 'mindMap'
+          'toggle', 'columns', 'mindMap', 'functionPlot', 'mathBlock'
         ].includes(childNode.type)
       );
 
@@ -449,7 +450,40 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
     
     case 'mindMap': {
-      return <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground">[Mind Map cannot be previewed here]</div>;
+      const { imageBase64 } = node.attrs;
+      if (imageBase64) {
+        return <img src={imageBase64} alt="Mind Map" className="w-full h-auto my-4" />;
+      }
+      return <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground">[Mind Map Preview Unavailable]</div>;
+    }
+
+    case 'functionPlot': {
+      const plotRef = useRef<HTMLDivElement>(null);
+      const { fn, xDomain, yDomain, height } = node.attrs;
+  
+      useEffect(() => {
+        if (plotRef.current) {
+          try {
+            functionPlot({
+              target: plotRef.current,
+              width: plotRef.current.clientWidth,
+              height: height,
+              xAxis: { domain: xDomain },
+              yAxis: { domain: yDomain },
+              grid: true,
+              data: [{ fn: fn, graphType: 'polyline' }],
+            });
+          } catch (e) {
+            plotRef.current.innerHTML = `<p class="text-destructive">Error rendering function: ${fn}</p>`;
+          }
+        }
+      }, [fn, xDomain, yDomain, height]);
+  
+      return (
+          <div className="my-4 p-2 border rounded-lg w-full">
+            <div ref={plotRef} style={{ width: '100%', height: `${height}px` }} />
+          </div>
+      );
     }
 
 

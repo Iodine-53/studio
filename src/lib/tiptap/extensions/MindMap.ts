@@ -25,6 +25,10 @@ export const MindMap = Node.create({
       edges: {
         default: [],
       },
+      imageBase64: {
+        default: null,
+        renderHTML: () => null, // Don't render this to HTML, it's for export only
+      }
     };
   },
 

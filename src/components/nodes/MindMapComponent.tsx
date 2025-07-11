@@ -4,7 +4,7 @@
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { useEffect, useRef } from 'react';
 import { Network } from 'vis-network';
-import 'vis-network/styles/vis-network.min.css';
+import 'vis-network/dist/vis-network.min.css';
 
 const MindMapComponent = ({ node, updateAttributes, editor }: NodeViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,12 +72,18 @@ const MindMapComponent = ({ node, updateAttributes, editor }: NodeViewProps) => 
       const updateState = () => {
         if (networkRef.current) {
           const networkData = (networkRef.current as any).body.data;
+          // Generate a data URL of the canvas to save for exporting
+          const imageBase64 = networkRef.current.canvas.getContext().canvas.toDataURL();
+
           updateAttributes({
             nodes: networkData.nodes.get(),
             edges: networkData.edges.get(),
+            imageBase64,
           });
         }
       };
+
+      network.on('afterDrawing', updateState);
     }
     
     return () => {
