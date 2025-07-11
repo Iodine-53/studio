@@ -32,6 +32,8 @@ import {
   Legend,
   Title,
 } from 'chart.js';
+import html2canvas from 'html2canvas';
+
 
 // Register all the components you use in your charts
 Chart.register(
@@ -302,9 +304,10 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
     case 'image':
     case 'chartBlock':
     case 'drawing':
+    case 'mindMap':
       try {
           let imageBuffer: Buffer;
-          let nodeTitle = 'Image';
+          let nodeTitle = node.attrs?.title || 'Image';
           const { layout, textAlign, caption } = node.attrs;
           
           const width = layout?.width || (node.type === 'chartBlock' ? 75 : 100);
@@ -319,6 +322,14 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
               const drawingImageBase64 = await renderDrawingToImage(node.attrs?.paths);
               if (!drawingImageBase64) throw new Error("Drawing rendering returned empty.");
               imageBuffer = await getImageBuffer(drawingImageBase64);
+          } else if (node.type === 'mindMap') {
+              const mindMapElement = document.getElementById(node.attrs.instanceId);
+              if (!mindMapElement) throw new Error("Mind map element not found in DOM");
+              
+              const canvas = await html2canvas(mindMapElement, { backgroundColor: '#ffffff' });
+              const mindMapImageBase64 = canvas.toDataURL('image/png');
+              if (!mindMapImageBase64) throw new Error("Mind map rendering returned empty.");
+              imageBuffer = await getImageBuffer(mindMapImageBase64);
           } else { // chartBlock
               const { chartData, chartConfig, chartType, title, viewConfig } = node.attrs;
               nodeTitle = title;
@@ -369,7 +380,7 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
           }
           
           const imageWidthInPixels = Math.floor(450 * (width / 100));
-          const imageHeightInPixels = node.type === 'chartBlock'
+          const imageHeightInPixels = (node.type === 'chartBlock' || node.type === 'mindMap')
             ? layout?.height || 320
             : Math.floor(300 * (width / 100)); // Rough aspect ratio for images/drawings
 
