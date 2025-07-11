@@ -19,7 +19,6 @@ const trailingNodeTypes: string[] = [
     'progressBarBlock',
     'toggle',
     'columns',
-    'mindMap',
 ];
 
 export const TrailingNode = Extension.create({

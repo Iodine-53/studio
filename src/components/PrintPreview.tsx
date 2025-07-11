@@ -6,8 +6,6 @@ import React, { type FC, useRef, useEffect, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ReactSketchCanvas, type ReactSketchCanvasRef } from 'react-sketch-canvas';
-import VisNetwork from 'vis-network-react';
-import type { Options, Data } from 'vis-network';
 
 type TiptapMark = {
     type: 'bold' | 'italic' | 'underline' | 'strike' | 'link' | 'textStyle';
@@ -451,51 +449,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
     
     case 'mindMap': {
-      try {
-        const { data: mindMapData, layout, title } = node.attrs;
-        if (!mindMapData || !mindMapData.nodes || mindMapData.nodes.length === 0) {
-          return <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground">[Empty Mind Map]</div>;
-        }
-
-        const options: Options = {
-          autoResize: true,
-          nodes: {
-            shape: 'dot',
-            size: 20,
-            font: { size: 14, color: '#333' },
-            borderWidth: 2,
-            shadow: true,
-          },
-          edges: {
-            width: 2,
-            color: '#888',
-            arrows: 'to',
-            smooth: { type: 'cubicBezier' },
-          },
-          physics: {
-            enabled: false, // Turn off physics for static view
-          },
-          interaction: {
-            dragNodes: false,
-            dragView: true,
-            zoomView: true,
-          },
-        };
-
-        return (
-          <div style={{...wrapperStyle, height: `${layout?.height || 400}px`}} className="my-4">
-            <div className="p-4 border rounded-lg not-prose h-full flex flex-col">
-              <h4 className="font-bold text-lg mb-2 text-center">{title}</h4>
-              <div className="flex-grow relative">
-                <VisNetwork data={mindMapData} options={options} />
-              </div>
-            </div>
-          </div>
-        );
-      } catch (e) {
-        console.error("Error rendering Mind Map for print:", e);
-        return <div className="my-4 p-4 border rounded-lg text-center text-destructive">[Invalid Mind Map Data]</div>;
-      }
+      return <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground">[Mind Map cannot be previewed here]</div>;
     }
 
 
