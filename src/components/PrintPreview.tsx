@@ -164,7 +164,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
           'image', 'chartBlock', 'drawing', 'todoList', 'callout',
           'horizontalRule', 'interactiveTable', 'embed', 'progressBarBlock',
           'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote',
-          'toggle'
+          'toggle', 'columns',
         ].includes(childNode.type)
       );
 
@@ -203,6 +203,10 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         return <hr className="my-4"/>
     case 'hardBreak':
         return <br />;
+    case 'table':
+        return <table className="w-full my-4 border-collapse prose"><tbody>{children}</tbody></table>;
+    case 'tableRow':
+        return <tr>{children}</tr>;
     case 'tableHeader':
         return <th className="border p-2 font-bold text-left bg-muted">{children}</th>;
     case 'tableCell':
@@ -404,6 +408,29 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
         </div>
       );
     }
+
+    case 'columns': {
+        const layout = node.attrs?.layout || '50-50';
+        const [col1Width, col2Width] = layout.split('-');
+        
+        return (
+            <div className="flex gap-4 my-4" style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: `0 0 ${col1Width}%`, minWidth: '0' }}>
+                    {renderNodes(node.content?.slice(0, 1))}
+                </div>
+                <div style={{ flex: `0 0 ${col2Width}%`, minWidth: '0' }}>
+                    {renderNodes(node.content?.slice(1))}
+                </div>
+            </div>
+        );
+    }
+
+    case 'column': {
+        // This is handled by the 'columns' case, which renders its children.
+        // Rendering it directly would cause duplication.
+        return <>{children}</>;
+    }
+
 
     case 'toggle': {
       const { title, isOpen } = node.attrs;
