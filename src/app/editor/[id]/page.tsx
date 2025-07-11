@@ -40,6 +40,7 @@ import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
 import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 import { MindMap } from "@/lib/tiptap/extensions/MindMap";
 import { InlineMath, MathBlock } from '@/lib/tiptap/extensions/Math';
+import 'vis-network/styles/vis-network.css';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -113,6 +114,8 @@ export default function EditorPage() {
           'interactiveTable',
           'embed',
           'progressBarBlock',
+          'functionPlot',
+          'mindMap',
         ] 
       }),
       SlashCommand.configure({
