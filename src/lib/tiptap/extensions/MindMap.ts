@@ -28,7 +28,31 @@ export const MindMap = Node.create({
       imageBase64: {
         default: null,
         renderHTML: () => null, // Don't render this to HTML, it's for export only
-      }
+      },
+      textAlign: {
+        default: 'center',
+        parseHTML: element => element.getAttribute('data-text-align'),
+        renderHTML: attributes => {
+          if (attributes.textAlign) {
+            return { 'data-text-align': attributes.textAlign };
+          }
+          return {};
+        },
+      },
+      layout: {
+        default: { width: 100, height: 500 },
+        parseHTML: element => {
+            const layoutAttr = element.getAttribute('data-layout');
+            try {
+                return layoutAttr ? JSON.parse(layoutAttr) : { width: 100, height: 500 };
+            } catch {
+                return { width: 100, height: 500 };
+            }
+        },
+        renderHTML: attributes => ({
+            'data-layout': JSON.stringify(attributes.layout),
+        }),
+      },
     };
   },
 

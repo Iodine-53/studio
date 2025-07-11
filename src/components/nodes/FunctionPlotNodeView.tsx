@@ -12,7 +12,8 @@ import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
 
 export const FunctionPlotNodeView: React.FC<NodeViewProps> = ({ node, updateAttributes, selected }) => {
-  const { fn, xDomain, yDomain, width, height } = node.attrs;
+  const { fn, xDomain, yDomain, layout, textAlign } = node.attrs;
+  const { width, height } = layout;
   const plotRef = useRef<HTMLDivElement>(null);
 
   const [currentFn, setCurrentFn] = useState(fn);
@@ -47,9 +48,10 @@ export const FunctionPlotNodeView: React.FC<NodeViewProps> = ({ node, updateAttr
   useEffect(() => {
     drawPlot();
     // Add resize listener to redraw the plot when the window size changes
-    window.addEventListener('resize', drawPlot);
+    const handleResize = () => drawPlot();
+    window.addEventListener('resize', handleResize);
     return () => {
-      window.removeEventListener('resize', drawPlot);
+      window.removeEventListener('resize', handleResize);
     };
   }, [drawPlot]);
 
@@ -59,9 +61,13 @@ export const FunctionPlotNodeView: React.FC<NodeViewProps> = ({ node, updateAttr
   };
   
   return (
-    <NodeViewWrapper className="my-4">
+    <NodeViewWrapper
+      className="my-4 custom-node-wrapper"
+      data-align={textAlign}
+      style={{ width: `${width}%` }}
+    >
       <div className={cn("p-4 border rounded-lg bg-card transition-shadow relative", isEditing && "ring-2 ring-primary shadow-lg")}>
-        <div ref={plotRef} style={{ width: '100%', height: `${height}px` }} className="w-full" />
+        <div ref={plotRef} style={{ height: `${height}px` }} className="w-full" />
         {isEditing && (
           <div className="mt-4 p-2 bg-muted/50 rounded-md space-y-2">
             <Label htmlFor="fn-input" className="font-semibold">Function f(x)</Label>

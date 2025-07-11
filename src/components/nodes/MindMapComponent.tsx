@@ -7,6 +7,9 @@ import { Network } from 'vis-network';
 import 'vis-network/styles/vis-network.css';
 
 const MindMapComponent = ({ node, updateAttributes, editor }: NodeViewProps) => {
+  const { layout, textAlign } = node.attrs;
+  const { width, height } = layout;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const networkRef = useRef<Network | null>(null);
 
@@ -92,10 +95,15 @@ const MindMapComponent = ({ node, updateAttributes, editor }: NodeViewProps) => 
   }, [node.attrs.nodes, node.attrs.edges, updateAttributes]);
 
   return (
-    <NodeViewWrapper>
+    <NodeViewWrapper
+      className="my-4 custom-node-wrapper"
+      data-align={textAlign}
+      style={{ width: `${width}%` }}
+    >
       <div 
         ref={containerRef} 
-        className="w-full h-[500px] border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 my-4"
+        style={{ height: `${height}px` }}
+        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 my-4"
       />
       <div className="text-xs text-center text-gray-500 p-2">
         Double-click empty space to add a node. Drag from a node to another to connect.

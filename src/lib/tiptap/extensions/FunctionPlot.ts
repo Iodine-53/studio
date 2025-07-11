@@ -28,11 +28,29 @@ export const FunctionPlot = Node.create({
       yDomain: {
         default: [-1, 10],
       },
-      width: {
-        default: 500,
+      textAlign: {
+        default: 'center',
+        parseHTML: element => element.getAttribute('data-text-align'),
+        renderHTML: attributes => {
+          if (attributes.textAlign) {
+            return { 'data-text-align': attributes.textAlign };
+          }
+          return {};
+        },
       },
-      height: {
-        default: 300,
+      layout: {
+        default: { width: 100, height: 300 },
+        parseHTML: element => {
+            const layoutAttr = element.getAttribute('data-layout');
+            try {
+                return layoutAttr ? JSON.parse(layoutAttr) : { width: 100, height: 300 };
+            } catch {
+                return { width: 100, height: 300 };
+            }
+        },
+        renderHTML: attributes => ({
+            'data-layout': JSON.stringify(attributes.layout),
+        }),
       },
     };
   },

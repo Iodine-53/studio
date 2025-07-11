@@ -28,10 +28,12 @@ const ACTIONABLE_NODE_TYPES = [
     'embed',
     'progressBarBlock',
     'layoutBlock',
+    'mindMap',
+    'functionPlot',
 ];
 
 // List of node types that support resizing controls
-const RESIZABLE_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'todoList', 'embed', 'interactiveTable', 'progressBarBlock'];
+const RESIZABLE_NODE_TYPES = ['image', 'chartBlock', 'drawing', 'todoList', 'embed', 'interactiveTable', 'progressBarBlock', 'mindMap', 'functionPlot'];
 
 export const LayoutBubbleMenu = ({ editor }: Props) => {
   
@@ -45,9 +47,9 @@ export const LayoutBubbleMenu = ({ editor }: Props) => {
     const oldLayout = node.attrs.layout || {};
     
     // For charts, we also scale the height proportionally
-    if (node.type.name === 'chartBlock') {
+    if (node.type.name === 'chartBlock' || node.type.name === 'functionPlot' || node.type.name === 'mindMap') {
         const oldWidth = oldLayout.width ?? 100;
-        const oldHeight = oldLayout.height ?? 400;
+        const oldHeight = oldLayout.height ?? (node.type.name === 'mindMap' ? 500 : 400);
         const scaleFactor = oldWidth > 0 ? newWidth / oldWidth : 1;
         const newHeight = Math.round(oldHeight * scaleFactor);
 
