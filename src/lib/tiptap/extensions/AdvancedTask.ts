@@ -1,3 +1,4 @@
+
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { AdvancedTaskNodeView } from '@/components/nodes/AdvancedTaskNodeView';
@@ -138,9 +139,6 @@ export const AdvancedTask = Node.create<AdvancedTaskOptions>({
   addNodeView() {
     return ReactNodeViewRenderer(AdvancedTaskNodeView, {
       contentDOMElementTag: 'span',
-      update: (node, decorations) => {
-        return node.type.name === this.name;
-      },
     });
   },
 });
