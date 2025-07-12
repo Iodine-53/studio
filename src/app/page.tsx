@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Github, Twitter, FileText, Image, AudioWaveform, Film, FileSliders, Voicemail, Settings } from "lucide-react";
+import { Github, Twitter, FileText, Image, AudioWaveform, Film, FileSliders, Voicemail, Settings, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -22,6 +22,12 @@ const tools = [
     description: "Create, manage, and edit all your rich-text documents with AI-powered assistance.",
     href: "/documents",
     icon: FileText,
+  },
+  {
+    title: "Knowledge Graph",
+    description: "Visualize the connections between your documents and explore your ideas in a new way.",
+    href: "/graph",
+    icon: Share2,
   },
   {
     title: "Text to Audio",

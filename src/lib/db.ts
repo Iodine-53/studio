@@ -1,14 +1,25 @@
+
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'toolbox-ai-db';
 const STORE_NAME = 'documents';
 const DB_VERSION = 1;
 
+// Define the structure of a Tiptap node for type safety
+export type TiptapNode = {
+  type: string;
+  attrs?: Record<string, any>;
+  content?: TiptapNode[];
+  text?: string;
+  marks?: { type: string; attrs?: Record<string, any> }[];
+};
+
+
 // Define the structure of our Document object
 export interface Document {
   id?: number;
   title: string;
-  content: any; // Tiptap's JSON content
+  content: TiptapNode; // Tiptap's JSON content
   createdAt: Date;
   updatedAt: Date;
 }
