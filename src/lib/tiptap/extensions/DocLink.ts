@@ -36,12 +36,13 @@ export const DocLinkExtension = Node.create({
 
   renderHTML({ HTMLAttributes }) {
     // The node view will handle the rendering, this is a fallback.
+    // Use the `label` from the passed HTMLAttributes, not from this.options
     return [
       'span',
       mergeAttributes(HTMLAttributes, {
         'data-type': 'doc-link',
       }),
-      this.options.HTMLAttributes.label,
+      HTMLAttributes.label,
     ];
   },
   
@@ -53,10 +54,13 @@ export const DocLinkExtension = Node.create({
         span.setAttribute('data-type', 'doc-link');
         span.setAttribute('data-doc-id', node.attrs.docId);
 
-        span.addEventListener('click', () => {
-          // Navigate to the linked document when clicked
-          if (node.attrs.docId) {
-            window.location.href = `/editor/${node.attrs.docId}`;
+        span.addEventListener('click', (event) => {
+          if (editor.isEditable) {
+            // In a real app, you might want to show a small popup to edit or go to the link.
+            // For now, we'll just navigate.
+            if (node.attrs.docId) {
+                window.open(`/editor/${node.attrs.docId}`, '_blank');
+            }
           }
         });
 
