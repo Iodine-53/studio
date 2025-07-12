@@ -1,6 +1,6 @@
 
 import type { Editor, Range } from "@tiptap/core";
-import { Extension } from "@tiptap/core";
+import { Extension, textInputRule } from "@tiptap/core";
 import {
   Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, Columns, BrainCircuit, Sigma, Link2
 } from "lucide-react";
@@ -9,7 +9,6 @@ import tippy from "tippy.js";
 import { CommandList } from "@/components/editor/CommandList";
 import type { ComponentProps } from 'react';
 import Suggestion from '@tiptap/suggestion';
-import { inputRules } from "prosemirror-inputrules";
 
 // Define a type for our command items
 export interface CommandItem {
@@ -139,6 +138,19 @@ export const SlashCommand = Extension.create({
         }
     },
 
+    addInputRules() {
+      return [
+        textInputRule({
+          find: /\[\[$/,
+          handler: ({ state, range }) => {
+            const { from, to } = range;
+            state.tr.delete(from, to);
+            this.options.openDocSearchModal();
+          },
+        }),
+      ];
+    },
+
     addProseMirrorPlugins() {
         return [
             Suggestion({
@@ -150,18 +162,6 @@ export const SlashCommand = Extension.create({
                         .slice(0, 10);
                 },
                 render: renderItems,
-            }),
-             inputRules({
-                rules: [
-                    {
-                        find: /\[\[$/,
-                        handler: ({ state, range }) => {
-                            const { from, to } = range;
-                            state.tr.delete(from, to);
-                            this.options.openDocSearchModal();
-                        },
-                    },
-                ],
             }),
         ]
     }
