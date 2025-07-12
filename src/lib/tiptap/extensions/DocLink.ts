@@ -13,7 +13,7 @@ export const DocLinkExtension = Node.create({
   name: 'docLink',
   group: 'inline',
   inline: true,
-  atom: true,
+  atom: true, // Treat the link as a single, atomic unit
 
   addAttributes() {
     return {
@@ -24,7 +24,7 @@ export const DocLinkExtension = Node.create({
       },
       label: {
         default: 'Untitled Link',
-        parseHTML: element => element.getAttribute('data-label'),
+        parseHTML: element => element.getAttribute('data-label') || element.innerText,
         renderHTML: attributes => ({ 'data-label': attributes.label }),
       },
     };
@@ -35,17 +35,19 @@ export const DocLinkExtension = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    // The node view will handle the rendering, this is a fallback.
-    // Use the `label` from the passed HTMLAttributes, not from this.options
+    // This is the fallback for serialization (e.g., copy-paste, saving).
+    // It must return a valid DOM description array.
     return [
       'span',
       mergeAttributes(HTMLAttributes, {
         'data-type': 'doc-link',
+        class: 'bg-primary/10 text-primary dark:bg-primary/20 px-2 py-1 rounded-md'
       }),
-      HTMLAttributes.label,
+      HTMLAttributes.label, // The text content of the span
     ];
   },
   
+  // This is the correct way to render the interactive React component in the editor.
   addNodeView() {
     return ({ node, editor }) => {
         const span = document.createElement('span');
@@ -55,9 +57,8 @@ export const DocLinkExtension = Node.create({
         span.setAttribute('data-doc-id', node.attrs.docId);
 
         span.addEventListener('click', (event) => {
-          if (editor.isEditable) {
-            // In a real app, you might want to show a small popup to edit or go to the link.
-            // For now, we'll just navigate.
+          // Allow navigation only when the editor is not editable.
+          if (!editor.isEditable) {
             if (node.attrs.docId) {
                 window.open(`/editor/${node.attrs.docId}`, '_blank');
             }
