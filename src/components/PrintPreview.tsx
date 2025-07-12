@@ -452,14 +452,18 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'mindMap': {
       const { imageBase64 } = node.attrs;
       if (imageBase64) {
-        return <img src={imageBase64} alt="Mind Map" className="w-full h-auto my-4" />;
+        return (
+          <div style={wrapperStyle}>
+            <img src={imageBase64} alt="Mind Map" className="w-full h-auto my-4" />
+          </div>
+        );
       }
       return <div className="my-4 p-4 border rounded-lg text-center text-muted-foreground">[Mind Map Preview Unavailable]</div>;
     }
 
     case 'functionPlot': {
       const plotRef = useRef<HTMLDivElement>(null);
-      const { fn, xDomain, yDomain, height } = node.attrs;
+      const { fn, xDomain, yDomain, layout } = node.attrs;
   
       useEffect(() => {
         if (plotRef.current) {
@@ -467,7 +471,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
             functionPlot({
               target: plotRef.current,
               width: plotRef.current.clientWidth,
-              height: height,
+              height: layout.height,
               xAxis: { domain: xDomain },
               yAxis: { domain: yDomain },
               grid: true,
@@ -477,11 +481,13 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
             plotRef.current.innerHTML = `<p class="text-destructive">Error rendering function: ${fn}</p>`;
           }
         }
-      }, [fn, xDomain, yDomain, height]);
+      }, [fn, xDomain, yDomain, layout]);
   
       return (
-          <div className="my-4 p-2 border rounded-lg w-full">
-            <div ref={plotRef} style={{ width: '100%', height: `${height}px` }} />
+          <div style={wrapperStyle}>
+            <div className="my-4 p-2 border rounded-lg w-full">
+              <div ref={plotRef} style={{ width: '100%', height: `${layout.height}px` }} />
+            </div>
           </div>
       );
     }

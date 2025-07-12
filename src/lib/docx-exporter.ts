@@ -249,14 +249,17 @@ const renderFunctionPlotToImage = (nodeAttrs: any): Promise<string> => {
         // Hide it from view
         container.style.position = 'absolute';
         container.style.left = '-9999px';
-        container.style.width = `${nodeAttrs.width || 500}px`;
-        container.style.height = `${nodeAttrs.height || 300}px`;
+        container.style.width = `${nodeAttrs.layout.width || 500}px`;
+        container.style.height = `${nodeAttrs.layout.height || 300}px`;
         document.body.appendChild(container);
 
         try {
             functionPlot({
                 target: container,
-                ...nodeAttrs,
+                ...nodeAttrs.layout,
+                xAxis: { domain: nodeAttrs.xDomain },
+                yAxis: { domain: nodeAttrs.yDomain },
+                grid: true,
                 data: [{ fn: nodeAttrs.fn, graphType: 'polyline' }],
             });
 
@@ -693,12 +696,28 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
       try {
         const imageBase64 = await renderFunctionPlotToImage(node.attrs);
         if (!imageBase64) throw new Error("Function plot rendering failed.");
+
         const imageBuffer = await getImageBuffer(imageBase64);
+        const { layout, textAlign } = node.attrs;
+        const width = layout?.width || 100;
+        const align = textAlign || 'center';
+        
+        const imageWidth = Math.floor(450 * (width / 100));
+        const imageHeight = Math.floor(300 * (width / 100)); // Maintain aspect ratio roughly
+
         const imageRun = new ImageRun({
             data: imageBuffer,
-            transformation: { width: 450, height: 270 },
+            transformation: { width: imageWidth, height: imageHeight },
         });
-        return [new Paragraph({ children: [imageRun], alignment: AlignmentType.CENTER })];
+
+        let docxAlignment: AlignmentType;
+        switch (align) {
+            case 'center': docxAlignment = AlignmentType.CENTER; break;
+            case 'right': docxAlignment = AlignmentType.RIGHT; break;
+            default: docxAlignment = AlignmentType.LEFT;
+        }
+
+        return [new Paragraph({ children: [imageRun], alignment: docxAlignment })];
       } catch (e) {
         console.error("Error exporting functionPlot to DOCX", e);
         return [new Paragraph({ text: '[Function Plot could not be exported]' })];
@@ -706,15 +725,29 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
     }
 
     case 'mindMap': {
-        const { imageBase64 } = node.attrs;
+        const { imageBase64, layout, textAlign } = node.attrs;
         if (imageBase64) {
             try {
                 const imageBuffer = await getImageBuffer(imageBase64);
+                const width = layout?.width || 100;
+                const align = textAlign || 'center';
+
+                const imageWidth = Math.floor(480 * (width / 100));
+                const imageHeight = Math.floor(400 * (width / 100)); // Maintain aspect ratio
+
                 const imageRun = new ImageRun({
                     data: imageBuffer,
-                    transformation: { width: 480, height: 400 },
+                    transformation: { width: imageWidth, height: imageHeight },
                 });
-                return [new Paragraph({ children: [imageRun], alignment: AlignmentType.CENTER })];
+
+                let docxAlignment: AlignmentType;
+                switch (align) {
+                    case 'center': docxAlignment = AlignmentType.CENTER; break;
+                    case 'right': docxAlignment = AlignmentType.RIGHT; break;
+                    default: docxAlignment = AlignmentType.LEFT;
+                }
+
+                return [new Paragraph({ children: [imageRun], alignment: docxAlignment })];
             } catch (e) {
                 console.error("Error exporting mindMap to DOCX", e);
                 return [new Paragraph({ text: '[Mind Map image was invalid]' })];
