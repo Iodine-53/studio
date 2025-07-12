@@ -353,13 +353,13 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
             
             let response;
             if (fileContext) {
-                const firstMessageContent = [{ text: `Here is the content of the file "${fileContext.name}":\n\n${fileContext.content}` }];
-                if(fileContext.type === 'image') {
-                    firstMessageContent[0] = { text: `Analyze this image named "${fileContext.name}"`};
-                }
-
-                const fileMessage = { role: 'user', content: fileContext.type === 'image' ? [{ media: { url: fileContext.content }}] : firstMessageContent };
-                const historyWithFile = [fileMessage, ...messages, newUserMessage];
+                const contextMessageContent: any[] = fileContext.type === 'image' 
+                    ? [{ media: { url: fileContext.content } }] 
+                    : [{ text: `Here is the content of the file "${fileContext.name}":\n\n${fileContext.content}` }];
+                
+                const contextMessage = { role: 'user', content: contextMessageContent };
+                const historyWithFile = [contextMessage, ...messages, newUserMessage];
+                
                 response = await analyzeDocument({ history: historyWithFile, apiKey });
             } else {
                 const docContext = editor ? getDocumentContext(editor.getJSON()) : undefined;

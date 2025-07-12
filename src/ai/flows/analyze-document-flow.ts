@@ -21,7 +21,7 @@ const MessageSchema = z.object({
 });
 
 const AnalyzeDocumentInputSchema = z.object({
-  history: z.array(MessageSchema).describe('The conversation history.'),
+  history: z.array(MessageSchema).describe('The conversation history, where the first user message contains the document context.'),
   apiKey: z.string().optional().describe('Optional API key for Gemini.'),
 });
 export type AnalyzeDocumentInput = z.infer<typeof AnalyzeDocumentInputSchema>;
