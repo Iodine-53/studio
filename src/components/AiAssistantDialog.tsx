@@ -43,6 +43,13 @@ type StoredChat = {
     messages: Message[];
 };
 
+type Props = {
+  editor: Editor | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+
 const BRAINSTORM_STORAGE_KEY = 'brainstormChatHistory';
 
 // Helper to generate a structured text representation of the document for AI context
@@ -92,7 +99,7 @@ const getDocumentContext = (node: any): string => {
         return `[A Chart titled: "${title}" with the following data:\n${chartDataString}]`;
     }
     case 'drawing': return `[A Drawing]`;
-    case 'interactiveTable':
+    case 'interactiveTable': {
         const title = node.attrs?.title || 'Untitled Table';
         let tableDataString = '[No Data]';
         try {
@@ -106,6 +113,7 @@ const getDocumentContext = (node: any): string => {
             tableDataString = '[Invalid Table Data]';
         }
         return `[A Table titled: "${title}" with the following data:\n${tableDataString}]`;
+    }
     case 'mindMap': return `[A Mind Map]`;
     case 'functionPlot': return `[A Function Plot for: f(x) = ${node.attrs?.fn}]`;
     case 'horizontalRule': return '---';
@@ -480,7 +488,7 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
 
             <TabsContent value="write" className="p-6 pt-0">
                 <WriteTab editor={editor} onOpenChange={onOpenChange}/>
-            </Tabs-content>
+            </TabsContent>
             
             <TabsContent value="list" className="p-6 pt-0">
                 <ListTab editor={editor} onOpenChange={onOpenChange}/>
