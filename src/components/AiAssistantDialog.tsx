@@ -398,7 +398,7 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
                     {messages.length === 0 && (
                         <div className="text-center text-sm text-muted-foreground py-8">
                             <Sparkles className="mx-auto h-8 w-8 mb-2" />
-                            <p>Ask a question about your document, or start a creative session.</p>
+                            <p>Ask a general question, or use / to ask about the current document.</p>
                             <p>Your chat history is saved for 24 hours.</p>
                         </div>
                     )}
@@ -425,7 +425,7 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleBrainstorm()}
-                        placeholder="Ask anything..."
+                        placeholder="Ask anything, or use '/' for document questions."
                         disabled={isLoading}
                     />
                     <Button onClick={handleBrainstorm} disabled={isLoading || !inputValue}><Send className="h-4 w-4" /></Button>
