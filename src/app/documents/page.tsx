@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft } from "lucide-react";
+import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2 } from "lucide-react";
 import { type Document, getAllDocuments, saveDocument, deleteDocument } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
@@ -135,10 +135,18 @@ export default function DocumentsPage() {
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">My Documents</h2>
                         <p className="text-lg text-muted-foreground mt-2">Create, edit, and manage all of your work.</p>
                     </div>
-                    <Button onClick={handleCreateNew} size="lg" className="shrink-0">
-                        <PlusCircle className="mr-2 h-5 w-5" />
-                        Create New Document
-                    </Button>
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" size="lg" asChild>
+                            <Link href="/graph">
+                                <Share2 className="mr-2 h-5 w-5" />
+                                View Graph
+                            </Link>
+                        </Button>
+                        <Button onClick={handleCreateNew} size="lg" className="shrink-0">
+                            <PlusCircle className="mr-2 h-5 w-5" />
+                            Create New Document
+                        </Button>
+                    </div>
                 </div>
                 
                 <div className="relative mb-8 max-w-lg">

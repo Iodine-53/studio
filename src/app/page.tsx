@@ -24,12 +24,6 @@ const tools = [
     icon: FileText,
   },
   {
-    title: "Knowledge Graph",
-    description: "Visualize the connections between your documents and explore your ideas in a new way.",
-    href: "/graph",
-    icon: Share2,
-  },
-  {
     title: "Text to Audio",
     description: "Convert any text into high-quality, natural-sounding speech with advanced AI voices.",
     href: "/text-to-audio",
