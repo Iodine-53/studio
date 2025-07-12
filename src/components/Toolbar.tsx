@@ -21,6 +21,7 @@ import {
   Wand2,
   Quote,
   Rows,
+  Sigma,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -38,9 +39,10 @@ type Props = {
   editor: Editor | null;
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
+  onOpenEquationModal: () => void;
 };
 
-const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick }: Props) => {
+const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal }: Props) => {
 
   if (!editor) {
     return null;
@@ -416,6 +418,20 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick }: Props) => {
           
           <Separator orientation="vertical" className="h-8 mx-1" />
 
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onOpenEquationModal}
+                aria-label="Add Equation"
+              >
+                <Sigma className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>Add Equation</p></TooltipContent>
+          </Tooltip>
+          
           <Tooltip>
             <TooltipTrigger asChild>
                 <Button

@@ -372,7 +372,6 @@ export const ChartNodeView = ({ node, updateAttributes, deleteNode, selected }: 
             <BarChartIcon className="h-12 w-12 mb-4"/>
             <p className="font-semibold">No data yet.</p>
             <p className="text-sm">Select to open the editor and add data.</p>
-            <p className="text-xs text-muted-foreground/50 mt-2">Last updated October 2023</p>
         </div>
       );
     }

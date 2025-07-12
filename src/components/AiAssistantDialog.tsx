@@ -400,6 +400,7 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
                             <Sparkles className="mx-auto h-8 w-8 mb-2" />
                             <p>Ask a general question, or use / to ask about the current document.</p>
                             <p>Your chat history is saved for 24 hours.</p>
+                             <p className="text-xs text-muted-foreground/50 mt-2">Last updated October 2023</p>
                         </div>
                     )}
                     {messages.map((message, index) => (

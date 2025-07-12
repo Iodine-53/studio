@@ -40,7 +40,7 @@ import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
 import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 import { MindMap } from "@/lib/tiptap/extensions/MindMap";
 import { InlineMath, MathBlock } from '@/lib/tiptap/extensions/Math';
-import 'vis-network/styles/vis-network.css';
+import 'katex/dist/katex.min.css';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -55,6 +55,7 @@ import { exportToHtml } from '@/lib/html-exporter';
 import TurndownService from 'turndown';
 import { AiAssistantDialog } from "@/components/AiAssistantDialog";
 import { ToggleTemplateModal } from "@/components/modals/ToggleTemplateModal";
+import { EquationModal } from "@/components/EquationModal";
 
 // Register languages for code block syntax highlighting
 lowlight.registerLanguage('html', html);
@@ -73,6 +74,7 @@ export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
+  const [isEquationModalOpen, setIsEquationModalOpen] = useState(false);
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   
@@ -84,6 +86,10 @@ export default function EditorPage() {
     setIsToggleModalOpen(false);
   };
   
+  const handleInsertEquation = (latex: string) => {
+    editor?.chain().focus().insertMathBlock({ content: latex }).run();
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -338,6 +344,7 @@ export default function EditorPage() {
                   editor={editor} 
                   onAiAssistantClick={() => setIsAiAssistantOpen(true)}
                   onAddToggleClick={() => setIsToggleModalOpen(true)}
+                  onOpenEquationModal={() => setIsEquationModalOpen(true)}
                 />
             </div>
         </main>
@@ -356,6 +363,11 @@ export default function EditorPage() {
         isOpen={isToggleModalOpen}
         onClose={() => setIsToggleModalOpen(false)}
         onSelect={handleSelectToggle}
+      />
+      <EquationModal
+        isOpen={isEquationModalOpen}
+        onClose={() => setIsEquationModalOpen(false)}
+        onInsert={handleInsertEquation}
       />
     </>
   );
