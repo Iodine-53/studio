@@ -77,8 +77,20 @@ const getDocumentContext = (node: any): string => {
 
     case 'image':
       return `[An Image: ${node.attrs?.caption || 'No caption'}]`;
-    case 'chartBlock':
-      return `[A Chart titled: "${node.attrs?.title || 'Untitled Chart'}"]`;
+    case 'chartBlock': {
+        const title = node.attrs?.title || 'Untitled Chart';
+        let chartDataString = '[No Data]';
+        try {
+            if (node.attrs?.chartData) {
+                const chartData = JSON.parse(node.attrs.chartData);
+                // Stringify with indentation for readability in the prompt
+                chartDataString = JSON.stringify(chartData, null, 2); 
+            }
+        } catch (e) {
+            chartDataString = '[Invalid Data Format]';
+        }
+        return `[A Chart titled: "${title}" with the following data:\n${chartDataString}]`;
+    }
     case 'drawing':
       return `[A Drawing]`;
     case 'interactiveTable':
