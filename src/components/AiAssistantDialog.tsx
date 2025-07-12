@@ -312,7 +312,7 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
                 const arrayBuffer = await file.arrayBuffer();
                 const pdf = await pdfjs.getDocument(arrayBuffer).promise;
                 let fullText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
+                for (let i = 1; i <= pdf.numPages, i++;) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
                     fullText += textContent.items.map(item => (item as any).str).join(' ');
@@ -358,9 +358,9 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
                     : [{ text: `Here is the content of the file "${fileContext.name}":\n\n${fileContext.content}` }];
                 
                 const contextMessage = { role: 'user', content: contextMessageContent };
-                const historyWithFile = [contextMessage, ...messages, newUserMessage];
+                const historyForModel = [contextMessage, ...messages, newUserMessage];
                 
-                response = await analyzeDocument({ history: historyWithFile, apiKey });
+                response = await analyzeDocument({ history: historyForModel, apiKey });
             } else {
                 const docContext = editor ? getDocumentContext(editor.getJSON()) : undefined;
                 const history = [...messages, newUserMessage];
@@ -498,3 +498,5 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
     </Dialog>
   );
 }
+
+    
