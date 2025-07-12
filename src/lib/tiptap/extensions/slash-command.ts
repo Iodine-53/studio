@@ -2,13 +2,14 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, Columns, BrainCircuit, Sigma
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, Columns, BrainCircuit, Sigma, Link2
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
 import { CommandList } from "@/components/editor/CommandList";
 import type { ComponentProps } from 'react';
 import Suggestion from '@tiptap/suggestion';
+import { inputRules } from "prosemirror-inputrules";
 
 // Define a type for our command items
 export interface CommandItem {
@@ -20,7 +21,7 @@ export interface CommandItem {
 // Type for the props of the CommandList component
 type CommandListProps = ComponentProps<typeof CommandList>;
 
-const getCommandItems = (openToggleModal: () => void): CommandItem[] => [
+const getCommandItems = (openToggleModal: () => void, openDocSearchModal: () => void): CommandItem[] => [
   // Basic Text Formatting
   { title: "Paragraph", icon: Pilcrow, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setParagraph().run(); } },
   { title: "Heading 1", icon: Heading1, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(); } },
@@ -39,6 +40,7 @@ const getCommandItems = (openToggleModal: () => void): CommandItem[] => [
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   
   // Custom Node Blocks
+  { title: "Link to Document", icon: Link2, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).run(); openDocSearchModal(); } },
   { title: "Math Block", icon: Sigma, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMathBlock().run(); } },
   { title: "Mind Map", icon: BrainCircuit, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMindMap().run(); } },
   { title: "2 Columns", icon: Columns, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertColumns().run(); } },
@@ -59,7 +61,6 @@ const renderItems = () => {
 
     return {
       onStart: (props: any) => {
-        // Guard against race-conditions: only render the popup if we have a valid clientRect
         if (typeof props.clientRect !== 'function' || !props.clientRect()) {
           return;
         }
@@ -82,7 +83,6 @@ const renderItems = () => {
       onUpdate(props: any) {
         component?.updateProps(props);
 
-        // If the position becomes invalid during an update, destroy the popup to prevent crashes.
         if (typeof props.clientRect !== 'function' || !props.clientRect()) {
           if (popup && popup[0]) {
             popup[0].destroy();
@@ -129,6 +129,7 @@ export const SlashCommand = Extension.create({
     addOptions() {
         return {
             openToggleModal: () => {},
+            openDocSearchModal: () => {},
             suggestion: {
                 char: '/',
                 command: ({ editor, range, props }: { editor: Editor; range: Range; props: any }) => {
@@ -144,12 +145,24 @@ export const SlashCommand = Extension.create({
                 editor: this.editor,
                 ...this.options.suggestion,
                 items: ({ query }: { query: string }) => {
-                    return getCommandItems(this.options.openToggleModal)
+                    return getCommandItems(this.options.openToggleModal, this.options.openDocSearchModal)
                         .filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
                         .slice(0, 10);
                 },
                 render: renderItems,
-            })
+            }),
+             inputRules({
+                rules: [
+                    {
+                        find: /\[\[$/,
+                        handler: ({ state, range }) => {
+                            const { from, to } = range;
+                            state.tr.delete(from, to);
+                            this.options.openDocSearchModal();
+                        },
+                    },
+                ],
+            }),
         ]
     }
 });

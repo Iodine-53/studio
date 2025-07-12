@@ -12,10 +12,11 @@ type Props = {
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
+  onOpenDocSearchModal: () => void;
 };
 
 
-const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal }: Props) => {
+const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenDocSearchModal }: Props) => {
   return (
     // This component now handles the layout of the toolbar and editor content area
     <div className="flex flex-col flex-grow overflow-hidden relative">

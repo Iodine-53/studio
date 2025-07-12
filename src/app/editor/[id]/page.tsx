@@ -40,6 +40,8 @@ import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
 import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 import { MindMap } from "@/lib/tiptap/extensions/MindMap";
 import { InlineMath, MathBlock } from '@/lib/tiptap/extensions/Math';
+import { DocLinkExtension } from '@/lib/tiptap/extensions/DocLink';
+import { Link as TiptapLink } from '@tiptap/extension-link';
 import 'katex/dist/katex.min.css';
 
 
@@ -56,6 +58,8 @@ import TurndownService from 'turndown';
 import { AiAssistantDialog } from "@/components/AiAssistantDialog";
 import { ToggleTemplateModal } from "@/components/modals/ToggleTemplateModal";
 import { EquationModal } from "@/components/EquationModal";
+import { DocSearchModal } from '@/components/DocSearchModal';
+
 
 // Register languages for code block syntax highlighting
 lowlight.registerLanguage('html', html);
@@ -75,6 +79,7 @@ export default function EditorPage() {
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [isEquationModalOpen, setIsEquationModalOpen] = useState(false);
+  const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   
@@ -90,6 +95,16 @@ export default function EditorPage() {
     editor?.chain().focus().insertMathBlock({ content: latex }).run();
   };
 
+  const handleSelectDocLink = (linkedDoc: { id: number; title: string }) => {
+    if (editor) {
+      editor.chain().focus().setDocLink({
+        docId: String(linkedDoc.id),
+        label: linkedDoc.title,
+      }).run();
+    }
+  };
+
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -102,10 +117,7 @@ export default function EditorPage() {
         tableHeader: false,
         tableCell: false,
         // from original config
-        link: {
-            linkOnPaste: false,
-            openOnClick: 'whenNotEditable',
-        },
+        link: false, // We disable the default link to use our own PasteHandler
       }),
       Underline,
       TextAlign.configure({ 
@@ -126,6 +138,7 @@ export default function EditorPage() {
       }),
       SlashCommand.configure({
         openToggleModal: () => setIsToggleModalOpen(true),
+        openDocSearchModal: () => setIsDocSearchOpen(true),
       }),
       TrailingNode,
       LineHeight,
@@ -156,6 +169,11 @@ export default function EditorPage() {
       MindMap,
       InlineMath,
       MathBlock,
+      DocLinkExtension,
+      TiptapLink.configure({
+        linkOnPaste: false,
+        openOnClick: 'whenNotEditable',
+      }),
     ],
     editorProps: {
       attributes: {
@@ -368,6 +386,12 @@ export default function EditorPage() {
         isOpen={isEquationModalOpen}
         onClose={() => setIsEquationModalOpen(false)}
         onInsert={handleInsertEquation}
+      />
+      <DocSearchModal
+        isOpen={isDocSearchOpen}
+        onClose={() => setIsDocSearchOpen(false)}
+        onSelect={handleSelectDocLink}
+        currentDocId={docId}
       />
     </>
   );
