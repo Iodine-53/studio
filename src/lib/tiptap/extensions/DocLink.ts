@@ -13,7 +13,7 @@ export const DocLinkExtension = Node.create({
   name: 'docLink',
   group: 'inline',
   inline: true,
-  atom: true, // Treat the link as a single, atomic unit
+  atom: true, // Treat the link as a single, indivisible unit
 
   addAttributes() {
     return {
@@ -35,32 +35,29 @@ export const DocLinkExtension = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    // This is the fallback for serialization (e.g., copy-paste, saving).
-    // It must return a valid DOM description array.
+    // When using a NodeView, renderHTML should return a simple container.
+    // The NodeView's `dom` property will be mounted inside this container.
     return [
       'span',
       mergeAttributes(HTMLAttributes, {
         'data-type': 'doc-link',
-        class: 'bg-primary/10 text-primary dark:bg-primary/20 px-2 py-1 rounded-md'
-      }),
-      HTMLAttributes.label, // The text content of the span
+      })
     ];
   },
   
-  // This is the correct way to render the interactive React component in the editor.
   addNodeView() {
     return ({ node, editor }) => {
         const span = document.createElement('span');
         span.className = 'bg-primary/10 text-primary dark:bg-primary/20 px-2 py-1 rounded-md cursor-pointer hover:bg-primary/20 transition-colors';
         span.textContent = node.attrs.label;
-        span.setAttribute('data-type', 'doc-link');
-        span.setAttribute('data-doc-id', node.attrs.docId);
-
+        
         span.addEventListener('click', (event) => {
           // Allow navigation only when the editor is not editable.
           if (!editor.isEditable) {
             if (node.attrs.docId) {
-                window.open(`/editor/${node.attrs.docId}`, '_blank');
+                // Use a robust way to open a new tab that works across browsers
+                const newWindow = window.open(`/editor/${node.attrs.docId}`, '_blank');
+                if (newWindow) newWindow.focus();
             }
           }
         });
