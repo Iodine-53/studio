@@ -31,6 +31,7 @@ import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, 
 import { type Document, getAllDocuments, saveDocument, deleteDocument, exportAllData, importData } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { saveAs } from 'file-saver';
+import { useDocumentSearch } from "@/hooks/useDocumentSearch";
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -46,6 +47,8 @@ export default function DocumentsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  const { results: filteredDocuments, search } = useDocumentSearch(documents);
 
 
   const fetchDocuments = async () => {
@@ -158,9 +161,11 @@ export default function DocumentsPage() {
     }
   };
 
-  const filteredDocuments = documents.filter(doc => 
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchTerm(query);
+    search(query);
+  }
 
   return (
     <>
@@ -204,10 +209,10 @@ export default function DocumentsPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                             type="search"
-                            placeholder="Search documents by title..."
+                            placeholder="Search document titles and content..."
                             className="w-full pl-10"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={handleSearchChange}
                         />
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
