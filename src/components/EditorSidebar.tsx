@@ -3,25 +3,75 @@
 
 import { type FC } from 'react';
 import { type Document } from '@/lib/db';
+import Link from 'next/link';
 import { TagInput } from './TagInput';
 import { MetadataEditor } from './MetadataEditor';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetHeader, SheetTitle } from './ui/sheet';
+import { Button } from './ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { ArrowLeft, BookOpen, Braces, Download, Eye, FileCode2, FileText, History } from 'lucide-react';
 
 type EditorSidebarProps = {
   doc: Document;
   tags: string[];
   onTagsChange: (newTags: string[]) => void;
   onMetadataUpdate: (newMetadata: Record<string, string>) => void;
+  onHistoryClick: () => void;
+  onPreviewClick: () => void;
+  onExportDocxClick: () => void;
+  onExportJsonClick: () => void;
+  onExportHtmlClick: () => void;
+  onExportMarkdownClick: () => void;
 };
 
-export const EditorSidebar: FC<EditorSidebarProps> = ({ doc, tags, onTagsChange, onMetadataUpdate }) => {
+export const EditorSidebar: FC<EditorSidebarProps> = ({ 
+    doc, 
+    tags, 
+    onTagsChange, 
+    onMetadataUpdate, 
+    onHistoryClick,
+    onPreviewClick,
+    onExportDocxClick,
+    onExportJsonClick,
+    onExportHtmlClick,
+    onExportMarkdownClick,
+}) => {
   return (
     <div className="h-full flex flex-col">
         <SheetHeader className="p-4 border-b">
-            <SheetTitle>Document Details</SheetTitle>
+            <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" className="shrink-0" asChild>
+                    <Link href="/documents">
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">Back to Document Hub</span>
+                    </Link>
+                </Button>
+                <SheetTitle className="truncate font-headline">{doc.title}</SheetTitle>
+            </div>
         </SheetHeader>
+        <div className="p-2 border-b flex justify-around">
+             <Button variant="ghost" size="sm" onClick={onHistoryClick}>
+                <History className="h-4 w-4 mr-2" /> History
+             </Button>
+             <Button variant="ghost" size="sm" onClick={onPreviewClick}>
+                <Eye className="h-4 w-4 mr-2" /> Preview
+             </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                        <Download className="h-4 w-4 mr-2" /> Export
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={onExportDocxClick}><FileText className="mr-2 h-4 w-4" />Export as DOCX</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onExportJsonClick}><Braces className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onExportHtmlClick}><FileCode2 className="mr-2 h-4 w-4" />Export as HTML</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onExportMarkdownClick}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
         <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">
                 <div>

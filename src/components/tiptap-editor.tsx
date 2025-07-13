@@ -12,11 +12,12 @@ type Props = {
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
+  onOpenSidebar: () => void;
   isMobile: boolean;
 };
 
 
-const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, isMobile }: Props) => {
+const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar, isMobile }: Props) => {
   
   return (
     <div className="flex flex-col flex-grow relative min-h-0">
@@ -28,6 +29,7 @@ const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEqua
           onAiAssistantClick={onAiAssistantClick} 
           onAddToggleClick={onAddToggleClick}
           onOpenEquationModal={onOpenEquationModal}
+          onOpenSidebar={onOpenSidebar}
           isMobile={isMobile}
         />
       </div>

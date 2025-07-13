@@ -51,7 +51,6 @@ import { getDocument, saveDocument, type Document, addDocVersion, type DocumentV
 import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History, PanelRight, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
@@ -83,7 +82,6 @@ export default function EditorPage() {
   const [currentContent, setCurrentContent] = useState<any>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
@@ -234,14 +232,11 @@ export default function EditorPage() {
   
   const handleDocxExport = async () => {
     if (!currentContent) return;
-    setIsExporting(true);
     try {
         const blob = await exportToDocx(currentContent);
         saveAs(blob, `${doc?.title || 'Document'}.docx`);
     } catch (error) {
         console.error("Failed to export DOCX", error);
-    } finally {
-        setIsExporting(false);
     }
   };
   
@@ -255,14 +250,11 @@ export default function EditorPage() {
 
   const handleHtmlExport = async () => {
       if (!editor) return;
-      setIsExporting(true);
       try {
         const htmlBlob = await exportToHtml(editor);
         saveAs(htmlBlob, `${doc?.title || 'Document'}.html`);
       } catch (error) {
         console.error("Failed to export HTML", error);
-      } finally {
-        setIsExporting(false);
       }
   };
 
@@ -287,54 +279,13 @@ export default function EditorPage() {
   return (
     <>
       <div className="flex flex-col min-h-screen bg-primary/5">
-        {!isMobile && (
-             <header className="sticky top-0 z-30 flex items-center justify-between border-b bg-background p-4 h-auto">
-                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                     <Button variant="outline" size="icon" className="shrink-0" asChild>
-                         <Link href="/documents">
-                         <ArrowLeft className="h-4 w-4" />
-                         <span className="sr-only">Back to Document Hub</span>
-                         </Link>
-                     </Button>
-                     <div className="flex-1 min-w-0">
-                         {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
-                     </div>
-                 </div>
-                 <div className="flex items-center gap-2">
-                   <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)}>
-                     <History className="h-4 w-4 md:mr-2" />
-                     <span className="hidden md:inline">History</span>
-                   </Button>
-                   <Button variant="outline" size="sm" onClick={handleOpenPreview} className="relative">
-                     <Eye className="h-4 w-4 md:mr-2" />
-                     <span className="hidden md:inline">Preview</span>
-                   </Button>
-                   <DropdownMenu>
-                     <DropdownMenuTrigger asChild>
-                         <Button variant="outline" size="sm" disabled={isExporting} className="relative w-[135px]">
-                             {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <> <Download className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Export</span> </>}
-                         </Button>
-                     </DropdownMenuTrigger>
-                     <DropdownMenuContent align="end">
-                         <DropdownMenuItem onClick={handleDocxExport}><FileText className="mr-2 h-4 w-4" />Export as DOCX</DropdownMenuItem>
-                         <DropdownMenuItem onClick={handleJsonExport}><Braces className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>
-                         <DropdownMenuItem onClick={handleHtmlExport}><FileCode2 className="mr-2 h-4 w-4" />Export as HTML</DropdownMenuItem>
-                         <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
-                     </DropdownMenuContent>
-                   </DropdownMenu>
-                   <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
-                     <PanelRight className="h-5 w-5" />
-                     <span className="sr-only">Open Sidebar</span>
-                   </Button>
-                 </div>
-             </header>
-        )}
         <main className="flex-1 flex flex-col min-h-0">
             <TiptapEditor 
                 editor={editor}
                 onAiAssistantClick={() => setIsAiAssistantOpen(true)}
                 onAddToggleClick={() => setIsToggleModalOpen(true)}
                 onOpenEquationModal={() => setIsEquationModalOpen(true)}
+                onOpenSidebar={() => setIsSidebarOpen(true)}
                 isMobile={isMobile}
             />
         </main>
@@ -353,6 +304,12 @@ export default function EditorPage() {
                     tags={tags}
                     onTagsChange={handleTagsChange}
                     onMetadataUpdate={handleMetadataUpdate}
+                    onHistoryClick={() => { setIsSidebarOpen(false); setIsHistoryOpen(true); }}
+                    onPreviewClick={() => { setIsSidebarOpen(false); handleOpenPreview(); }}
+                    onExportDocxClick={handleDocxExport}
+                    onExportJsonClick={handleJsonExport}
+                    onExportHtmlClick={handleHtmlExport}
+                    onExportMarkdownClick={handleMarkdownExport}
                 />
             </SheetContent>
         </Sheet>

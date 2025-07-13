@@ -23,6 +23,7 @@ import {
   Quote,
   Rows,
   Sigma,
+  Menu,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -42,10 +43,11 @@ type Props = {
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
+  onOpenSidebar: () => void;
   isMobile: boolean;
 };
 
-const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, isMobile }: Props) => {
+const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar, isMobile }: Props) => {
 
   if (!editor) {
     return null;
@@ -91,7 +93,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
   const toolbarClass = cn(
     "flex w-full items-center bg-card p-2 border-b",
     isMobile 
-      ? "gap-1 overflow-x-auto hide-scrollbar" 
+      ? "gap-2 overflow-x-auto hide-scrollbar pl-4" // Added more gap and padding
       : "gap-2 rounded-t-xl flex-wrap"
   );
   
@@ -101,6 +103,26 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
   return (
     <TooltipProvider>
       <div className={toolbarClass}>
+          {isMobile && (
+              <>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size={buttonSize}
+                        onClick={onOpenSidebar}
+                        className="h-9 w-9"
+                        aria-label="Open Menu"
+                    >
+                        <Menu className="h-5 w-5" />
+                    </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Open Menu</p></TooltipContent>
+                </Tooltip>
+                <Separator orientation="vertical" className="h-8 mx-1" />
+              </>
+          )}
+
           {/* Text Formatting Tools */}
           <Tooltip>
             <TooltipTrigger asChild>
