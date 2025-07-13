@@ -28,6 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle, Settings } from "lucide-react";
 import { type Document, getAllDocuments, saveDocument, deleteDocument, deleteTrashedDocs, exportAllData, importData } from "@/lib/db";
