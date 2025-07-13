@@ -202,3 +202,30 @@ export const importData = async (file: File): Promise<void> => {
     reader.readAsText(file);
   });
 };
+
+// New function to completely delete the database
+export const deleteDatabase = async (): Promise<void> => {
+    // Close the connection if it's open
+    if (dbPromise) {
+        const db = await dbPromise;
+        db.close();
+        dbPromise = null; // Nullify the promise to allow re-initialization
+    }
+    // Use indexedDB's native deleteDatabase function
+    await new Promise<void>((resolve, reject) => {
+        const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+        deleteRequest.onsuccess = () => {
+            console.log(`Database "${DB_NAME}" deleted successfully.`);
+            resolve();
+        };
+        deleteRequest.onerror = (event) => {
+            console.error(`Error deleting database "${DB_NAME}":`, event);
+            reject(deleteRequest.error);
+        };
+        deleteRequest.onblocked = () => {
+            console.warn(`Database "${DB_NAME}" delete blocked. Please close other tabs with this app open.`);
+            // You might want to reject or alert the user here
+            reject(new Error('Database deletion was blocked.'));
+        };
+    });
+};
