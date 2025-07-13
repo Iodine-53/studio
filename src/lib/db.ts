@@ -47,26 +47,25 @@ const initDB = () => {
     upgrade(db, oldVersion, newVersion, tx) {
       console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
       
-      // This switch block handles migrations gracefully.
-      // It falls through, so a user on version 0 would get all upgrades.
-      switch (oldVersion) {
-        case 0: {
-          // A user has no database, so create it from scratch.
-          const store = db.createObjectStore(STORE_NAME, {
-            keyPath: 'id',
-            autoIncrement: true,
-          });
-          store.createIndex('updatedAt', 'updatedAt');
-          store.createIndex('status', 'status');
-        }
-        // falls through
-        case 1: {
-          // A user has version 1, and needs the 'status' index.
-          const store = tx.objectStore(STORE_NAME);
-          if (!store.indexNames.contains('status')) {
-            store.createIndex('status', 'status');
-          }
-        }
+      let store;
+      // If the store doesn't exist, create it. This handles the initial setup (oldVersion is 0)
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        store = db.createObjectStore(STORE_NAME, {
+          keyPath: 'id',
+          autoIncrement: true,
+        });
+      } else {
+        store = tx.objectStore(STORE_NAME);
+      }
+      
+      // Create the 'updatedAt' index if it doesn't exist.
+      if (!store.indexNames.contains('updatedAt')) {
+        store.createIndex('updatedAt', 'updatedAt');
+      }
+
+      // Create the 'status' index if it doesn't exist. This is the key part of the v2 upgrade.
+      if (!store.indexNames.contains('status')) {
+        store.createIndex('status', 'status');
       }
     },
   });
@@ -142,7 +141,11 @@ export const exportAllData = async (): Promise<Blob> => {
     };
 
     // Convert the array of objects to a JSON string
-    const jsonString = JSON.stringify(backupData, null, 2); // null, 2 for pretty-printing
+    const jsonString = JSON.stringify(backupData, (key, value) => {
+      // The content object from tiptap can be circular, so we handle it.
+      if (key === 'editor') return undefined;
+      return value;
+    }, 2);
 
     // Create a Blob from the JSON string
     return new Blob([jsonString], { type: 'application/json' });
@@ -182,6 +185,8 @@ export const importData = async (file: File): Promise<void> => {
             doc.updatedAt = new Date(doc.updatedAt);
             // Ensure status is set, default to active if missing
             doc.status = doc.status || 'active';
+            // Remove the ID to allow auto-incrementing to work correctly on a fresh import
+            if (doc.id) delete doc.id;
             return store.add(doc);
         }));
 
