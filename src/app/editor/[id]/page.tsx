@@ -315,15 +315,15 @@ export default function EditorPage() {
                     <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="outline" size="sm" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+              <Button variant="ghost" size="sm" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
                 <PanelRight className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Sidebar</span>
               </Button>
             </div>
         </header>
-        <main className="flex-1 grid grid-cols-12 overflow-hidden">
-            <div className={cn("transition-all duration-300", isSidebarOpen ? "col-span-12 md:col-span-9" : "col-span-12")}>
-                 <div className="h-full flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
+        <main className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0">
+                 <div className="flex-grow h-full flex flex-col items-center p-4 sm:p-6 md:p-8">
                     <div className="w-full max-w-6xl flex-grow glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col">
                         <TiptapEditor 
                           editor={editor} 
@@ -334,16 +334,16 @@ export default function EditorPage() {
                     </div>
                 </div>
             </div>
-            <div className={cn("transition-all duration-300 overflow-hidden", isSidebarOpen ? "col-span-12 md:col-span-3" : "col-span-0 w-0")}>
-                {isSidebarOpen && doc && (
+            {isSidebarOpen && doc && (
+                <aside className="hidden md:block w-80 bg-card border-l transition-all duration-300">
                     <EditorSidebar 
                         doc={doc}
                         tags={tags}
                         onTagsChange={handleTagsChange}
                         onMetadataUpdate={handleMetadataUpdate}
                     />
-                )}
-            </div>
+                </aside>
+            )}
         </main>
       </div>
       <VersionHistory 

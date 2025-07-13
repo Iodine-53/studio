@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { type Editor, EditorContent } from '@tiptap/react'
@@ -16,7 +17,7 @@ type Props = {
 
 const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal }: Props) => {
   return (
-    <div className="flex flex-col flex-grow relative">
+    <div className="flex flex-col flex-grow relative min-h-0">
       {editor && <LayoutBubbleMenu editor={editor} />}
       
       <Toolbar 
