@@ -4,7 +4,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 const DB_NAME = 'toolbox-ai-db';
 const DOC_STORE_NAME = 'documents';
 const VERSION_STORE_NAME = 'document_versions';
-const DB_VERSION = 4; // Version remains 4 as metadata is not indexed.
+const DB_VERSION = 5; // Incremented version to trigger schema upgrade
 
 // Define the structure of a Tiptap node for type safety
 export type TiptapNode = {
@@ -80,6 +80,8 @@ const initDB = () => {
       if (!docStore.indexNames.contains('updatedAt')) {
         docStore.createIndex('updatedAt', 'updatedAt');
       }
+      // This check ensures the 'title' index is created if it doesn't exist.
+      // Bumping the DB_VERSION ensures this whole upgrade function runs.
       if (!docStore.indexNames.contains('title')) {
         docStore.createIndex('title', 'title');
       }
