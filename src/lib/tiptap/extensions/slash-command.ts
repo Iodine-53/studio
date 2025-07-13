@@ -47,7 +47,7 @@ const getCommandItems = (openToggleModal: () => void, openDocSearchModal: () => 
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCallout().run(); } },
   { title: "Chart", icon: AreaChart, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'chartBlock' }).run(); } },
   { title: "Drawing", icon: PenSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'drawing' }).run(); } },
-  { title: "Todo List", icon: ListTodo, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertTodoList().run(); } },
+  { title: "Todo List", icon: ListTodo, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'todoList' }).run(); } },
   { title: "Embed", icon: Film, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setEmbed({ src: '' }).run(); } },
   { title: "Progress Bars", icon: SlidersHorizontal, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertProgressBarBlock().run(); } },
   { title: "Function Plot", icon: FunctionSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'functionPlot' }).run(); } },
