@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { type Editor } from "@tiptap/react";
@@ -89,20 +88,13 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
       { name: 'Monospace', value: 'monospace' },
       { name: 'Cursive', value: 'cursive' },
   ];
-
-  const toolbarClass = cn(
-    "flex w-full items-center bg-card p-2 border-b",
-    isMobile 
-      ? "gap-2 overflow-x-auto hide-scrollbar pl-4" // Added more gap and padding
-      : "gap-2 rounded-t-xl flex-wrap"
-  );
   
   const toggleSize = "sm";
   const buttonSize = "sm";
 
   return (
     <TooltipProvider>
-      <div className={toolbarClass}>
+      <div className="flex w-full items-center bg-card p-2 border-b">
           {isMobile && (
               <>
                 <Tooltip>
@@ -111,7 +103,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                         variant="ghost"
                         size={buttonSize}
                         onClick={onOpenSidebar}
-                        className="h-9 w-9"
+                        className="h-9 w-9 shrink-0"
                         aria-label="Open Menu"
                     >
                         <Menu className="h-5 w-5" />
@@ -119,369 +111,372 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                     </TooltipTrigger>
                     <TooltipContent><p>Open Menu</p></TooltipContent>
                 </Tooltip>
-                <Separator orientation="vertical" className="h-8 mx-1" />
+                <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
               </>
           )}
 
-          {/* Text Formatting Tools */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive("bold")}
-                onPressedChange={() => editor.chain().focus().toggleBold().run()}
-                disabled={!editor.can().toggleBold()}
-                aria-label="Toggle bold"
-              >
-                <Bold className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Bold</p></TooltipContent>
-          </Tooltip>
+          {/* This div will handle the scrolling of tools */}
+          <div className={cn("flex items-center gap-1", isMobile ? "overflow-x-auto hide-scrollbar" : "flex-wrap gap-2")}>
+              {/* Text Formatting Tools */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive("bold")}
+                    onPressedChange={() => editor.chain().focus().toggleBold().run()}
+                    disabled={!editor.can().toggleBold()}
+                    aria-label="Toggle bold"
+                  >
+                    <Bold className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Bold</p></TooltipContent>
+              </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive("italic")}
-                onPressedChange={() => editor.chain().focus().toggleItalic().run()}
-                disabled={!editor.can().toggleItalic()}
-                aria-label="Toggle italic"
-              >
-                <Italic className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Italic</p></TooltipContent>
-          </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive("italic")}
+                    onPressedChange={() => editor.chain().focus().toggleItalic().run()}
+                    disabled={!editor.can().toggleItalic()}
+                    aria-label="Toggle italic"
+                  >
+                    <Italic className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Italic</p></TooltipContent>
+              </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive("strike")}
-                onPressedChange={() => editor.chain().focus().toggleStrike().run()}
-                disabled={!editor.can().toggleStrike()}
-                aria-label="Toggle strikethrough"
-              >
-                <Strikethrough className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Strikethrough</p></TooltipContent>
-          </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive("strike")}
+                    onPressedChange={() => editor.chain().focus().toggleStrike().run()}
+                    disabled={!editor.can().toggleStrike()}
+                    aria-label="Toggle strikethrough"
+                  >
+                    <Strikethrough className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Strikethrough</p></TooltipContent>
+              </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive("underline")}
-                onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
-                disabled={!editor.can().toggleUnderline()}
-                aria-label="Toggle underline"
-              >
-                <Underline className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Underline</p></TooltipContent>
-          </Tooltip>
-          
-          <Separator orientation="vertical" className="h-8 mx-1" />
-          
-          {/* Font and Text Style Popovers */}
-          <Popover>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size={buttonSize} className="h-9 w-9" aria-label="Font Settings">
-                    <Type className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-              </TooltipTrigger>
-              <TooltipContent><p>Font Settings</p></TooltipContent>
-            </Tooltip>
-            <PopoverContent className="w-60 p-4">
-                <div className="space-y-4">
-                    <div>
-                        <Label>Font Family</Label>
-                        <Select
-                            value={editor.getAttributes('textStyle').fontFamily || 'Inter, sans-serif'}
-                            onValueChange={val => editor.chain().focus().setFontFamily(val).run()}
-                        >
-                            <SelectTrigger><SelectValue placeholder="Select font..." /></SelectTrigger>
-                            <SelectContent>
-                                {FONT_FAMILIES.map(font => (
-                                    <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>{font.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive("underline")}
+                    onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
+                    disabled={!editor.can().toggleUnderline()}
+                    aria-label="Toggle underline"
+                  >
+                    <Underline className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Underline</p></TooltipContent>
+              </Tooltip>
+              
+              <Separator orientation="vertical" className="h-8 mx-1" />
+              
+              {/* Font and Text Style Popovers */}
+              <Popover>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size={buttonSize} className="h-9 w-9" aria-label="Font Settings">
+                        <Type className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Font Settings</p></TooltipContent>
+                </Tooltip>
+                <PopoverContent className="w-60 p-4">
+                    <div className="space-y-4">
+                        <div>
+                            <Label>Font Family</Label>
+                            <Select
+                                value={editor.getAttributes('textStyle').fontFamily || 'Inter, sans-serif'}
+                                onValueChange={val => editor.chain().focus().setFontFamily(val).run()}
+                            >
+                                <SelectTrigger><SelectValue placeholder="Select font..." /></SelectTrigger>
+                                <SelectContent>
+                                    {FONT_FAMILIES.map(font => (
+                                        <SelectItem key={font.name} value={font.value} style={{fontFamily: font.value}}>{font.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Font Size</Label>
+                            <Select
+                                value={editor.getAttributes('textStyle').fontSize?.replace('px', '') || '16'}
+                                onValueChange={val => editor.chain().focus().setFontSize(`${val}px`).run()}
+                            >
+                                <SelectTrigger><SelectValue placeholder="Select size..." /></SelectTrigger>
+                                <SelectContent>
+                                    {FONT_SIZES.map(size => (
+                                        <SelectItem key={size} value={size}>{size}px</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Font Color</Label>
+                            <Input
+                                type="color"
+                                className="w-full h-10 p-1 cursor-pointer"
+                                onInput={(event: React.ChangeEvent<HTMLInputElement>) => editor.chain().focus().setColor(event.target.value).run()}
+                                value={editor.getAttributes('textStyle').color || '#000000'}
+                            />
+                        </div>
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => editor.chain().focus().unsetFontFamily().unsetFontSize().unsetColor().run()}>Reset Formatting</Button>
                     </div>
-                    <div>
-                        <Label>Font Size</Label>
-                        <Select
-                            value={editor.getAttributes('textStyle').fontSize?.replace('px', '') || '16'}
-                            onValueChange={val => editor.chain().focus().setFontSize(`${val}px`).run()}
-                        >
-                            <SelectTrigger><SelectValue placeholder="Select size..." /></SelectTrigger>
-                            <SelectContent>
-                                {FONT_SIZES.map(size => (
-                                    <SelectItem key={size} value={size}>{size}px</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Font Color</Label>
-                        <Input
-                            type="color"
-                            className="w-full h-10 p-1 cursor-pointer"
-                            onInput={(event: React.ChangeEvent<HTMLInputElement>) => editor.chain().focus().setColor(event.target.value).run()}
-                            value={editor.getAttributes('textStyle').color || '#000000'}
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size={buttonSize} className="h-9 w-9" aria-label="Line height">
+                        <Baseline className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Line Height</p></TooltipContent>
+                </Tooltip>
+                <PopoverContent className="w-60 p-4">
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <Label htmlFor="line-height-slider" className="shrink-0 mr-4">Line Height</Label>
+                            <span className="text-sm font-mono text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                                {currentLineHeight.toFixed(2)}
+                            </span>
+                        </div>
+                        <Slider
+                            id="line-height-slider"
+                            min={0.25}
+                            max={2.0}
+                            step={0.05}
+                            value={[currentLineHeight]}
+                            onValueChange={(value) => {
+                                editor.chain().focus().setLineHeight(String(value[0])).run()
+                            }}
                         />
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => editor.chain().focus().unsetLineHeight().run()}
+                        >
+                            Reset to Default
+                        </Button>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => editor.chain().focus().unsetFontFamily().unsetFontSize().unsetColor().run()}>Reset Formatting</Button>
-                </div>
-            </PopoverContent>
-          </Popover>
+                </PopoverContent>
+              </Popover>
+              
+              <Separator orientation="vertical" className="h-8 mx-1" />
 
-          <Popover>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size={buttonSize} className="h-9 w-9" aria-label="Line height">
-                    <Baseline className="h-4 w-4" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    onPressedChange={() => editor.chain().focus().undo().run()}
+                    disabled={!editor.can().undo()}
+                    aria-label="Undo"
+                  >
+                    <Undo className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Undo</p></TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    onPressedChange={() => editor.chain().focus().redo().run()}
+                    disabled={!editor.can().redo()}
+                    aria-label="Redo"
+                  >
+                    <Redo className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Redo</p></TooltipContent>
+              </Tooltip>
+
+              <Separator orientation="vertical" className="h-8 mx-1" />
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size={buttonSize}
+                    onClick={onAiAssistantClick}
+                    className="h-9 w-9 text-accent-foreground"
+                    aria-label="AI Assistant"
+                  >
+                    <Wand2 className="h-4 w-4" />
                   </Button>
-                </PopoverTrigger>
-              </TooltipTrigger>
-              <TooltipContent><p>Line Height</p></TooltipContent>
-            </Tooltip>
-            <PopoverContent className="w-60 p-4">
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <Label htmlFor="line-height-slider" className="shrink-0 mr-4">Line Height</Label>
-                        <span className="text-sm font-mono text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                            {currentLineHeight.toFixed(2)}
-                        </span>
-                    </div>
-                    <Slider
-                        id="line-height-slider"
-                        min={0.25}
-                        max={2.0}
-                        step={0.05}
-                        value={[currentLineHeight]}
-                        onValueChange={(value) => {
-                            editor.chain().focus().setLineHeight(String(value[0])).run()
-                        }}
-                    />
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full"
-                        onClick={() => editor.chain().focus().unsetLineHeight().run()}
+                </TooltipTrigger>
+                <TooltipContent><p>AI Assistant</p></TooltipContent>
+              </Tooltip>
+
+              <Separator orientation="vertical" className="h-8 mx-1" />
+
+              {/* Alignment and Block Tools */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive({ textAlign: 'left' })}
+                    onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
+                    aria-label="Set text align left"
+                  >
+                    <AlignLeft className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Align Left</p></TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive({ textAlign: 'center' })}
+                    onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
+                    aria-label="Set text align center"
+                  >
+                    <AlignCenter className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Align Center</p></TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive({ textAlign: 'right' })}
+                    onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
+                    aria-label="Set text align right"
+                  >
+                    <AlignRight className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Align Right</p></TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive({ textAlign: 'justify' })}
+                    onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()}
+                    aria-label="Set text align justify"
+                  >
+                    <AlignJustify className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Justify</p></TooltipContent>
+              </Tooltip>
+
+              <Separator orientation="vertical" className="h-8 mx-1" />
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive("paragraph")}
+                    onPressedChange={() => editor.chain().focus().setParagraph().run()}
+                    aria-label="Set paragraph"
+                  >
+                    <Pilcrow className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Paragraph</p></TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive("heading", { level: 1 })}
+                    onPressedChange={() =>
+                      editor.chain().focus().toggleHeading({ level: 1 }).run()
+                    }
+                    aria-label="Toggle heading 1"
+                  >
+                    <Heading1 className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Heading 1</p></TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Toggle
+                    size={toggleSize}
+                    pressed={editor.isActive("blockquote")}
+                    onPressedChange={() =>
+                      editor.chain().focus().toggleBlockquote().run()
+                    }
+                    disabled={!editor.can().toggleBlockquote()}
+                    aria-label="Toggle blockquote"
+                  >
+                    <Quote className="h-4 w-4" />
+                  </Toggle>
+                </TooltipTrigger>
+                <TooltipContent><p>Blockquote</p></TooltipContent>
+              </Tooltip>
+              
+              <Separator orientation="vertical" className="h-8 mx-1" />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size={buttonSize}
+                    variant="ghost"
+                    onClick={onOpenEquationModal}
+                    aria-label="Add Equation"
+                  >
+                    <Sigma className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Add Equation</p></TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                      size={buttonSize}
+                      variant="ghost"
+                      onClick={onAddToggleClick}
+                      aria-label="Add Toggle"
                     >
-                        Reset to Default
+                      <Rows className="h-4 w-4" />
                     </Button>
-                </div>
-            </PopoverContent>
-          </Popover>
-          
-          <Separator orientation="vertical" className="h-8 mx-1" />
+                </TooltipTrigger>
+                <TooltipContent><p>Add Toggle</p></TooltipContent>
+              </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                onPressedChange={() => editor.chain().focus().undo().run()}
-                disabled={!editor.can().undo()}
-                aria-label="Undo"
-              >
-                <Undo className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Undo</p></TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                onPressedChange={() => editor.chain().focus().redo().run()}
-                disabled={!editor.can().redo()}
-                aria-label="Redo"
-              >
-                <Redo className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Redo</p></TooltipContent>
-          </Tooltip>
-
-          <Separator orientation="vertical" className="h-8 mx-1" />
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size={buttonSize}
-                onClick={onAiAssistantClick}
-                className="h-9 w-9 text-accent-foreground"
-                aria-label="AI Assistant"
-              >
-                <Wand2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>AI Assistant</p></TooltipContent>
-          </Tooltip>
-
-          <Separator orientation="vertical" className="h-8 mx-1" />
-
-          {/* Alignment and Block Tools */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive({ textAlign: 'left' })}
-                onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
-                aria-label="Set text align left"
-              >
-                <AlignLeft className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Align Left</p></TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive({ textAlign: 'center' })}
-                onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
-                aria-label="Set text align center"
-              >
-                <AlignCenter className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Align Center</p></TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive({ textAlign: 'right' })}
-                onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
-                aria-label="Set text align right"
-              >
-                <AlignRight className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Align Right</p></TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive({ textAlign: 'justify' })}
-                onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()}
-                aria-label="Set text align justify"
-              >
-                <AlignJustify className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Justify</p></TooltipContent>
-          </Tooltip>
-
-          <Separator orientation="vertical" className="h-8 mx-1" />
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive("paragraph")}
-                onPressedChange={() => editor.chain().focus().setParagraph().run()}
-                aria-label="Set paragraph"
-              >
-                <Pilcrow className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Paragraph</p></TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive("heading", { level: 1 })}
-                onPressedChange={() =>
-                  editor.chain().focus().toggleHeading({ level: 1 }).run()
-                }
-                aria-label="Toggle heading 1"
-              >
-                <Heading1 className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Heading 1</p></TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Toggle
-                size={toggleSize}
-                pressed={editor.isActive("blockquote")}
-                onPressedChange={() =>
-                  editor.chain().focus().toggleBlockquote().run()
-                }
-                disabled={!editor.can().toggleBlockquote()}
-                aria-label="Toggle blockquote"
-              >
-                <Quote className="h-4 w-4" />
-              </Toggle>
-            </TooltipTrigger>
-            <TooltipContent><p>Blockquote</p></TooltipContent>
-          </Tooltip>
-          
-          <Separator orientation="vertical" className="h-8 mx-1" />
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size={buttonSize}
-                variant="ghost"
-                onClick={onOpenEquationModal}
-                aria-label="Add Equation"
-              >
-                <Sigma className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Add Equation</p></TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-                <Button
-                  size={buttonSize}
-                  variant="ghost"
-                  onClick={onAddToggleClick}
-                  aria-label="Add Toggle"
-                >
-                  <Rows className="h-4 w-4" />
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Add Toggle</p></TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-                <Button
-                  size={buttonSize}
-                  variant="ghost"
-                  onClick={handleAddBlock}
-                  aria-label="Add block"
-                >
-                  <Plus className="h-4 w-4" />
-                  {!isMobile && "Block"}
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Insert a block (triggers /)</p></TooltipContent>
-          </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                      size={buttonSize}
+                      variant="ghost"
+                      onClick={handleAddBlock}
+                      aria-label="Add block"
+                    >
+                      <Plus className="h-4 w-4" />
+                      {!isMobile && "Block"}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Insert a block (triggers /)</p></TooltipContent>
+              </Tooltip>
+          </div>
            <style jsx>{`
             .hide-scrollbar::-webkit-scrollbar {
                 display: none;
