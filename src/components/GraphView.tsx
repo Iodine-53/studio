@@ -57,29 +57,31 @@ export const GraphView = () => {
         const options = {
           nodes: {
             borderWidth: 2,
+            shape: 'box',
+            margin: 12,
             color: {
-                border: 'hsl(var(--primary))',
-                background: 'hsl(var(--card))',
+                border: '#4338ca', // indigo-700
+                background: '#e0e7ff', // indigo-100
                 highlight: {
-                  border: 'hsl(var(--primary))',
-                  background: 'hsl(var(--accent))',
+                  border: '#4338ca',
+                  background: '#a5b4fc', // indigo-300
                 },
                 hover: {
-                  border: 'hsl(var(--primary))',
-                  background: 'hsl(var(--accent))',
+                  border: '#4338ca',
+                  background: '#c7d2fe', // indigo-200
                 }
             },
             font: { 
-                color: 'hsl(var(--foreground))',
+                color: '#1e293b', // slate-800
                 size: 16,
                 face: 'Inter, sans-serif'
             }
           },
           edges: {
             color: {
-              color: 'hsl(var(--border))',
-              highlight: 'hsl(var(--primary))',
-              hover: 'hsl(var(--primary))',
+              color: '#94a3b8', // slate-400
+              highlight: '#4f46e5', // indigo-600
+              hover: '#64748b', // slate-500
             },
             width: 1.5,
             smooth: {
@@ -126,8 +128,8 @@ export const GraphView = () => {
             const isConnected = id === String(nodeId) || connectedNodes.includes(id);
             return {
               id: id,
-              color: isConnected ? undefined : { border: 'hsl(var(--border))', background: 'hsl(var(--muted))' },
-              font: { color: isConnected ? undefined : 'hsl(var(--muted-foreground))' }
+              color: isConnected ? undefined : { border: '#e5e7eb', background: '#f9fafb' },
+              font: { color: isConnected ? undefined : '#d1d5db' }
             };
           });
           nodes.update(nodeUpdates as any);
@@ -137,7 +139,7 @@ export const GraphView = () => {
             const isConnected = edge.from === nodeId || edge.to === nodeId;
             return {
               id: edge.id,
-              color: isConnected ? undefined : 'hsl(var(--muted))'
+              color: isConnected ? undefined : '#f3f4f6'
             };
           });
           edges.update(edgeUpdates);
