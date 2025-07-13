@@ -72,7 +72,7 @@ export default function DocumentsPage() {
     }
   };
 
-  // Fetch documents when the active tab changes
+  // Fetch documents when the component mounts and when the active tab changes
   useEffect(() => {
     fetchDocuments(activeTab);
   }, [activeTab]);

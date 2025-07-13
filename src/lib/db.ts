@@ -3,7 +3,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'toolbox-ai-db';
 const STORE_NAME = 'documents';
-const DB_VERSION = 2; // Bump version for schema change
+const DB_VERSION = 2; // Version bump for schema change
 
 // Define the structure of a Tiptap node for type safety
 export type TiptapNode = {
@@ -44,8 +44,9 @@ const initDB = () => {
   }
   
   dbPromise = openDB<ToolboxAiDb>(DB_NAME, DB_VERSION, {
-    upgrade(db, oldVersion) {
+    upgrade(db, oldVersion, newVersion, tx) {
       if (oldVersion < 1) {
+        // This runs if the database is being created for the first time
         const store = db.createObjectStore(STORE_NAME, {
           keyPath: 'id',
           autoIncrement: true,
@@ -53,18 +54,9 @@ const initDB = () => {
         store.createIndex('updatedAt', 'updatedAt');
       }
       if (oldVersion < 2) {
-        const store = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
+        // This runs if the user has version 1 and needs to upgrade to version 2
+        const store = tx.objectStore(STORE_NAME);
         store.createIndex('status', 'status');
-        // Migrate existing documents to have a default status
-        store.openCursor().then(function cursorIterate(cursor) {
-          if (!cursor) return;
-          const doc = cursor.value;
-          if (!doc.status) {
-            doc.status = 'active';
-            cursor.update(doc);
-          }
-          cursor.continue();
-        });
       }
     },
   });
@@ -90,7 +82,7 @@ export const saveDocument = async (doc: Partial<Document>): Promise<number> => {
     content: doc.content || { type: 'doc', content: [{ type: 'paragraph' }] },
     createdAt: now,
     updatedAt: now,
-    status: 'active', // Default status for new docs
+    status: doc.status || 'active', // Default status for new docs
   };
   return db.add(STORE_NAME, newDoc);
 };
