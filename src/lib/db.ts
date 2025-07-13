@@ -3,7 +3,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'toolbox-ai-db';
 const STORE_NAME = 'documents';
-const DB_VERSION = 2; // IMPORTANT: Version bump for schema change
+const DB_VERSION = 3; // IMPORTANT: Version bump for schema change
 
 // Define the structure of a Tiptap node for type safety
 export type TiptapNode = {
@@ -22,7 +22,8 @@ export interface Document {
   content: TiptapNode; // Tiptap's JSON content
   createdAt: Date;
   updatedAt: Date;
-  status: 'active' | 'archived' | 'trashed'; // New status field
+  status: 'active' | 'archived' | 'trashed';
+  tags?: string[];
 }
 
 // Define the schema for our database
@@ -30,7 +31,7 @@ interface ToolboxAiDb extends DBSchema {
   [STORE_NAME]: {
     key: number;
     value: Document;
-    indexes: { 'updatedAt': Date; 'status': string };
+    indexes: { 'updatedAt': Date; 'status': string; 'tags': string };
   };
 }
 
@@ -48,8 +49,7 @@ const initDB = () => {
       console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
       
       let store;
-      // If the store doesn't exist, create it. This handles the initial setup (oldVersion is 0)
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
+      if (oldVersion < 1) {
         store = db.createObjectStore(STORE_NAME, {
           keyPath: 'id',
           autoIncrement: true,
@@ -58,14 +58,25 @@ const initDB = () => {
         store = tx.objectStore(STORE_NAME);
       }
       
-      // Create the 'updatedAt' index if it doesn't exist.
-      if (!store.indexNames.contains('updatedAt')) {
-        store.createIndex('updatedAt', 'updatedAt');
+      if (oldVersion < 2) {
+          if (!store.indexNames.contains('updatedAt')) {
+            store.createIndex('updatedAt', 'updatedAt');
+          }
+          if (!store.indexNames.contains('status')) {
+            store.createIndex('status', 'status');
+          }
       }
-
-      // Create the 'status' index if it doesn't exist. This is the key part of the v2 upgrade.
-      if (!store.indexNames.contains('status')) {
-        store.createIndex('status', 'status');
+      if (oldVersion < 3) {
+        if (!store.indexNames.contains('tags')) {
+          store.createIndex('tags', 'tags', { multiEntry: true });
+        }
+        // Add default tags array to existing documents
+        tx.objectStore(STORE_NAME).iterate(doc => {
+          if (doc && !doc.tags) {
+            doc.tags = [];
+            store.put(doc);
+          }
+        });
       }
     },
   });
@@ -91,7 +102,8 @@ export const saveDocument = async (doc: Partial<Document>): Promise<number> => {
     content: doc.content || { type: 'doc', content: [{ type: 'paragraph' }] },
     createdAt: now,
     updatedAt: now,
-    status: doc.status || 'active', // Default status for new docs
+    status: doc.status || 'active',
+    tags: doc.tags || [],
   };
   return db.add(STORE_NAME, newDoc);
 };
@@ -106,6 +118,27 @@ export const getAllDocuments = async (status?: 'active' | 'archived' | 'trashed'
   }
   // Sort by updatedAt descending manually after fetching
   return docs.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+};
+
+export const getDocsByTag = async (tag: string): Promise<Document[]> => {
+    const db = await initDB();
+    const docs = await db.getAllFromIndex(STORE_NAME, 'tags', tag);
+    // Filter for active docs and sort
+    return docs
+        .filter(doc => doc.status === 'active')
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+};
+
+export const getAllTags = async (): Promise<string[]> => {
+    const db = await initDB();
+    const allDocs = await db.getAllFromIndex(STORE_NAME, 'status', 'active');
+    const allTags = new Set<string>();
+    allDocs.forEach(doc => {
+        if (doc.tags) {
+            doc.tags.forEach(tag => allTags.add(tag));
+        }
+    });
+    return Array.from(allTags).sort();
 };
 
 export const getDocument = async (id: number): Promise<Document | undefined> => {
@@ -185,6 +218,8 @@ export const importData = async (file: File): Promise<void> => {
             doc.updatedAt = new Date(doc.updatedAt);
             // Ensure status is set, default to active if missing
             doc.status = doc.status || 'active';
+            // Ensure tags are set, default to empty array if missing
+            doc.tags = doc.tags || [];
             // Remove the ID to allow auto-incrementing to work correctly on a fresh import
             if (doc.id) delete doc.id;
             return store.add(doc);

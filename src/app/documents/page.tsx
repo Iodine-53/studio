@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -30,12 +31,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle, Settings } from "lucide-react";
-import { type Document, getAllDocuments, saveDocument, deleteDocument, deleteTrashedDocs, exportAllData, importData } from "@/lib/db";
+import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle, Settings, Tag, X } from "lucide-react";
+import { type Document, getAllDocuments, saveDocument, deleteDocument, deleteTrashedDocs, exportAllData, importData, getAllTags, getDocsByTag } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { saveAs } from 'file-saver';
 import { useDocumentSearch } from "@/hooks/useDocumentSearch";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 type DocStatus = 'active' | 'archived' | 'trashed';
 
@@ -57,16 +59,29 @@ export default function DocumentsPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
 
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
 
   const { results: filteredDocuments, search } = useDocumentSearch(documents);
 
 
-  const fetchDocuments = useCallback(async (status: DocStatus) => {
+  const fetchDocuments = useCallback(async (status: DocStatus, tag?: string | null) => {
     setIsLoading(true);
-    setSearchTerm(""); // Reset search on tab change
+    setSearchTerm(""); // Reset search on tab change/filter
     try {
-      const docs = await getAllDocuments(status);
+      let docs;
+      if (tag) {
+          docs = await getDocsByTag(tag);
+      } else {
+          docs = await getAllDocuments(status);
+      }
       setDocuments(docs);
+      
+      // Also fetch all unique tags for the sidebar filter list
+      const tags = await getAllTags();
+      setAllTags(tags);
+
     } catch (error) {
       console.error("Failed to fetch documents:", error);
       toast({ variant: "destructive", title: "Error", description: "Failed to load documents." });
@@ -75,10 +90,10 @@ export default function DocumentsPage() {
     }
   }, [toast]);
 
-  // Fetch documents when the component mounts and when the active tab changes
+  // Fetch documents when the component mounts and when the active tab or tag filter changes
   useEffect(() => {
-    fetchDocuments(activeTab);
-  }, [activeTab, fetchDocuments]);
+    fetchDocuments(activeTab, activeTag);
+  }, [activeTab, activeTag, fetchDocuments]);
   
 
   const handleExport = async () => {
@@ -146,7 +161,7 @@ export default function DocumentsPage() {
     try {
       await saveDocument({ ...docToRename, title: newTitle.trim() });
       toast({ title: "Success", description: `Renamed to "${newTitle.trim()}"` });
-      await fetchDocuments(activeTab);
+      await fetchDocuments(activeTab, activeTag);
     } catch (error) {
       console.error("Failed to rename document:", error);
       toast({ variant: 'destructive', title: "Error", description: "Failed to rename document." });
@@ -164,7 +179,7 @@ export default function DocumentsPage() {
     try {
       await deleteDocument(docToDelete.id);
       toast({ title: "Document Permanently Deleted", description: `"${docToDelete.title}" has been deleted forever.` });
-      await fetchDocuments(activeTab);
+      await fetchDocuments(activeTab, activeTag);
     } catch (error) {
       console.error("Failed to delete document:", error);
       toast({ variant: 'destructive', title: "Error", description: "Failed to delete document." });
@@ -193,13 +208,21 @@ export default function DocumentsPage() {
       try {
         await saveDocument({ id: doc.id, status });
         toast({ title: "Document Updated", description: `"${doc.title}" moved to ${status}.` });
-        await fetchDocuments(activeTab);
+        await fetchDocuments(activeTab, activeTag);
       } catch (error) {
          console.error("Failed to update status:", error);
          toast({ variant: 'destructive', title: "Error", description: "Could not update document status." });
       }
   }
 
+  const handleTagClick = (tag: string) => {
+    setActiveTag(tag);
+    setActiveTab('active'); // Filtering by tag only makes sense for active documents
+  };
+
+  const clearTagFilter = () => {
+    setActiveTag(null);
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -278,87 +301,120 @@ export default function DocumentsPage() {
                     </div>
                 </div>
 
-                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DocStatus)}>
-                    <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <TabsList>
-                            <TabsTrigger value="active">Active</TabsTrigger>
-                            <TabsTrigger value="archived">Archived</TabsTrigger>
-                            <TabsTrigger value="trashed">Trash</TabsTrigger>
-                        </TabsList>
-                         <div className="flex items-center gap-2 shrink-0">
-                            <div className={cn("relative w-full max-w-sm", activeTab === 'trashed' && 'invisible')}>
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="search" placeholder="Search documents..." className="w-full pl-10" value={searchTerm} onChange={handleSearchChange} />
-                            </div>
-                            <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImportFile} />
-                            <Button onClick={handleImportClick} variant="outline" disabled={isImporting}>
-                                {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                                Import
-                            </Button>
-                            <Button onClick={handleExport} variant="outline" disabled={isExporting}>
-                                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                                Export All
-                            </Button>
+                <div className="flex flex-col md:flex-row gap-8">
+                    {/* Sidebar for Tags */}
+                    <aside className="w-full md:w-64">
+                        <h3 className="text-lg font-semibold mb-4">Tags</h3>
+                        <div className="space-y-2">
+                            {allTags.map(tag => (
+                                <button key={tag} onClick={() => handleTagClick(tag)} className={cn("w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors", activeTag === tag ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>
+                                    #{tag}
+                                </button>
+                            ))}
+                            {allTags.length === 0 && (
+                                <p className="text-sm text-muted-foreground px-3">No tags yet. Add some in the editor!</p>
+                            )}
+                            {activeTag && (
+                                <Button variant="ghost" size="sm" onClick={clearTagFilter} className="w-full justify-start text-destructive hover:text-destructive mt-4">
+                                    <X className="mr-2 h-4 w-4" />
+                                    Clear Filter
+                                </Button>
+                            )}
                         </div>
-                    </div>
-                    
-                    <TabsContent value={activeTab} className="mt-4">
-                        {isLoading ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <Card key={i}><CardHeader><Skeleton className="h-7 w-3/4" /></CardHeader><CardContent><Skeleton className="h-5 w-1/2" /></CardContent></Card>
-                                ))}
-                            </div>
-                        ) : (
-                            <>
-                                {activeTab === 'trashed' && documents.length > 0 && (
-                                    <div className="mb-6 flex items-center justify-between rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-                                        <div className="flex items-center gap-3">
-                                            <AlertTriangle className="h-6 w-6 text-destructive" />
-                                            <p className="text-sm font-medium text-destructive">Items in the trash will be deleted automatically after 30 days.</p>
-                                        </div>
-                                        <Button onClick={handleEmptyTrash} variant="destructive" disabled={isEmptingTrash}>
-                                            {isEmptingTrash ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4"/>}
-                                            Empty Trash
-                                        </Button>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <div className="flex-1">
+                        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DocStatus)}>
+                            <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <TabsList>
+                                    <TabsTrigger value="active" onClick={() => setActiveTag(null)}>Active</TabsTrigger>
+                                    <TabsTrigger value="archived" onClick={() => setActiveTag(null)}>Archived</TabsTrigger>
+                                    <TabsTrigger value="trashed" onClick={() => setActiveTag(null)}>Trash</TabsTrigger>
+                                </TabsList>
+                                 <div className="flex items-center gap-2 shrink-0">
+                                    <div className={cn("relative w-full max-w-sm", activeTab === 'trashed' && 'invisible')}>
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                        <Input type="search" placeholder="Search documents..." className="w-full pl-10" value={searchTerm} onChange={handleSearchChange} />
                                     </div>
-                                )}
-                                {filteredDocuments.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                    {filteredDocuments.map((doc) => (
-                                        doc.id && (
-                                            <Card key={doc.id} className="flex flex-col bg-card relative group transition-all duration-300 hover:border-primary hover:shadow-xl hover:-translate-y-1">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100" onClick={(e) => e.stopPropagation()}>
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                                        <DropdownMenuItem onClick={() => handleRenameInitiate(doc)}><FileEdit className="mr-2 h-4 w-4"/> Rename</DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        {renderDropdownItems(doc)}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                
-                                                <div onClick={() => router.push(`/editor/${doc.id}`)} className="flex flex-col flex-grow h-full cursor-pointer">
-                                                    <CardHeader className="flex-grow"><CardTitle className="truncate text-2xl font-headline group-hover:underline">{doc.title}</CardTitle></CardHeader>
-                                                    <CardContent><CardDescription>Updated: {format(new Date(doc.updatedAt), 'PP')}</CardDescription></CardContent>
-                                                </div>
-                                            </Card>
-                                        )
-                                    ))}
+                                    <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImportFile} />
+                                    <Button onClick={handleImportClick} variant="outline" disabled={isImporting}>
+                                        {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                        Import
+                                    </Button>
+                                    <Button onClick={handleExport} variant="outline" disabled={isExporting}>
+                                        {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                                        Export All
+                                    </Button>
+                                </div>
+                            </div>
+                            
+                            <TabsContent value={activeTab} className="mt-4">
+                                {isLoading ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                        {Array.from({ length: 4 }).map((_, i) => (
+                                            <Card key={i}><CardHeader><Skeleton className="h-7 w-3/4" /></CardHeader><CardContent><Skeleton className="h-5 w-1/2" /><div className="flex gap-2 mt-2"><Skeleton className="h-5 w-16" /><Skeleton className="h-5 w-20" /></div></CardContent></Card>
+                                        ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-16 px-6 rounded-2xl border-2 border-dashed bg-card/50">
-                                        <h4 className="text-2xl font-bold font-headline">This folder is empty</h4>
-                                        <p className="text-muted-foreground mt-2 mb-6">There are no documents with the status '{activeTab}'.</p>
-                                    </div>
+                                    <>
+                                        {activeTab === 'trashed' && documents.length > 0 && (
+                                            <div className="mb-6 flex items-center justify-between rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                                                <div className="flex items-center gap-3">
+                                                    <AlertTriangle className="h-6 w-6 text-destructive" />
+                                                    <p className="text-sm font-medium text-destructive">Items in the trash will be deleted automatically after 30 days.</p>
+                                                </div>
+                                                <Button onClick={handleEmptyTrash} variant="destructive" disabled={isEmptingTrash}>
+                                                    {isEmptingTrash ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4"/>}
+                                                    Empty Trash
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {filteredDocuments.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                            {filteredDocuments.map((doc) => (
+                                                doc.id && (
+                                                    <Card key={doc.id} className="flex flex-col bg-card relative group transition-all duration-300 hover:border-primary hover:shadow-xl hover:-translate-y-1">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                                                    <MoreVertical className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                                <DropdownMenuItem onClick={() => handleRenameInitiate(doc)}><FileEdit className="mr-2 h-4 w-4"/> Rename</DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                {renderDropdownItems(doc)}
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                        
+                                                        <div onClick={() => router.push(`/editor/${doc.id}`)} className="flex flex-col flex-grow h-full cursor-pointer p-6">
+                                                            <CardHeader className="p-0 flex-grow"><CardTitle className="truncate text-2xl font-headline group-hover:underline">{doc.title}</CardTitle></CardHeader>
+                                                            <CardContent className="p-0 mt-4">
+                                                                <CardDescription>Updated: {format(new Date(doc.updatedAt), 'PP')}</CardDescription>
+                                                                <div className="flex flex-wrap gap-2 mt-3">
+                                                                    {(doc.tags || []).map(tag => (
+                                                                        <Badge key={tag} variant="secondary" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); handleTagClick(tag); }}>{tag}</Badge>
+                                                                    ))}
+                                                                </div>
+                                                            </CardContent>
+                                                        </div>
+                                                    </Card>
+                                                )
+                                            ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-16 px-6 rounded-2xl border-2 border-dashed bg-card/50">
+                                                <h4 className="text-2xl font-bold font-headline">This folder is empty</h4>
+                                                <p className="text-muted-foreground mt-2 mb-6">There are no documents with the status '{activeTab}'.</p>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
-                            </>
-                        )}
-                    </TabsContent>
-                </Tabs>
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+                </div>
             </div>
         </main>
       </div>
