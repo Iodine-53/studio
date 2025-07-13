@@ -43,6 +43,7 @@ import { InlineMath, MathBlock } from '@/lib/tiptap/extensions/Math';
 import { DocLinkExtension } from '@/lib/tiptap/extensions/DocLink';
 import { Link as TiptapLink } from '@tiptap/extension-link';
 import 'katex/dist/katex.min.css';
+import { AdvancedTodoListExtension } from '@/lib/tiptap/extensions/AdvancedTodoList';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -91,6 +92,7 @@ export default function EditorPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const [isEditorFocused, setIsEditorFocused] = useState(false);
 
   const { toast } = useToast();
 
@@ -140,7 +142,7 @@ export default function EditorPage() {
         heading: { levels: [1, 2, 3] }, // Limit headings
       }),
       Underline,
-      TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'todoList', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap'] }),
+      TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap', 'advancedTodoList'] }),
       SlashCommand.configure({ openToggleModal: () => setIsToggleModalOpen(true), openDocSearchModal: () => setIsDocSearchOpen(true) }),
       TrailingNode, LineHeight, TextStyle, Color, FontFamily, FontSize, CustomImage, InteractiveTable,
       CodeBlockLowlight.configure({ lowlight }),
@@ -151,11 +153,18 @@ export default function EditorPage() {
       TaskItem.configure({
         nested: true,
       }),
+      AdvancedTodoListExtension,
     ],
     editorProps: {
       attributes: {
         class: cn('prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow'),
       },
+    },
+    onFocus: () => {
+      setIsEditorFocused(true);
+    },
+    onBlur: () => {
+      setIsEditorFocused(false);
     },
     onUpdate: ({ editor }) => {
         const json = editor.getJSON();
@@ -287,6 +296,7 @@ export default function EditorPage() {
                 onOpenEquationModal={() => setIsEquationModalOpen(true)}
                 onOpenSidebar={() => setIsSidebarOpen(true)}
                 isMobile={isMobile}
+                isEditorFocused={isEditorFocused}
             />
         </main>
       </div>

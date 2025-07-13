@@ -4,7 +4,8 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 const DB_NAME = 'toolbox-ai-db';
 const DOC_STORE_NAME = 'documents';
 const VERSION_STORE_NAME = 'document_versions';
-const DB_VERSION = 5; // Incremented version to trigger schema upgrade
+const TASK_STORE_NAME = 'tasks'; // New store name
+const DB_VERSION = 6; // Incremented version to trigger schema upgrade
 
 // Define the structure of a Tiptap node for type safety
 export type TiptapNode = {
@@ -24,7 +25,7 @@ export interface Document {
   updatedAt: Date;
   status: 'active' | 'archived' | 'trashed';
   tags?: string[];
-  metadata?: Record<string, string>; // New metadata field
+  metadata?: Record<string, string>;
 }
 
 // Define the structure for a document version
@@ -35,6 +36,17 @@ export interface DocumentVersion {
     content: TiptapNode;
     timestamp: Date;
 }
+
+// Define the structure for a Task
+export type Task = {
+  id?: number;
+  blockId: string;
+  parentId: string | null;
+  text: string;
+  completed: boolean;
+  createdAt: Date;
+};
+
 
 // Define the schema for our database
 interface ToolboxAiDb extends DBSchema {
@@ -47,6 +59,11 @@ interface ToolboxAiDb extends DBSchema {
     key: number;
     value: DocumentVersion;
     indexes: { 'docId': number; 'timestamp': Date };
+  };
+  [TASK_STORE_NAME]: {
+    key: number;
+    value: Task;
+    indexes: { 'blockId': string; 'parentId': string; 'createdAt': Date };
   }
 }
 
@@ -61,31 +78,16 @@ const initDB = () => {
     upgrade(db, oldVersion, newVersion, tx) {
       console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
       
-      let docStore;
       if (!db.objectStoreNames.contains(DOC_STORE_NAME)) {
-        docStore = db.createObjectStore(DOC_STORE_NAME, {
+        const docStore = db.createObjectStore(DOC_STORE_NAME, {
           keyPath: 'id',
           autoIncrement: true,
         });
-      } else {
-        docStore = tx.objectStore(DOC_STORE_NAME);
-      }
-      
-      if (!docStore.indexNames.contains('status')) {
         docStore.createIndex('status', 'status');
-      }
-      if (!docStore.indexNames.contains('tags')) {
         docStore.createIndex('tags', 'tags', { multiEntry: true });
-      }
-      if (!docStore.indexNames.contains('updatedAt')) {
         docStore.createIndex('updatedAt', 'updatedAt');
-      }
-      // This check ensures the 'title' index is created if it doesn't exist.
-      // Bumping the DB_VERSION ensures this whole upgrade function runs.
-      if (!docStore.indexNames.contains('title')) {
         docStore.createIndex('title', 'title');
       }
-
 
       if (!db.objectStoreNames.contains(VERSION_STORE_NAME)) {
           const versionStore = db.createObjectStore(VERSION_STORE_NAME, {
@@ -94,6 +96,16 @@ const initDB = () => {
           });
           versionStore.createIndex('docId', 'docId');
           versionStore.createIndex('timestamp', 'timestamp');
+      }
+
+      if (!db.objectStoreNames.contains(TASK_STORE_NAME)) {
+          const taskStore = db.createObjectStore(TASK_STORE_NAME, {
+              keyPath: 'id',
+              autoIncrement: true,
+          });
+          taskStore.createIndex('blockId', 'blockId');
+          taskStore.createIndex('parentId', 'parentId');
+          taskStore.createIndex('createdAt', 'createdAt');
       }
     },
   });
@@ -220,6 +232,49 @@ export const getVersionsForDoc = async (docId: number): Promise<DocumentVersion[
     const db = await initDB();
     const versions = await db.getAllFromIndex(VERSION_STORE_NAME, 'docId', docId);
     return versions.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+};
+
+// --- Task Functions ---
+export const getTasksByBlockId = async (blockId: string): Promise<Task[]> => {
+    const db = await initDB();
+    const tasks = await db.getAllFromIndex(TASK_STORE_NAME, 'blockId', blockId);
+    return tasks.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+};
+
+export const addTask = async (taskData: Omit<Task, 'createdAt' | 'id'>): Promise<number> => {
+    const db = await initDB();
+    const taskWithDate = { ...taskData, createdAt: new Date() } as Task;
+    return db.add(TASK_STORE_NAME, taskWithDate);
+};
+
+export const updateTask = async (taskId: number, updates: Partial<Omit<Task, 'id'>>): Promise<number> => {
+    const db = await initDB();
+    const task = await db.get(TASK_STORE_NAME, taskId);
+    if (!task) throw new Error("Task not found");
+    const updatedTask = { ...task, ...updates };
+    return db.put(TASK_STORE_NAME, updatedTask);
+};
+
+export const deleteTask = async (taskId: number): Promise<void> => {
+    const db = await initDB();
+    const tx = db.transaction(TASK_STORE_NAME, 'readwrite');
+
+    const tasksToDelete = new Set<number>([taskId]);
+    const queue = [String(taskId)];
+
+    while(queue.length > 0) {
+        const parentId = queue.shift();
+        const children = await tx.store.index('parentId').getAll(parentId!);
+        for (const child of children) {
+            if(child.id) {
+                tasksToDelete.add(child.id);
+                queue.push(String(child.id));
+            }
+        }
+    }
+
+    await Promise.all(Array.from(tasksToDelete).map(id => tx.store.delete(id)));
+    await tx.done;
 };
 
 

@@ -2,7 +2,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension, textInputRule } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListTodo, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, Columns, BrainCircuit, Sigma, Link2
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, CodeSquare, Minus, AlertTriangle, AreaChart, PenSquare, ListChecks, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, Columns, BrainCircuit, Sigma, Link2
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -39,6 +39,7 @@ const getCommandItems = (openToggleModal: () => void, openDocSearchModal: () => 
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   
   // Custom Node Blocks
+  { title: "Advanced To-do List", icon: ListChecks, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertAdvancedTodoList().run(); } },
   { title: "Link to Document", icon: Link2, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).run(); openDocSearchModal(); } },
   { title: "Math Block", icon: Sigma, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMathBlock().run(); } },
   { title: "Mind Map", icon: BrainCircuit, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMindMap().run(); } },
@@ -47,7 +48,6 @@ const getCommandItems = (openToggleModal: () => void, openDocSearchModal: () => 
   { title: "Callout", icon: AlertTriangle, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setCallout().run(); } },
   { title: "Chart", icon: AreaChart, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'chartBlock' }).run(); } },
   { title: "Drawing", icon: PenSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'drawing' }).run(); } },
-  { title: "Todo List", icon: ListTodo, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'todoList' }).run(); } },
   { title: "Embed", icon: Film, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setEmbed({ src: '' }).run(); } },
   { title: "Progress Bars", icon: SlidersHorizontal, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertProgressBarBlock().run(); } },
   { title: "Function Plot", icon: FunctionSquare, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertContent({ type: 'functionPlot' }).run(); } },
