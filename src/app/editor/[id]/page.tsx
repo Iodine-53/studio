@@ -47,8 +47,8 @@ import 'katex/dist/katex.min.css';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
-import { getDocument, saveDocument, type Document } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen } from "lucide-react";
+import { getDocument, saveDocument, type Document, addDocVersion, getVersionsForDoc, type DocumentVersion } from "@/lib/db";
+import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrintPreview } from "@/components/PrintPreview";
@@ -62,14 +62,17 @@ import { EquationModal } from "@/components/EquationModal";
 import { DocSearchModal } from '@/components/DocSearchModal';
 import { TagInput } from "@/components/TagInput";
 import { useToast } from "@/hooks/use-toast";
+import { VersionHistory } from "@/components/VersionHistory";
+import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
 
-
-// Register languages for code block syntax highlighting
 lowlight.registerLanguage('html', html);
 lowlight.registerLanguage('css', css);
 lowlight.registerLanguage('js', js);
 lowlight.registerLanguage('ts', ts);
 
+const SAVE_DEBOUNCE_MS = 1000;
+const VERSION_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const VERSION_CHAR_THRESHOLD = 100;
 
 export default function EditorPage() {
   const params = useParams();
@@ -84,10 +87,13 @@ export default function EditorPage() {
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
   const [isEquationModalOpen, setIsEquationModalOpen] = useState(false);
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const { toast } = useToast();
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const tagDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const lastVersionTime = useRef<number>(Date.now());
+  const lastVersionContent = useRef<string>('');
   
   const idFromParams = Array.isArray(params.id) ? params.id[0] : params.id;
   const docId = Number(idFromParams);
@@ -125,72 +131,17 @@ export default function EditorPage() {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable Tiptap's default complex blocks to use our own custom versions
-        codeBlock: false,
-        horizontalRule: false,
-        image: false,
-        table: false,
-        tableRow: false,
-        tableHeader: false,
-        tableCell: false,
-        // from original config
-        link: false, // We disable the default link to use our own PasteHandler
+        codeBlock: false, horizontalRule: false, image: false, table: false, tableRow: false, tableHeader: false, tableCell: false, link: false,
       }),
       Underline,
-      TextAlign.configure({ 
-        types: [
-          'heading', 
-          'paragraph',
-          'image',
-          'chartBlock',
-          'drawing',
-          'todoList',
-          'callout', 
-          'interactiveTable',
-          'embed',
-          'progressBarBlock',
-          'functionPlot',
-          'mindMap',
-        ] 
-      }),
-      SlashCommand.configure({
-        openToggleModal: () => setIsToggleModalOpen(true),
-        openDocSearchModal: () => setIsDocSearchOpen(true),
-      }),
-      TrailingNode,
-      LineHeight,
-      TextStyle, 
-      Color, 
-      FontFamily, 
-      FontSize,
-      CustomImage,
-      InteractiveTable,
+      TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'todoList', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap'] }),
+      SlashCommand.configure({ openToggleModal: () => setIsToggleModalOpen(true), openDocSearchModal: () => setIsDocSearchOpen(true) }),
+      TrailingNode, LineHeight, TextStyle, Color, FontFamily, FontSize, CustomImage, InteractiveTable,
       CodeBlockLowlight.configure({ lowlight }),
-      HorizontalRule,
-      Chart,
-      Drawing,
-      TodoListExtension,
-      Embed,
-      Callout,
-      PasteHandler,
-      ProgressBarBlock,
-      FunctionPlot,
-      Calculator,
-      ToggleExtension,
-      TaskList,
-      TaskItem.configure({
-        nested: true,
-      }),
-      ColumnsExtension,
-      ColumnExtension,
-      MindMap,
-      InlineMath,
-      MathBlock,
-      DocLinkExtension,
-      TiptapLink.configure({
-        linkOnPaste: false,
-        openOnClick: 'whenNotEditable',
-      }),
+      HorizontalRule, Chart, Drawing, TodoListExtension, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
+      TaskList, TaskItem.configure({ nested: true }),
+      ColumnsExtension, ColumnExtension, MindMap, InlineMath, MathBlock, DocLinkExtension,
+      TiptapLink.configure({ linkOnPaste: false, openOnClick: 'whenNotEditable' }),
     ],
     editorProps: {
       attributes: {
@@ -198,17 +149,28 @@ export default function EditorPage() {
       },
     },
     onUpdate: ({ editor }) => {
-      const json = editor.getJSON();
-      setCurrentContent(json); // Update content for print preview
-      if (doc) {
-        if (debounceTimeout.current) {
-          clearTimeout(debounceTimeout.current);
-        }
-        debounceTimeout.current = setTimeout(() => {
-          saveDocument({ ...doc, content: json });
-          console.log("Document auto-saved!");
-        }, 1000);
-      }
+        const json = editor.getJSON();
+        setCurrentContent(json);
+        if (!doc) return;
+
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+        
+        debounceTimeout.current = setTimeout(async () => {
+            await saveDocument({ ...doc, content: json });
+            console.log("Document auto-saved!");
+            
+            const currentText = tiptapJsonToText(json);
+            const now = Date.now();
+            const timeDiff = now - lastVersionTime.current;
+            const charDiff = Math.abs(currentText.length - (lastVersionContent.current?.length || 0));
+            
+            if (timeDiff > VERSION_INTERVAL_MS || charDiff > VERSION_CHAR_THRESHOLD) {
+                await addDocVersion({ docId: doc.id!, content: json, title: doc.title });
+                console.log(`New version created for doc ${doc.id}`);
+                lastVersionTime.current = now;
+                lastVersionContent.current = currentText;
+            }
+        }, SAVE_DEBOUNCE_MS);
     },
   });
 
@@ -226,9 +188,12 @@ export default function EditorPage() {
           setDoc(loadedDoc);
           setCurrentContent(loadedDoc.content);
           setTags(loadedDoc.tags || []);
+          lastVersionContent.current = tiptapJsonToText(loadedDoc.content);
+          // Set initial version time from last update time
+          lastVersionTime.current = new Date(loadedDoc.updatedAt).getTime();
         } else {
           console.error("Document not found");
-          router.push("/documents"); // Redirect to a safe page
+          router.push("/documents");
         }
       } catch (error) {
         console.error("Failed to load document:", error);
@@ -238,9 +203,7 @@ export default function EditorPage() {
       }
     };
     
-    if (docId) {
-        fetchDocument();
-    }
+    fetchDocument();
     
     return () => {
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -248,34 +211,26 @@ export default function EditorPage() {
     };
   }, [docId, router]);
   
-  // Effect to sync loaded document content to the editor instance
   useEffect(() => {
     if (editor && doc && !editor.isDestroyed) {
       const editorContent = editor.getJSON();
       const docContent = doc.content;
-      // Only set content if it's different to prevent loops and cursor jumps
       if (JSON.stringify(editorContent) !== JSON.stringify(docContent)) {
         editor.commands.setContent(docContent, false);
       }
     }
   }, [editor, doc]);
 
-  const handleOpenPreview = () => {
-    setIsPreviewOpen(true);
-  };
-
+  const handleOpenPreview = () => setIsPreviewOpen(true);
+  
   const handleDocxExport = async () => {
-    if (!currentContent) {
-        alert("Cannot export an empty document.");
-        return;
-    }
+    if (!currentContent) return;
     setIsExporting(true);
     try {
         const blob = await exportToDocx(currentContent);
         saveAs(blob, `${doc?.title || 'Document'}.docx`);
     } catch (error) {
         console.error("Failed to export DOCX", error);
-        alert("An error occurred while exporting to DOCX. Please check the console for details.");
     } finally {
         setIsExporting(false);
     }
@@ -297,7 +252,6 @@ export default function EditorPage() {
         saveAs(htmlBlob, `${doc?.title || 'Document'}.html`);
       } catch (error) {
         console.error("Failed to export HTML", error);
-        alert("An error occurred while exporting to HTML. Please check the console for details.");
       } finally {
         setIsExporting(false);
       }
@@ -339,6 +293,10 @@ export default function EditorPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)}>
+                    <History className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">History</span>
+                  </Button>
                   <Button variant="outline" size="sm" onClick={handleOpenPreview} className="relative">
                     <Eye className="h-4 w-4 md:mr-2" />
                     <span className="hidden md:inline">Preview</span>
@@ -346,33 +304,14 @@ export default function EditorPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" disabled={isExporting} className="relative w-[135px]">
-                            {isExporting ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <>
-                                    <Download className="h-4 w-4 md:mr-2" />
-                                    <span className="hidden md:inline">Export</span>
-                                </>
-                            )}
+                            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <> <Download className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Export</span> </>}
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleDocxExport}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            Export as DOCX
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleJsonExport}>
-                            <Braces className="mr-2 h-4 w-4" />
-                            Export as JSON
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleHtmlExport}>
-                            <FileCode2 className="mr-2 h-4 w-4" />
-                            Export as HTML
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleMarkdownExport}>
-                            <BookOpen className="mr-2 h-4 w-4" />
-                            Export as Markdown
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleDocxExport}><FileText className="mr-2 h-4 w-4" />Export as DOCX</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleJsonExport}><Braces className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleHtmlExport}><FileCode2 className="mr-2 h-4 w-4" />Export as HTML</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -393,32 +332,17 @@ export default function EditorPage() {
             </div>
         </main>
       </div>
-      <PrintPreview
-        isOpen={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
-        content={currentContent}
-      />
-      <AiAssistantDialog 
-        open={isAiAssistantOpen} 
-        onOpenChange={setIsAiAssistantOpen} 
+      <VersionHistory 
+        isOpen={isHistoryOpen} 
+        onClose={() => setIsHistoryOpen(false)} 
+        docId={docId}
         editor={editor}
       />
-      <ToggleTemplateModal
-        isOpen={isToggleModalOpen}
-        onClose={() => setIsToggleModalOpen(false)}
-        onSelect={handleSelectToggle}
-      />
-      <EquationModal
-        isOpen={isEquationModalOpen}
-        onClose={() => setIsEquationModalOpen(false)}
-        onInsert={handleInsertEquation}
-      />
-      <DocSearchModal
-        isOpen={isDocSearchOpen}
-        onClose={() => setIsDocSearchOpen(false)}
-        onSelect={handleSelectDocLink}
-        currentDocId={docId}
-      />
+      <PrintPreview isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} content={currentContent} />
+      <AiAssistantDialog open={isAiAssistantOpen} onOpenChange={setIsAiAssistantOpen} editor={editor} />
+      <ToggleTemplateModal isOpen={isToggleModalOpen} onClose={() => setIsToggleModalOpen(false)} onSelect={handleSelectToggle} />
+      <EquationModal isOpen={isEquationModalOpen} onClose={() => setIsEquationModalOpen(false)} onInsert={handleInsertEquation} />
+      <DocSearchModal isOpen={isDocSearchOpen} onClose={() => setIsDocSearchOpen(false)} onSelect={handleSelectDocLink} currentDocId={docId} />
     </>
   );
 }
