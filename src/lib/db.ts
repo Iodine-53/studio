@@ -41,7 +41,7 @@ interface ToolboxAiDb extends DBSchema {
   [DOC_STORE_NAME]: {
     key: number;
     value: Document;
-    indexes: { 'updatedAt': Date; 'status': string; 'tags': string };
+    indexes: { 'updatedAt': Date; 'status': string; 'tags': string; 'title': string };
   };
   [VERSION_STORE_NAME]: {
     key: number;
@@ -80,6 +80,10 @@ const initDB = () => {
       if (!docStore.indexNames.contains('updatedAt')) {
         docStore.createIndex('updatedAt', 'updatedAt');
       }
+      if (!docStore.indexNames.contains('title')) {
+        docStore.createIndex('title', 'title');
+      }
+
 
       if (!db.objectStoreNames.contains(VERSION_STORE_NAME)) {
           const versionStore = db.createObjectStore(VERSION_STORE_NAME, {
@@ -115,9 +119,30 @@ export const saveDocument = async (doc: Partial<Document>): Promise<number> => {
     updatedAt: now,
     status: doc.status || 'active',
     tags: doc.tags || [],
-    metadata: doc.metadata || {}, // Add metadata field
+    metadata: doc.metadata || {},
   };
   return db.add(DOC_STORE_NAME, newDoc);
+};
+
+export const findOrCreateNoteByTitle = async (
+  title: string,
+  templateContent?: TiptapNode,
+  templateMetadata?: Record<string, string>
+): Promise<number> => {
+  const db = await initDB();
+  const existingDoc = await db.getFromIndex(DOC_STORE_NAME, 'title', title);
+
+  if (existingDoc && existingDoc.id) {
+    return existingDoc.id;
+  } else {
+    const newDocPayload: Partial<Document> = {
+      title: title,
+      content: templateContent || { type: 'doc', content: [{ type: 'paragraph' }] },
+      metadata: templateMetadata,
+    };
+    const newDocId = await saveDocument(newDocPayload);
+    return newDocId;
+  }
 };
 
 export const getAllDocuments = async (status: 'active' | 'archived' | 'trashed' = 'active'): Promise<Document[]> => {

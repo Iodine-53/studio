@@ -30,14 +30,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle, Settings, Tag, X, File, FilePlus2, Users, Target } from "lucide-react";
-import { type Document, getAllDocuments, saveDocument, deleteDocument, deleteTrashedDocs, exportAllData, importData, getAllTags, getDocsByTag } from "@/lib/db";
+import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle, Settings, Tag, X, File, FilePlus2, Users, Target, Calendar, CalendarDays } from "lucide-react";
+import { type Document, getAllDocuments, saveDocument, deleteDocument, deleteTrashedDocs, exportAllData, importData, getAllTags, getDocsByTag, findOrCreateNoteByTitle } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { saveAs } from 'file-saver';
 import { useDocumentSearch } from "@/hooks/useDocumentSearch";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { type DocumentTemplate, documentTemplates } from "@/lib/templates";
+import { getDailyNoteTitle, getWeeklyNoteTitle } from '@/lib/date-utils';
 
 type DocStatus = 'active' | 'archived' | 'trashed';
 
@@ -52,6 +53,7 @@ const iconMap: { [key: string]: React.FC<any> } = {
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [activeTab, setActiveTab] = useState<DocStatus>('active');
   const router = useRouter();
   const { toast } = useToast();
@@ -102,7 +104,20 @@ export default function DocumentsPage() {
   useEffect(() => {
     fetchDocuments(activeTab, activeTag);
   }, [activeTab, activeTag, fetchDocuments]);
-  
+
+  const handleNavigateToNote = async (type: 'daily' | 'weekly') => {
+    setIsNavigating(true);
+    try {
+      const title = type === 'daily' ? getDailyNoteTitle() : getWeeklyNoteTitle();
+      const noteMetadata = { Type: type === 'daily' ? 'Daily Note' : 'Weekly Note' };
+      const noteId = await findOrCreateNoteByTitle(title, undefined, noteMetadata);
+      router.push(`/editor/${noteId}`);
+    } catch (error) {
+      console.error(`Failed to find or create ${type} note:`, error);
+      toast({ variant: "destructive", title: "Error", description: `Could not open the ${type} note.` });
+      setIsNavigating(false);
+    }
+  };  
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -357,22 +372,39 @@ export default function DocumentsPage() {
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Sidebar for Tags */}
                     <aside className="w-full md:w-64">
-                        <h3 className="text-lg font-semibold mb-4">Tags</h3>
-                        <div className="space-y-2">
-                            {allTags.map(tag => (
-                                <button key={tag} onClick={() => handleTagClick(tag)} className={cn("w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors", activeTag === tag ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>
-                                    #{tag}
-                                </button>
-                            ))}
-                            {allTags.length === 0 && (
-                                <p className="text-sm text-muted-foreground px-3">No tags yet. Add some in the editor!</p>
-                            )}
-                            {activeTag && (
-                                <Button variant="ghost" size="sm" onClick={clearTagFilter} className="w-full justify-start text-destructive hover:text-destructive mt-4">
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear Filter
-                                </Button>
-                            )}
+                         <div className="space-y-4">
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Journal</h3>
+                                <div className="space-y-2">
+                                    <Button onClick={() => handleNavigateToNote('daily')} disabled={isNavigating} variant="outline" className="w-full justify-start">
+                                        {isNavigating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Calendar className="mr-2 h-4 w-4"/>}
+                                        Today's Note
+                                    </Button>
+                                    <Button onClick={() => handleNavigateToNote('weekly')} disabled={isNavigating} variant="outline" className="w-full justify-start">
+                                        {isNavigating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CalendarDays className="mr-2 h-4 w-4"/>}
+                                        This Week's Note
+                                    </Button>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Tags</h3>
+                                <div className="space-y-2">
+                                    {allTags.map(tag => (
+                                        <button key={tag} onClick={() => handleTagClick(tag)} className={cn("w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors", activeTag === tag ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>
+                                            #{tag}
+                                        </button>
+                                    ))}
+                                    {allTags.length === 0 && (
+                                        <p className="text-sm text-muted-foreground px-3">No tags yet. Add some in the editor!</p>
+                                    )}
+                                    {activeTag && (
+                                        <Button variant="ghost" size="sm" onClick={clearTagFilter} className="w-full justify-start text-destructive hover:text-destructive mt-4">
+                                            <X className="mr-2 h-4 w-4" />
+                                            Clear Filter
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </aside>
 
