@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import { type Document } from '@/lib/db';
 import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
@@ -15,6 +15,12 @@ type SearchableDocument = {
 
 export const useDocumentSearch = (documents: Document[]) => {
   const [results, setResults] = useState<Document[]>(documents);
+
+  // When the source documents array changes (e.g., after initial load),
+  // update our results state to match.
+  useEffect(() => {
+    setResults(documents);
+  }, [documents]);
 
   // useMemo is critical here for performance
   const fuse = useMemo(() => {
