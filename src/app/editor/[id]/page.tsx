@@ -42,6 +42,8 @@ import { InlineMath, MathBlock } from '@/lib/tiptap/extensions/Math';
 import { DocLinkExtension } from '@/lib/tiptap/extensions/DocLink';
 import { Link as TiptapLink } from '@tiptap/extension-link';
 import 'katex/dist/katex.min.css';
+import { TaskList } from '@tiptap/extension-task-list';
+import { CustomTaskItem } from '@/lib/tiptap/extensions/CustomTaskItem';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -65,8 +67,6 @@ import { VersionHistory } from "@/components/VersionHistory";
 import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { MobileToolbar } from '@/components/MobileToolbar';
-
 
 lowlight.registerLanguage('html', html);
 lowlight.registerLanguage('css', css);
@@ -92,6 +92,8 @@ export default function EditorPage() {
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isEditorFocused, setIsEditorFocused] = useState(false);
+  
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const { toast } = useToast();
@@ -149,10 +151,14 @@ export default function EditorPage() {
       HorizontalRule, Chart, Drawing, TodoListExtension, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
       ColumnsExtension, ColumnExtension, MindMap, InlineMath, MathBlock, DocLinkExtension,
       TiptapLink.configure({ linkOnPaste: false, openOnClick: 'whenNotEditable' }),
+      TaskList.configure({
+        itemTypeName: 'customTaskItem',
+      }),
+      CustomTaskItem,
     ],
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow md:pb-8 pb-24',
+        class: cn('prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow', isMobile ? 'pb-24' : 'pb-8'),
       },
     },
     onUpdate: ({ editor }) => {
@@ -178,6 +184,12 @@ export default function EditorPage() {
                 lastVersionContent.current = currentText;
             }
         }, SAVE_DEBOUNCE_MS);
+    },
+    onFocus: () => {
+      setIsEditorFocused(true);
+    },
+    onBlur: () => {
+      setIsEditorFocused(false);
     },
   });
 
@@ -327,7 +339,8 @@ export default function EditorPage() {
             <div className="flex-grow h-full flex flex-col items-center p-4 sm:p-6 md:p-8">
               <div className="w-full max-w-6xl flex-grow glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col">
                   <TiptapEditor 
-                    editor={editor} 
+                    editor={editor}
+                    isEditorFocused={isEditorFocused}
                     onAiAssistantClick={() => setIsAiAssistantOpen(true)}
                     onAddToggleClick={() => setIsToggleModalOpen(true)}
                     onOpenEquationModal={() => setIsEquationModalOpen(true)}
@@ -362,3 +375,5 @@ export default function EditorPage() {
     </>
   );
 }
+
+    

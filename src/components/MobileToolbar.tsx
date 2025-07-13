@@ -26,7 +26,7 @@ export const MobileToolbar = ({ editor, onAiAssistantClick }: Props) => {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-20 bg-background border-t shadow-lg md:hidden">
+    <div className="bg-background border-t shadow-lg w-full">
       <div className="flex items-center gap-1 overflow-x-auto p-1 hide-scrollbar">
         <Toggle size="sm" pressed={editor.isActive("bold")} onPressedChange={() => editor.chain().focus().toggleBold().run()}><Bold size={18} /></Toggle>
         <Toggle size="sm" pressed={editor.isActive("italic")} onPressedChange={() => editor.chain().focus().toggleItalic().run()}><Italic size={18} /></Toggle>
@@ -50,3 +50,5 @@ export const MobileToolbar = ({ editor, onAiAssistantClick }: Props) => {
     </div>
   );
 };
+
+    
