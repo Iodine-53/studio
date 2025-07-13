@@ -12,6 +12,7 @@ export const GraphView = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const networkRef = useRef<Network | null>(null);
 
   useEffect(() => {
     const generateGraph = async () => {
@@ -23,10 +24,6 @@ export const GraphView = () => {
           label: doc.title || 'Untitled',
           shape: 'box',
           margin: 10,
-          font: {
-            size: 16,
-            face: 'Inter',
-          }
         }))
       );
 
@@ -57,77 +54,115 @@ export const GraphView = () => {
       });
 
       if (containerRef.current) {
-        const network = new Network(
-          containerRef.current,
-          { nodes, edges },
-          {
-            nodes: {
-              borderWidth: 2,
-              color: {
+        const options = {
+          nodes: {
+            borderWidth: 2,
+            color: {
+                border: 'hsl(var(--primary))',
+                background: 'hsl(var(--card))',
+                highlight: {
                   border: 'hsl(var(--primary))',
-                  background: 'hsl(var(--card))',
-                  highlight: {
-                    border: 'hsl(var(--primary))',
-                    background: 'hsl(var(--accent))',
-                  },
-                  hover: {
-                    border: 'hsl(var(--primary))',
-                    background: 'hsl(var(--accent))',
-                  }
-              },
-              font: { color: 'hsl(var(--foreground))' }
+                  background: 'hsl(var(--accent))',
+                },
+                hover: {
+                  border: 'hsl(var(--primary))',
+                  background: 'hsl(var(--accent))',
+                }
             },
-            edges: {
-              color: {
-                color: 'hsl(var(--border))',
-                highlight: 'hsl(var(--primary))',
-                hover: 'hsl(var(--primary))',
-              },
-              width: 1.5,
-              smooth: {
-                type: 'dynamic'
-              }
+            font: { 
+                color: 'hsl(var(--foreground))',
+                size: 16,
+                face: 'Inter, sans-serif'
+            }
+          },
+          edges: {
+            color: {
+              color: 'hsl(var(--border))',
+              highlight: 'hsl(var(--primary))',
+              hover: 'hsl(var(--primary))',
             },
-            physics: {
-              enabled: true,
-              solver: 'forceAtlas2Based',
-              forceAtlas2Based: {
-                gravitationalConstant: -50,
-                centralGravity: 0.005,
-                springLength: 230,
-                springConstant: 0.18,
-                avoidOverlap: 1.5,
-              },
-              stabilization: {
-                iterations: 150
-              }
+            width: 1.5,
+            smooth: {
+              type: 'dynamic'
+            }
+          },
+          physics: {
+            enabled: true,
+            solver: 'forceAtlas2Based',
+            forceAtlas2Based: {
+              gravitationalConstant: -50,
+              centralGravity: 0.005,
+              springLength: 230,
+              springConstant: 0.18,
+              avoidOverlap: 1.5,
             },
-            interaction: {
-              hover: true,
-              tooltipDelay: 200,
-            },
-          }
-        );
+            stabilization: {
+              iterations: 150
+            }
+          },
+          interaction: {
+            hover: true,
+            tooltipDelay: 200,
+          },
+        };
+        
+        const network = new Network(containerRef.current, { nodes, edges }, options);
+        networkRef.current = network;
 
-        network.on('doubleClick', (params) => {
+        network.on('selectNode', (params) => {
           if (params.nodes.length > 0) {
             const nodeId = params.nodes[0];
             router.push(`/editor/${nodeId}`);
           }
         });
 
-        // Add a click listener to open on single click for mobile-friendliness
-        network.on('click', (params) => {
-            if (params.nodes.length > 0) {
-                const nodeId = params.nodes[0];
-                router.push(`/editor/${nodeId}`);
-            }
+        const allNodes = nodes.get({ returnType: 'Object' });
+        
+        network.on('hoverNode', params => {
+          const nodeId = params.node;
+          const connectedNodes = network.getConnectedNodes(nodeId) as string[];
+          
+          const nodeUpdates = Object.keys(allNodes).map(id => {
+            const isConnected = id === String(nodeId) || connectedNodes.includes(id);
+            return {
+              id: id,
+              color: isConnected ? undefined : { border: 'hsl(var(--border))', background: 'hsl(var(--muted))' },
+              font: { color: isConnected ? undefined : 'hsl(var(--muted-foreground))' }
+            };
+          });
+          nodes.update(nodeUpdates as any);
+        
+          const allEdges = edges.get();
+          const edgeUpdates = allEdges.map(edge => {
+            const isConnected = edge.from === nodeId || edge.to === nodeId;
+            return {
+              id: edge.id,
+              color: isConnected ? undefined : 'hsl(var(--muted))'
+            };
+          });
+          edges.update(edgeUpdates);
+        });
+        
+        network.on('blurNode', () => {
+          const nodeUpdates = Object.keys(allNodes).map(id => ({ id: id, color: undefined, font: { color: undefined } }));
+          nodes.update(nodeUpdates as any);
+        
+          const allEdges = edges.get();
+          const edgeUpdates = allEdges.map(edge => ({ id: edge.id, color: undefined }));
+          edges.update(edgeUpdates);
         });
       }
       setIsLoading(false);
     };
 
-    generateGraph();
+    if (containerRef.current) {
+        generateGraph();
+    }
+    
+    return () => {
+        networkRef.current?.destroy();
+        networkRef.current = null;
+    }
   }, [router]);
 
   return (
