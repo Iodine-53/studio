@@ -4,7 +4,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 const DB_NAME = 'toolbox-ai-db';
 const DOC_STORE_NAME = 'documents';
 const VERSION_STORE_NAME = 'document_versions';
-const DB_VERSION = 4;
+const DB_VERSION = 4; // Version remains 4 as metadata is not indexed.
 
 // Define the structure of a Tiptap node for type safety
 export type TiptapNode = {
@@ -24,6 +24,7 @@ export interface Document {
   updatedAt: Date;
   status: 'active' | 'archived' | 'trashed';
   tags?: string[];
+  metadata?: Record<string, string>; // New metadata field
 }
 
 // Define the structure for a document version
@@ -70,28 +71,23 @@ const initDB = () => {
         docStore = tx.objectStore(DOC_STORE_NAME);
       }
       
-      if (oldVersion < 2 && !docStore.indexNames.contains('status')) {
+      if (!docStore.indexNames.contains('status')) {
         docStore.createIndex('status', 'status');
       }
-      if (oldVersion < 3 && !docStore.indexNames.contains('tags')) {
+      if (!docStore.indexNames.contains('tags')) {
         docStore.createIndex('tags', 'tags', { multiEntry: true });
-        tx.objectStore(DOC_STORE_NAME).iterate(doc => {
-          if (doc && !doc.tags) {
-            doc.tags = [];
-            docStore.put(doc);
-          }
-        });
+      }
+      if (!docStore.indexNames.contains('updatedAt')) {
+        docStore.createIndex('updatedAt', 'updatedAt');
       }
 
-      if (oldVersion < 4) {
-        if (!db.objectStoreNames.contains(VERSION_STORE_NAME)) {
-            const versionStore = db.createObjectStore(VERSION_STORE_NAME, {
-                keyPath: 'id',
-                autoIncrement: true,
-            });
-            versionStore.createIndex('docId', 'docId');
-            versionStore.createIndex('timestamp', 'timestamp');
-        }
+      if (!db.objectStoreNames.contains(VERSION_STORE_NAME)) {
+          const versionStore = db.createObjectStore(VERSION_STORE_NAME, {
+              keyPath: 'id',
+              autoIncrement: true,
+          });
+          versionStore.createIndex('docId', 'docId');
+          versionStore.createIndex('timestamp', 'timestamp');
       }
     },
   });
@@ -119,18 +115,14 @@ export const saveDocument = async (doc: Partial<Document>): Promise<number> => {
     updatedAt: now,
     status: doc.status || 'active',
     tags: doc.tags || [],
+    metadata: doc.metadata || {}, // Add metadata field
   };
   return db.add(DOC_STORE_NAME, newDoc);
 };
 
-export const getAllDocuments = async (status?: 'active' | 'archived' | 'trashed'): Promise<Document[]> => {
+export const getAllDocuments = async (status: 'active' | 'archived' | 'trashed' = 'active'): Promise<Document[]> => {
   const db = await initDB();
-  let docs;
-  if (status) {
-    docs = await db.getAllFromIndex(DOC_STORE_NAME, 'status', status);
-  } else {
-    docs = await db.getAll(DOC_STORE_NAME);
-  }
+  const docs = await db.getAllFromIndex(DOC_STORE_NAME, 'status', status);
   return docs.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 };
 

@@ -61,6 +61,7 @@ import { ToggleTemplateModal } from "@/components/modals/ToggleTemplateModal";
 import { EquationModal } from "@/components/EquationModal";
 import { DocSearchModal } from '@/components/DocSearchModal';
 import { TagInput } from "@/components/TagInput";
+import { MetadataEditor } from "@/components/MetadataEditor";
 import { useToast } from "@/hooks/use-toast";
 import { VersionHistory } from "@/components/VersionHistory";
 import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
@@ -91,7 +92,6 @@ export default function EditorPage() {
   const { toast } = useToast();
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-  const tagDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const lastVersionTime = useRef<number>(Date.now());
   const lastVersionContent = useRef<string>('');
   
@@ -118,14 +118,18 @@ export default function EditorPage() {
 
   const handleTagsChange = (newTags: string[]) => {
       setTags(newTags);
-      if (tagDebounceTimeout.current) clearTimeout(tagDebounceTimeout.current);
-      tagDebounceTimeout.current = setTimeout(() => {
-          if (doc?.id) {
-              saveDocument({ id: doc.id, tags: newTags });
-              toast({title: "Tags Updated", description: "Your tags have been saved."})
-          }
-      }, 1000);
+      if (doc?.id) {
+          saveDocument({ id: doc.id, tags: newTags });
+          toast({title: "Tags Updated", description: "Your tags have been saved."})
+      }
   };
+
+  const handleMetadataUpdate = useCallback((newMetadata: Record<string, string>) => {
+    if (doc?.id) {
+      saveDocument({ id: doc.id, metadata: newMetadata });
+      // We don't show a toast here to avoid being too noisy, as it auto-saves.
+    }
+  }, [doc?.id]);
 
 
   const editor = useEditor({
@@ -207,7 +211,6 @@ export default function EditorPage() {
     
     return () => {
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-      if (tagDebounceTimeout.current) clearTimeout(tagDebounceTimeout.current);
     };
   }, [docId, router]);
   
@@ -323,6 +326,7 @@ export default function EditorPage() {
         </header>
         <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 overflow-hidden">
             <div className="w-full max-w-6xl glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col flex-grow">
+                {doc && <MetadataEditor initialMetadata={doc.metadata || {}} onUpdate={handleMetadataUpdate} />}
                 <TiptapEditor 
                   editor={editor} 
                   onAiAssistantClick={() => setIsAiAssistantOpen(true)}
