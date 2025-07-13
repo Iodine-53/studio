@@ -3,7 +3,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'toolbox-ai-db';
 const STORE_NAME = 'documents';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Bump version for schema change
 
 // Define the structure of a Tiptap node for type safety
 export type TiptapNode = {
@@ -22,6 +22,7 @@ export interface Document {
   content: TiptapNode; // Tiptap's JSON content
   createdAt: Date;
   updatedAt: Date;
+  status: 'active' | 'archived' | 'trashed'; // New status field
 }
 
 // Define the schema for our database
@@ -29,7 +30,7 @@ interface ToolboxAiDb extends DBSchema {
   [STORE_NAME]: {
     key: number;
     value: Document;
-    indexes: { 'updatedAt': Date };
+    indexes: { 'updatedAt': Date; 'status': string }; // New index for status
   };
 }
 
@@ -43,15 +44,27 @@ const initDB = () => {
   }
   
   dbPromise = openDB<ToolboxAiDb>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      // This upgrade callback runs only when the DB is first created or the version number is increased.
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
         const store = db.createObjectStore(STORE_NAME, {
           keyPath: 'id',
           autoIncrement: true,
         });
-        // Create an index to query/sort by the 'updatedAt' field.
         store.createIndex('updatedAt', 'updatedAt');
+      }
+      if (oldVersion < 2) {
+        const store = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
+        store.createIndex('status', 'status');
+        // Migrate existing documents to have a default status
+        store.openCursor().then(function cursorIterate(cursor) {
+          if (!cursor) return;
+          const doc = cursor.value;
+          if (!doc.status) {
+            doc.status = 'active';
+            cursor.update(doc);
+          }
+          cursor.continue();
+        });
       }
     },
   });
@@ -77,14 +90,16 @@ export const saveDocument = async (doc: Partial<Document>): Promise<number> => {
     content: doc.content || { type: 'doc', content: [{ type: 'paragraph' }] },
     createdAt: now,
     updatedAt: now,
+    status: 'active', // Default status for new docs
   };
   return db.add(STORE_NAME, newDoc);
 };
 
-export const getAllDocuments = async (): Promise<Document[]> => {
+export const getAllDocuments = async (status: 'active' | 'archived' | 'trashed' = 'active'): Promise<Document[]> => {
   const db = await initDB();
-  // Use the 'updatedAt' index to get all docs and sort them in reverse order (newest first).
-  return db.getAllFromIndex(STORE_NAME, 'updatedAt').then(docs => docs.reverse());
+  const docs = await db.getAllFromIndex(STORE_NAME, 'status', status);
+  // Sort by updatedAt descending manually after fetching
+  return docs.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 };
 
 export const getDocument = async (id: number): Promise<Document | undefined> => {
@@ -96,6 +111,15 @@ export const deleteDocument = async (id: number): Promise<void> => {
   const db = await initDB();
   return db.delete(STORE_NAME, id);
 };
+
+export const deleteTrashedDocs = async (): Promise<void> => {
+    const db = await initDB();
+    const trashedDocs = await db.getAllFromIndex(STORE_NAME, 'status', 'trashed');
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    await Promise.all(trashedDocs.map(doc => doc.id && tx.store.delete(doc.id)));
+    await tx.done;
+};
+
 
 // New function to export all data from the 'documents' table
 export const exportAllData = async (): Promise<Blob> => {
@@ -149,6 +173,8 @@ export const importData = async (file: File): Promise<void> => {
             // Re-instantiate dates which are lost in JSON serialization
             doc.createdAt = new Date(doc.createdAt);
             doc.updatedAt = new Date(doc.updatedAt);
+            // Ensure status is set, default to active if missing
+            doc.status = doc.status || 'active';
             return store.add(doc);
         }));
 

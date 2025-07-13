@@ -16,14 +16,13 @@ export const GraphView = () => {
 
   useEffect(() => {
     const generateGraph = async () => {
-      const allDocs = await getAllDocuments();
+      // Only fetch 'active' documents for the graph
+      const allDocs = await getAllDocuments('active');
       
       const nodes = new DataSet(
         allDocs.map(doc => ({
           id: doc.id,
           label: doc.title || 'Untitled',
-          shape: 'box',
-          margin: 10,
         }))
       );
 
@@ -60,28 +59,28 @@ export const GraphView = () => {
             shape: 'box',
             margin: 12,
             color: {
-                border: '#4338ca', // indigo-700
-                background: '#e0e7ff', // indigo-100
+                border: '#4682B4', // primary
+                background: '#E6E9ED', // background
                 highlight: {
-                  border: '#4338ca',
-                  background: '#a5b4fc', // indigo-300
+                  border: '#4682B4',
+                  background: '#cce0f1', 
                 },
                 hover: {
-                  border: '#4338ca',
-                  background: '#c7d2fe', // indigo-200
+                  border: '#4682B4',
+                  background: '#d9e8f5',
                 }
             },
             font: { 
-                color: '#1e293b', // slate-800
+                color: '#2c3e50',
                 size: 16,
                 face: 'Inter, sans-serif'
             }
           },
           edges: {
             color: {
-              color: '#94a3b8', // slate-400
-              highlight: '#4f46e5', // indigo-600
-              hover: '#64748b', // slate-500
+              color: '#bdc3c7', 
+              highlight: '#4682B4',
+              hover: '#95a5a6',
             },
             width: 1.5,
             smooth: {
@@ -111,7 +110,7 @@ export const GraphView = () => {
         const network = new Network(containerRef.current, { nodes, edges }, options);
         networkRef.current = network;
 
-        network.on('selectNode', (params) => {
+        network.on('doubleClick', (params) => {
           if (params.nodes.length > 0) {
             const nodeId = params.nodes[0];
             router.push(`/editor/${nodeId}`);
@@ -122,10 +121,10 @@ export const GraphView = () => {
         
         network.on('hoverNode', params => {
           const nodeId = params.node;
-          const connectedNodes = network.getConnectedNodes(nodeId) as string[];
+          const connectedNodes = network.getConnectedNodes(nodeId) as (string | number)[];
           
           const nodeUpdates = Object.keys(allNodes).map(id => {
-            const isConnected = id === String(nodeId) || connectedNodes.includes(id);
+            const isConnected = String(id) === String(nodeId) || connectedNodes.includes(String(id));
             return {
               id: id,
               color: isConnected ? undefined : { border: '#e5e7eb', background: '#f9fafb' },

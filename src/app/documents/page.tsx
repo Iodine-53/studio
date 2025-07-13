@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,16 +27,21 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2 } from "lucide-react";
-import { type Document, getAllDocuments, saveDocument, deleteDocument, exportAllData, importData } from "@/lib/db";
+import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle } from "lucide-react";
+import { type Document, getAllDocuments, saveDocument, deleteDocument, deleteTrashedDocs, exportAllData, importData } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { saveAs } from 'file-saver';
 import { useDocumentSearch } from "@/hooks/useDocumentSearch";
+import { cn } from "@/lib/utils";
+
+type DocStatus = 'active' | 'archived' | 'trashed';
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<DocStatus>('active');
   const router = useRouter();
   const { toast } = useToast();
 
@@ -43,6 +49,7 @@ export default function DocumentsPage() {
   const [docToRename, setDocToRename] = useState<Document | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [docToDelete, setDocToDelete] = useState<Document | null>(null);
+  const [isEmptingTrash, setIsEmptyingTrash] = useState(false);
   
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -51,10 +58,10 @@ export default function DocumentsPage() {
   const { results: filteredDocuments, search } = useDocumentSearch(documents);
 
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (status: DocStatus = 'active') => {
     setIsLoading(true);
     try {
-      const docs = await getAllDocuments();
+      const docs = await getAllDocuments(status);
       setDocuments(docs);
     } catch (error) {
       console.error("Failed to fetch documents:", error);
@@ -64,8 +71,8 @@ export default function DocumentsPage() {
   };
 
   useEffect(() => {
-    fetchDocuments();
-  }, []);
+    fetchDocuments(activeTab);
+  }, [activeTab]);
   
   const handleExport = async () => {
     setIsExporting(true);
@@ -91,7 +98,6 @@ export default function DocumentsPage() {
     if (!file) return;
 
     if (!window.confirm("Are you sure? Importing will overwrite all your current documents. This action cannot be undone.")) {
-        // Clear the input value so the same file can be selected again
         if(importInputRef.current) importInputRef.current.value = "";
         return;
     }
@@ -106,7 +112,6 @@ export default function DocumentsPage() {
         toast({ variant: 'destructive', title: "Import Failed", description: (error as Error).message || "Could not import the selected file." });
         setIsImporting(false);
     }
-    // Clear the input value
     if(importInputRef.current) importInputRef.current.value = "";
   };
 
@@ -134,7 +139,7 @@ export default function DocumentsPage() {
     try {
       await saveDocument({ ...docToRename, title: newTitle.trim() });
       toast({ title: "Success", description: `Renamed to "${newTitle.trim()}"` });
-      await fetchDocuments();
+      await fetchDocuments(activeTab);
     } catch (error) {
       console.error("Failed to rename document:", error);
       toast({ variant: 'destructive', title: "Error", description: "Failed to rename document." });
@@ -151,8 +156,8 @@ export default function DocumentsPage() {
     if (!docToDelete?.id) return;
     try {
       await deleteDocument(docToDelete.id);
-      toast({ title: "Document Deleted", description: `"${docToDelete.title}" has been moved to trash.` });
-      await fetchDocuments();
+      toast({ title: "Document Permanently Deleted", description: `"${docToDelete.title}" has been deleted forever.` });
+      await fetchDocuments(activeTab);
     } catch (error) {
       console.error("Failed to delete document:", error);
       toast({ variant: 'destructive', title: "Error", description: "Failed to delete document." });
@@ -160,11 +165,68 @@ export default function DocumentsPage() {
         setDocToDelete(null);
     }
   };
+  
+  const handleEmptyTrash = async () => {
+      if (!window.confirm("Are you absolutely sure? This will permanently delete all items in the trash. This action cannot be undone.")) return;
+      setIsEmptyingTrash(true);
+      try {
+        await deleteTrashedDocs();
+        toast({ title: "Trash Emptied", description: "All trashed documents have been deleted." });
+        await fetchDocuments('trashed');
+      } catch (error) {
+        console.error("Failed to empty trash:", error);
+        toast({ variant: 'destructive', title: "Error", description: "Could not empty the trash." });
+      } finally {
+        setIsEmptyingTrash(false);
+      }
+  };
+  
+  const handleStatusChange = async (doc: Document, status: DocStatus) => {
+      if (!doc.id) return;
+      try {
+        await saveDocument({ id: doc.id, status });
+        toast({ title: "Document Updated", description: `"${doc.title}" moved to ${status}.` });
+        await fetchDocuments(activeTab);
+      } catch (error) {
+         console.error("Failed to update status:", error);
+         toast({ variant: 'destructive', title: "Error", description: "Could not update document status." });
+      }
+  }
+
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchTerm(query);
     search(query);
+  }
+
+  const renderDropdownItems = (doc: Document) => {
+    switch(activeTab) {
+        case 'active':
+            return (
+                <>
+                <DropdownMenuItem onClick={() => handleStatusChange(doc, 'archived')}><Archive className="mr-2 h-4 w-4"/> Archive</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange(doc, 'trashed')} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4"/> Move to Trash</DropdownMenuItem>
+                </>
+            );
+        case 'archived':
+            return (
+                <>
+                <DropdownMenuItem onClick={() => handleStatusChange(doc, 'active')}><ArchiveRestore className="mr-2 h-4 w-4"/> Unarchive</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange(doc, 'trashed')} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4"/> Move to Trash</DropdownMenuItem>
+                </>
+            );
+        case 'trashed':
+            return (
+                <>
+                <DropdownMenuItem onClick={() => handleStatusChange(doc, 'active')}><History className="mr-2 h-4 w-4"/> Restore</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleDeleteInitiate(doc)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4"/> Delete Permanently</DropdownMenuItem>
+                </>
+            );
+        default:
+            return null;
+    }
   }
 
   return (
@@ -185,7 +247,7 @@ export default function DocumentsPage() {
         </header>
         <main className="flex-1 p-4 sm:p-6 md:p-8">
             <div className="container mx-auto">
-                <div className="mb-12 flex flex-col md:flex-row items-start justify-between gap-6">
+                <div className="mb-8 flex flex-col md:flex-row items-start justify-between gap-6">
                     <div>
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">My Documents</h2>
                         <p className="text-lg text-muted-foreground mt-2">Create, edit, and manage all of your work.</p>
@@ -204,98 +266,87 @@ export default function DocumentsPage() {
                     </div>
                 </div>
 
-                <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="relative max-w-lg w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Search document titles and content..."
-                            className="w-full pl-10"
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                        />
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImportFile} />
-                        <Button onClick={handleImportClick} variant="outline" disabled={isImporting}>
-                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                            Import
-                        </Button>
-                        <Button onClick={handleExport} variant="outline" disabled={isExporting}>
-                            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                            Export All
-                        </Button>
-                    </div>
-                </div>
-                
-                {isLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <Card key={i}>
-                                <CardHeader>
-                                    <Skeleton className="h-7 w-3/4" />
-                                </CardHeader>
-                                <CardContent>
-                                    <Skeleton className="h-5 w-1/2" />
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                ) : documents.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {filteredDocuments.map((doc) => (
-                    doc.id && (
-                        <Card 
-                            key={doc.id} 
-                            className="flex flex-col bg-card relative group transition-all duration-300 hover:border-primary hover:shadow-xl hover:-translate-y-1"
-                        >
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                    <DropdownMenuItem onClick={() => handleRenameInitiate(doc)}>
-                                        <FileEdit className="mr-2 h-4 w-4" />
-                                        <span>Rename</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteInitiate(doc)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        <span>Delete</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            
-                            <div onClick={() => router.push(`/editor/${doc.id}`)} className="flex flex-col flex-grow h-full cursor-pointer">
-                                <CardHeader className="flex-grow">
-                                    <CardTitle className="truncate text-2xl font-headline group-hover:underline">{doc.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <CardDescription>
-                                        Updated: {format(new Date(doc.updatedAt), 'PP')}
-                                    </CardDescription>
-                                </CardContent>
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DocStatus)}>
+                    <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <TabsList>
+                            <TabsTrigger value="active">Active</TabsTrigger>
+                            <TabsTrigger value="archived">Archived</TabsTrigger>
+                            <TabsTrigger value="trashed">Trash</TabsTrigger>
+                        </TabsList>
+                         <div className="flex items-center gap-2 shrink-0">
+                            <div className={cn("relative w-full max-w-sm", activeTab === 'archived' && 'invisible')}>
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input type="search" placeholder="Search documents..." className="w-full pl-10" value={searchTerm} onChange={handleSearchChange} />
                             </div>
-                        </Card>
-                    )
-                    ))}
-                </div>
-                ) : (
-                    <div className="text-center py-16 px-6 rounded-2xl border-2 border-dashed bg-card/50">
-                        <h4 className="text-2xl font-bold font-headline">Your workspace is empty</h4>
-                        <p className="text-muted-foreground mt-2 mb-6">Click the button to create your first document.</p>
-                        <Button onClick={handleCreateNew}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Create a Document
-                        </Button>
+                            <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImportFile} />
+                            <Button onClick={handleImportClick} variant="outline" disabled={isImporting}>
+                                {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                Import
+                            </Button>
+                            <Button onClick={handleExport} variant="outline" disabled={isExporting}>
+                                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                                Export All
+                            </Button>
+                        </div>
                     </div>
-                )}
+                    
+                    <TabsContent value={activeTab} className="mt-4">
+                        {isLoading ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <Card key={i}><CardHeader><Skeleton className="h-7 w-3/4" /></CardHeader><CardContent><Skeleton className="h-5 w-1/2" /></CardContent></Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <>
+                                {activeTab === 'trashed' && documents.length > 0 && (
+                                    <div className="mb-6 flex items-center justify-between rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                                        <div className="flex items-center gap-3">
+                                            <AlertTriangle className="h-6 w-6 text-destructive" />
+                                            <p className="text-sm font-medium text-destructive">Items in the trash will be deleted automatically after 30 days.</p>
+                                        </div>
+                                        <Button onClick={handleEmptyTrash} variant="destructive" disabled={isEmptingTrash}>
+                                            {isEmptingTrash ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4"/>}
+                                            Empty Trash
+                                        </Button>
+                                    </div>
+                                )}
+                                {filteredDocuments.length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                    {filteredDocuments.map((doc) => (
+                                        doc.id && (
+                                            <Card key={doc.id} className="flex flex-col bg-card relative group transition-all duration-300 hover:border-primary hover:shadow-xl hover:-translate-y-1">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                        <DropdownMenuItem onClick={() => handleRenameInitiate(doc)}><FileEdit className="mr-2 h-4 w-4"/> Rename</DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        {renderDropdownItems(doc)}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                                
+                                                <div onClick={() => router.push(`/editor/${doc.id}`)} className="flex flex-col flex-grow h-full cursor-pointer">
+                                                    <CardHeader className="flex-grow"><CardTitle className="truncate text-2xl font-headline group-hover:underline">{doc.title}</CardTitle></CardHeader>
+                                                    <CardContent><CardDescription>Updated: {format(new Date(doc.updatedAt), 'PP')}</CardDescription></CardContent>
+                                                </div>
+                                            </Card>
+                                        )
+                                    ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-16 px-6 rounded-2xl border-2 border-dashed bg-card/50">
+                                        <h4 className="text-2xl font-bold font-headline">This folder is empty</h4>
+                                        <p className="text-muted-foreground mt-2 mb-6">There are no documents with the status '{activeTab}'.</p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </div>
         </main>
       </div>
@@ -303,16 +354,8 @@ export default function DocumentsPage() {
       <Dialog open={!!docToRename} onOpenChange={() => setDocToRename(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Rename Document</DialogTitle></DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="doc-title" className="text-right">Title</Label>
-              <Input id="doc-title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="col-span-3" onKeyDown={(e) => e.key === 'Enter' && handleRenameConfirm()} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDocToRename(null)}>Cancel</Button>
-            <Button onClick={handleRenameConfirm}>Save changes</Button>
-          </DialogFooter>
+          <div className="grid gap-4 py-4"><div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="doc-title" className="text-right">Title</Label><Input id="doc-title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="col-span-3" onKeyDown={(e) => e.key === 'Enter' && handleRenameConfirm()} /></div></div>
+          <DialogFooter><Button variant="outline" onClick={() => setDocToRename(null)}>Cancel</Button><Button onClick={handleRenameConfirm}>Save changes</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -322,10 +365,7 @@ export default function DocumentsPage() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>This action cannot be undone. This will permanently delete the document titled "{docToDelete?.title}".</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Continue</AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Continue</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>

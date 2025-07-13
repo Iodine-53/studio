@@ -16,7 +16,7 @@ type SearchableDocument = {
 export const useDocumentSearch = (documents: Document[]) => {
   const [results, setResults] = useState<Document[]>(documents);
 
-  // When the source documents array changes (e.g., after initial load),
+  // When the source documents array changes (e.g., after initial load or tab switch),
   // update our results state to match.
   useEffect(() => {
     setResults(documents);
@@ -24,8 +24,11 @@ export const useDocumentSearch = (documents: Document[]) => {
 
   // useMemo is critical here for performance
   const fuse = useMemo(() => {
+    // Only search active documents
+    const activeDocs = documents.filter(doc => doc.status === 'active');
+    
     // First, flatten the documents into a searchable format
-    const searchableDocs: SearchableDocument[] = documents
+    const searchableDocs: SearchableDocument[] = activeDocs
       .filter(doc => doc.id !== undefined)
       .map(doc => ({
         id: doc.id!,
