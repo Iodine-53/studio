@@ -58,22 +58,26 @@ export default function DocumentsPage() {
   const { results: filteredDocuments, search } = useDocumentSearch(documents);
 
 
-  const fetchDocuments = async (status: DocStatus = 'active') => {
+  const fetchDocuments = async (status: DocStatus) => {
     setIsLoading(true);
+    setSearchTerm(""); // Reset search on tab change
     try {
       const docs = await getAllDocuments(status);
       setDocuments(docs);
     } catch (error) {
       console.error("Failed to fetch documents:", error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to load documents." });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Fetch documents when the active tab changes
   useEffect(() => {
     fetchDocuments(activeTab);
   }, [activeTab]);
   
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -274,7 +278,7 @@ export default function DocumentsPage() {
                             <TabsTrigger value="trashed">Trash</TabsTrigger>
                         </TabsList>
                          <div className="flex items-center gap-2 shrink-0">
-                            <div className={cn("relative w-full max-w-sm", activeTab === 'archived' && 'invisible')}>
+                            <div className={cn("relative w-full max-w-sm", activeTab === 'trashed' && 'invisible')}>
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                 <Input type="search" placeholder="Search documents..." className="w-full pl-10" value={searchTerm} onChange={handleSearchChange} />
                             </div>
