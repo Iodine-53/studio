@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -27,9 +27,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2 } from "lucide-react";
-import { type Document, getAllDocuments, saveDocument, deleteDocument } from "@/lib/db";
+import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2 } from "lucide-react";
+import { type Document, getAllDocuments, saveDocument, deleteDocument, exportAllData, importData } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
+import { saveAs } from 'file-saver';
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -41,6 +42,11 @@ export default function DocumentsPage() {
   const [docToRename, setDocToRename] = useState<Document | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [docToDelete, setDocToDelete] = useState<Document | null>(null);
+  
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
 
   const fetchDocuments = async () => {
     setIsLoading(true);
@@ -57,6 +63,50 @@ export default function DocumentsPage() {
   useEffect(() => {
     fetchDocuments();
   }, []);
+  
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+        const blob = await exportAllData();
+        const date = new Date().toISOString().split('T')[0];
+        saveAs(blob, `toolbox-ai-backup-${date}.json`);
+        toast({ title: "Export Successful", description: "Your data has been downloaded." });
+    } catch (error) {
+        console.error("Export failed:", error);
+        toast({ variant: 'destructive', title: "Export Failed", description: "Could not export your data." });
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm("Are you sure? Importing will overwrite all your current documents. This action cannot be undone.")) {
+        // Clear the input value so the same file can be selected again
+        if(importInputRef.current) importInputRef.current.value = "";
+        return;
+    }
+    
+    setIsImporting(true);
+    try {
+        await importData(file);
+        toast({ title: "Import Successful", description: "Your data has been restored. The page will now reload." });
+        setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+        console.error("Import failed:", error);
+        toast({ variant: 'destructive', title: "Import Failed", description: (error as Error).message || "Could not import the selected file." });
+        setIsImporting(false);
+    }
+    // Clear the input value
+    if(importInputRef.current) importInputRef.current.value = "";
+  };
+
 
   const handleCreateNew = async () => {
     try {
@@ -130,13 +180,13 @@ export default function DocumentsPage() {
         </header>
         <main className="flex-1 p-4 sm:p-6 md:p-8">
             <div className="container mx-auto">
-                <div className="mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="mb-12 flex flex-col md:flex-row items-start justify-between gap-6">
                     <div>
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">My Documents</h2>
                         <p className="text-lg text-muted-foreground mt-2">Create, edit, and manage all of your work.</p>
                     </div>
                     <div className="flex items-center gap-2">
-                         <Button variant="outline" size="lg" asChild>
+                        <Button variant="outline" size="lg" asChild>
                             <Link href="/graph">
                                 <Share2 className="mr-2 h-5 w-5" />
                                 View Graph
@@ -148,16 +198,29 @@ export default function DocumentsPage() {
                         </Button>
                     </div>
                 </div>
-                
-                <div className="relative mb-8 max-w-lg">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Search documents by title..."
-                        className="w-full pl-10"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+
+                <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="relative max-w-lg w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search documents by title..."
+                            className="w-full pl-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImportFile} />
+                        <Button onClick={handleImportClick} variant="outline" disabled={isImporting}>
+                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                            Import
+                        </Button>
+                        <Button onClick={handleExport} variant="outline" disabled={isExporting}>
+                            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                            Export All
+                        </Button>
+                    </div>
                 </div>
                 
                 {isLoading ? (

@@ -96,3 +96,71 @@ export const deleteDocument = async (id: number): Promise<void> => {
   const db = await initDB();
   return db.delete(STORE_NAME, id);
 };
+
+// New function to export all data from the 'documents' table
+export const exportAllData = async (): Promise<Blob> => {
+  try {
+    const db = await initDB();
+    const allDocs = await db.getAll(STORE_NAME);
+    
+    // Create a structured backup object
+    const backupData = {
+      version: 1, // Add a version number for future migrations
+      exportedAt: new Date().toISOString(),
+      documents: allDocs,
+    };
+
+    // Convert the array of objects to a JSON string
+    const jsonString = JSON.stringify(backupData, null, 2); // null, 2 for pretty-printing
+
+    // Create a Blob from the JSON string
+    return new Blob([jsonString], { type: 'application/json' });
+  } catch (error) {
+    console.error("Failed to export data:", error);
+    throw new Error("Data export failed.");
+  }
+};
+
+
+// New function to import data from a JSON file
+export const importData = async (file: File): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const jsonString = event.target?.result as string;
+        const backupData = JSON.parse(jsonString);
+
+        if (!backupData.documents || !Array.isArray(backupData.documents)) {
+          throw new Error("Invalid backup file format. Missing 'documents' array.");
+        }
+        
+        const db = await initDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        
+        // 1. Clear all existing data
+        await store.clear();
+        
+        // 2. Add all new data from the backup
+        // Note: idb doesn't have a bulkAdd, so we iterate. 
+        // The transaction ensures this is atomic.
+        await Promise.all(backupData.documents.map((doc: Document) => {
+            // Re-instantiate dates which are lost in JSON serialization
+            doc.createdAt = new Date(doc.createdAt);
+            doc.updatedAt = new Date(doc.updatedAt);
+            return store.add(doc);
+        }));
+
+        await tx.done; // Commit the transaction
+        resolve();
+
+      } catch (error) {
+        console.error("Failed to import data:", error);
+        reject(error);
+      }
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsText(file);
+  });
+};
