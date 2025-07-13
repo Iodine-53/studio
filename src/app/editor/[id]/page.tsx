@@ -42,8 +42,6 @@ import { InlineMath, MathBlock } from '@/lib/tiptap/extensions/Math';
 import { DocLinkExtension } from '@/lib/tiptap/extensions/DocLink';
 import { Link as TiptapLink } from '@tiptap/extension-link';
 import 'katex/dist/katex.min.css';
-import { TaskList } from '@tiptap/extension-task-list';
-import { CustomTaskItem } from '@/lib/tiptap/extensions/CustomTaskItem';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -151,10 +149,6 @@ export default function EditorPage() {
       HorizontalRule, Chart, Drawing, TodoListExtension, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
       ColumnsExtension, ColumnExtension, MindMap, InlineMath, MathBlock, DocLinkExtension,
       TiptapLink.configure({ linkOnPaste: false, openOnClick: 'whenNotEditable' }),
-      TaskList.configure({
-        itemTypeName: 'customTaskItem',
-      }),
-      CustomTaskItem,
     ],
     editorProps: {
       attributes: {
@@ -375,5 +369,3 @@ export default function EditorPage() {
     </>
   );
 }
-
-    
