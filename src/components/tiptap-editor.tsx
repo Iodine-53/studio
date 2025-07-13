@@ -6,7 +6,6 @@ import Toolbar from './Toolbar'
 import { LayoutBubbleMenu } from './LayoutBubbleMenu';
 import 'highlight.js/styles/atom-one-dark.css'
 
-// Define the component's props
 type Props = {
   editor: Editor | null;
   onAiAssistantClick: () => void;
@@ -17,11 +16,9 @@ type Props = {
 
 const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal }: Props) => {
   return (
-    // This component now handles the layout of the toolbar and editor content area
     <div className="flex flex-col flex-grow relative">
       {editor && <LayoutBubbleMenu editor={editor} />}
       
-      {/* Toolbar is a non-scrolling part of the flex container */}
       <Toolbar 
         editor={editor} 
         onAiAssistantClick={onAiAssistantClick} 
@@ -29,7 +26,6 @@ const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEqua
         onOpenEquationModal={onOpenEquationModal}
       />
 
-      {/* Editor content area is scrollable and takes up the remaining space */}
       <div className="flex-grow overflow-y-auto">
         <EditorContent editor={editor} />
       </div>

@@ -47,8 +47,9 @@ import 'katex/dist/katex.min.css';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
-import { getDocument, saveDocument, type Document, addDocVersion, getVersionsForDoc, type DocumentVersion } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History } from "lucide-react";
+import { EditorSidebar } from "@/components/EditorSidebar";
+import { getDocument, saveDocument, type Document, addDocVersion, type DocumentVersion } from "@/lib/db";
+import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History, PanelRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrintPreview } from "@/components/PrintPreview";
@@ -60,11 +61,11 @@ import { AiAssistantDialog } from "@/components/AiAssistantDialog";
 import { ToggleTemplateModal } from "@/components/modals/ToggleTemplateModal";
 import { EquationModal } from "@/components/EquationModal";
 import { DocSearchModal } from '@/components/DocSearchModal';
-import { TagInput } from "@/components/TagInput";
-import { MetadataEditor } from "@/components/MetadataEditor";
 import { useToast } from "@/hooks/use-toast";
 import { VersionHistory } from "@/components/VersionHistory";
 import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
+import { cn } from "@/lib/utils";
+
 
 lowlight.registerLanguage('html', html);
 lowlight.registerLanguage('css', css);
@@ -89,6 +90,8 @@ export default function EditorPage() {
   const [isEquationModalOpen, setIsEquationModalOpen] = useState(false);
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   const { toast } = useToast();
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -116,18 +119,16 @@ export default function EditorPage() {
     }
   };
 
-  const handleTagsChange = (newTags: string[]) => {
+  const handleTagsChange = useCallback((newTags: string[]) => {
       setTags(newTags);
       if (doc?.id) {
           saveDocument({ id: doc.id, tags: newTags });
-          toast({title: "Tags Updated", description: "Your tags have been saved."})
       }
-  };
+  }, [doc?.id]);
 
   const handleMetadataUpdate = useCallback((newMetadata: Record<string, string>) => {
     if (doc?.id) {
       saveDocument({ id: doc.id, metadata: newMetadata });
-      // We don't show a toast here to avoid being too noisy, as it auto-saves.
     }
   }, [doc?.id]);
 
@@ -193,7 +194,6 @@ export default function EditorPage() {
           setCurrentContent(loadedDoc.content);
           setTags(loadedDoc.tags || []);
           lastVersionContent.current = tiptapJsonToText(loadedDoc.content);
-          // Set initial version time from last update time
           lastVersionTime.current = new Date(loadedDoc.updatedAt).getTime();
         } else {
           console.error("Document not found");
@@ -281,58 +281,68 @@ export default function EditorPage() {
   return (
     <>
       <div className="flex flex-col min-h-screen bg-primary/5">
-        <header className="sticky top-0 z-30 flex items-center h-auto px-4 py-2 border-b bg-background md:px-6 md:py-3">
-          <div className="flex flex-col w-full gap-2">
-            <div className="flex items-center w-full justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <Button variant="outline" size="icon" className="shrink-0" asChild>
-                        <Link href="/documents">
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="sr-only">Back to Document Hub</span>
-                        </Link>
+        <header className="sticky top-0 z-30 flex items-center justify-between h-auto px-4 py-2 border-b bg-background md:px-6 md:py-3">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+                <Button variant="outline" size="icon" className="shrink-0" asChild>
+                    <Link href="/documents">
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">Back to Document Hub</span>
+                    </Link>
+                </Button>
+                <div className="flex-1 min-w-0">
+                    {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)}>
+                <History className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">History</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleOpenPreview} className="relative">
+                <Eye className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Preview</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={isExporting} className="relative w-[135px]">
+                        {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <> <Download className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Export</span> </>}
                     </Button>
-                    <div className="flex-1 min-w-0">
-                        {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleDocxExport}><FileText className="mr-2 h-4 w-4" />Export as DOCX</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleJsonExport}><Braces className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleHtmlExport}><FileCode2 className="mr-2 h-4 w-4" />Export as HTML</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="outline" size="sm" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                <PanelRight className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Sidebar</span>
+              </Button>
+            </div>
+        </header>
+        <main className="flex-1 grid grid-cols-12 overflow-hidden">
+            <div className={cn("transition-all duration-300", isSidebarOpen ? "col-span-12 md:col-span-9" : "col-span-12")}>
+                 <div className="h-full flex flex-col items-center justify-start p-4 sm:p-6 md:p-8">
+                    <div className="w-full max-w-6xl flex-grow glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col">
+                        <TiptapEditor 
+                          editor={editor} 
+                          onAiAssistantClick={() => setIsAiAssistantOpen(true)}
+                          onAddToggleClick={() => setIsToggleModalOpen(true)}
+                          onOpenEquationModal={() => setIsEquationModalOpen(true)}
+                        />
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)}>
-                    <History className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">History</span>
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleOpenPreview} className="relative">
-                    <Eye className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">Preview</span>
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" disabled={isExporting} className="relative w-[135px]">
-                            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <> <Download className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Export</span> </>}
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleDocxExport}><FileText className="mr-2 h-4 w-4" />Export as DOCX</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleJsonExport}><Braces className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleHtmlExport}><FileCode2 className="mr-2 h-4 w-4" />Export as HTML</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            <div className="pl-14">
-                <TagInput value={tags} onChange={handleTagsChange} />
             </div>
-          </div>
-        </header>
-        <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 overflow-hidden">
-            <div className="w-full max-w-6xl glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col flex-grow">
-                {doc && <MetadataEditor initialMetadata={doc.metadata || {}} onUpdate={handleMetadataUpdate} />}
-                <TiptapEditor 
-                  editor={editor} 
-                  onAiAssistantClick={() => setIsAiAssistantOpen(true)}
-                  onAddToggleClick={() => setIsToggleModalOpen(true)}
-                  onOpenEquationModal={() => setIsEquationModalOpen(true)}
-                />
+            <div className={cn("transition-all duration-300 overflow-hidden", isSidebarOpen ? "col-span-12 md:col-span-3" : "col-span-0 w-0")}>
+                {isSidebarOpen && doc && (
+                    <EditorSidebar 
+                        doc={doc}
+                        tags={tags}
+                        onTagsChange={handleTagsChange}
+                        onMetadataUpdate={handleMetadataUpdate}
+                    />
+                )}
             </div>
         </main>
       </div>

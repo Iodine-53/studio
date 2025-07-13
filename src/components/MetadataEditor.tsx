@@ -11,7 +11,6 @@ type MetadataEditorProps = {
   onUpdate: (newMetadata: Record<string, string>) => void;
 };
 
-// A helper component for the inline editable fields
 const EditableField: FC<{
   value: string;
   onSave: (newValue: string) => void;
@@ -62,7 +61,6 @@ const EditableField: FC<{
 export const MetadataEditor: FC<MetadataEditorProps> = ({ initialMetadata, onUpdate }) => {
   const [metadata, setMetadata] = useState(initialMetadata || {});
   
-  // Use a ref to hold the latest onUpdate function to avoid dependency issues in the debounced effect.
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => {
     onUpdateRef.current = onUpdate;
@@ -83,14 +81,11 @@ export const MetadataEditor: FC<MetadataEditorProps> = ({ initialMetadata, onUpd
 
 
   const handleKeyChange = (oldKey: string, newKey: string) => {
-    // Trim and prevent empty keys or duplicates
     const trimmedNewKey = newKey.trim();
     if (!trimmedNewKey || (trimmedNewKey !== oldKey && metadata.hasOwnProperty(trimmedNewKey))) {
-        // Optionally show a toast here to inform user of duplicate key
         return;
     }
     
-    // Create a new object preserving order as much as possible
     const newMeta = Object.keys(metadata).reduce((acc, key) => {
         if (key === oldKey) {
             acc[trimmedNewKey] = metadata[oldKey];
@@ -108,7 +103,6 @@ export const MetadataEditor: FC<MetadataEditorProps> = ({ initialMetadata, onUpd
   };
 
   const handleAddProperty = () => {
-    // Find a unique name for the new property
     let newKey = 'New Property';
     let i = 1;
     while (metadata.hasOwnProperty(newKey)) {
@@ -124,7 +118,7 @@ export const MetadataEditor: FC<MetadataEditorProps> = ({ initialMetadata, onUpd
   };
 
   return (
-    <div className="p-4 border-b">
+    <div className="p-2 border rounded-lg bg-background">
       <div className="space-y-2">
         {Object.keys(metadata).map((key) => (
           <div key={key} className="flex items-center gap-2 group">
@@ -132,7 +126,7 @@ export const MetadataEditor: FC<MetadataEditorProps> = ({ initialMetadata, onUpd
                 value={key} 
                 onSave={(newKey) => handleKeyChange(key, newKey)}
                 placeholder="Key"
-                className="p-1 rounded-md hover:bg-muted cursor-pointer text-sm truncate w-32 font-semibold text-muted-foreground h-8" 
+                className="p-1 rounded-md hover:bg-muted cursor-pointer text-sm truncate w-28 font-semibold text-muted-foreground h-8" 
             />
             <EditableField 
                 value={metadata[key]} 
@@ -146,7 +140,7 @@ export const MetadataEditor: FC<MetadataEditorProps> = ({ initialMetadata, onUpd
           </div>
         ))}
       </div>
-      <Button variant="link" onClick={handleAddProperty} className="mt-2 p-1 text-sm h-auto text-primary">
+      <Button variant="link" onClick={handleAddProperty} className="mt-1 p-1 text-xs h-auto text-primary">
         <Plus size={14} className="mr-1"/>
         Add a property
       </Button>
