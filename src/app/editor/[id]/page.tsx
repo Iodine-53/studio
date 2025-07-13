@@ -36,7 +36,7 @@ import { FunctionPlot } from '@/lib/tiptap/extensions/FunctionPlot';
 import { Calculator } from '@/lib/tiptap/extensions/Calculator';
 import { ToggleExtension } from '@/lib/tiptap/extensions/Toggle';
 import { TaskList } from '@tiptap/extension-task-list';
-import { TaskItem } from '@tiptap/extension-task-item';
+import { CustomTaskItem } from '@/lib/tiptap/extensions/CustomTaskItem';
 import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
 import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 import { MindMap } from "@/lib/tiptap/extensions/MindMap";
@@ -138,6 +138,7 @@ export default function EditorPage() {
     extensions: [
       StarterKit.configure({
         codeBlock: false, horizontalRule: false, image: false, table: false, tableRow: false, tableHeader: false, tableCell: false, link: false,
+        heading: { levels: [1, 2, 3] }, // Limit headings
       }),
       Underline,
       TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'todoList', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap'] }),
@@ -145,13 +146,16 @@ export default function EditorPage() {
       TrailingNode, LineHeight, TextStyle, Color, FontFamily, FontSize, CustomImage, InteractiveTable,
       CodeBlockLowlight.configure({ lowlight }),
       HorizontalRule, Chart, Drawing, TodoListExtension, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
-      TaskList, TaskItem.configure({ nested: true }),
+      TaskList.configure({
+        itemTypeName: 'customTaskItem',
+      }),
+      CustomTaskItem,
       ColumnsExtension, ColumnExtension, MindMap, InlineMath, MathBlock, DocLinkExtension,
       TiptapLink.configure({ linkOnPaste: false, openOnClick: 'whenNotEditable' }),
     ],
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow',
+        class: 'prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow md:pb-8 pb-24',
       },
     },
     onUpdate: ({ editor }) => {
