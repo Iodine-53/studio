@@ -326,23 +326,23 @@ export default function DocumentsPage() {
                     {/* Main Content Area */}
                     <div className="flex-1">
                         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DocStatus)}>
-                            <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                            <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
                                 <TabsList>
                                     <TabsTrigger value="active" onClick={() => setActiveTag(null)}>Active</TabsTrigger>
                                     <TabsTrigger value="archived" onClick={() => setActiveTag(null)}>Archived</TabsTrigger>
                                     <TabsTrigger value="trashed" onClick={() => setActiveTag(null)}>Trash</TabsTrigger>
                                 </TabsList>
-                                 <div className="flex items-center gap-2 shrink-0">
-                                    <div className={cn("relative w-full max-w-sm", activeTab === 'trashed' && 'invisible')}>
+                                 <div className="flex items-center gap-2 flex-grow sm:flex-grow-0">
+                                    <div className={cn("relative w-full sm:w-64", activeTab === 'trashed' && 'invisible')}>
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                         <Input type="search" placeholder="Search documents..." className="w-full pl-10" value={searchTerm} onChange={handleSearchChange} />
                                     </div>
                                     <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImportFile} />
-                                    <Button onClick={handleImportClick} variant="outline" disabled={isImporting}>
+                                    <Button onClick={handleImportClick} variant="outline" disabled={isImporting} className="hidden sm:inline-flex">
                                         {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
                                         Import
                                     </Button>
-                                    <Button onClick={handleExport} variant="outline" disabled={isExporting}>
+                                    <Button onClick={handleExport} variant="outline" disabled={isExporting} className="hidden sm:inline-flex">
                                         {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
                                         Export All
                                     </Button>
