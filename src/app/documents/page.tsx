@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,10 +27,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle } from "lucide-react";
+import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle, Settings } from "lucide-react";
 import { type Document, getAllDocuments, saveDocument, deleteDocument, deleteTrashedDocs, exportAllData, importData } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { saveAs } from 'file-saver';
@@ -54,6 +54,8 @@ export default function DocumentsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
+
 
   const { results: filteredDocuments, search } = useDocumentSearch(documents);
 
@@ -236,8 +238,8 @@ export default function DocumentsPage() {
   return (
     <>
       <div className="flex flex-col min-h-screen bg-primary/5">
-        <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
-            <nav className="flex items-center gap-4 text-lg font-medium md:gap-2 md:text-sm">
+        <header className="sticky top-0 z-10 flex items-center justify-between h-16 px-4 border-b bg-background md:px-6">
+            <div className="flex items-center gap-4 text-lg font-medium md:gap-2 md:text-sm">
                 <Button variant="outline" size="icon" className="shrink-0" asChild>
                     <Link href="/">
                     <ArrowLeft className="h-4 w-4" />
@@ -247,7 +249,12 @@ export default function DocumentsPage() {
                 <h1 className="text-xl font-bold font-headline text-primary">
                     Document Hub
                 </h1>
-            </nav>
+            </div>
+             <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setIsApiDialogOpen(true)} aria-label="Settings">
+                    <Settings className="h-5 w-5"/>
+                </Button>
+            </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 md:p-8">
             <div className="container mx-auto">
@@ -372,6 +379,8 @@ export default function DocumentsPage() {
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Continue</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <ApiKeyDialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen} />
     </>
   );
 }
