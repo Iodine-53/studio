@@ -60,5 +60,3 @@ const TiptapEditor = ({ editor, isEditorFocused, onAiAssistantClick, onAddToggle
 }
 
 export default TiptapEditor
-
-    

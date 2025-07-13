@@ -1,3 +1,4 @@
+
 "use client";
 
 import { type Editor } from "@tiptap/react";
@@ -50,5 +51,3 @@ export const MobileToolbar = ({ editor, onAiAssistantClick }: Props) => {
     </div>
   );
 };
-
-    
