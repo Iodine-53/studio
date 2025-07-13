@@ -35,8 +35,6 @@ import { ProgressBarBlock } from "@/lib/tiptap/extensions/ProgressBar";
 import { FunctionPlot } from '@/lib/tiptap/extensions/FunctionPlot';
 import { Calculator } from '@/lib/tiptap/extensions/Calculator';
 import { ToggleExtension } from '@/lib/tiptap/extensions/Toggle';
-import { TaskList } from '@tiptap/extension-task-list';
-import { CustomTaskItem } from '@/lib/tiptap/extensions/CustomTaskItem';
 import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
 import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 import { MindMap } from "@/lib/tiptap/extensions/MindMap";
@@ -66,6 +64,8 @@ import { useToast } from "@/hooks/use-toast";
 import { VersionHistory } from "@/components/VersionHistory";
 import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { MobileToolbar } from '@/components/MobileToolbar';
 
 
 lowlight.registerLanguage('html', html);
@@ -92,6 +92,7 @@ export default function EditorPage() {
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const { toast } = useToast();
 
@@ -146,10 +147,6 @@ export default function EditorPage() {
       TrailingNode, LineHeight, TextStyle, Color, FontFamily, FontSize, CustomImage, InteractiveTable,
       CodeBlockLowlight.configure({ lowlight }),
       HorizontalRule, Chart, Drawing, TodoListExtension, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
-      TaskList.configure({
-        itemTypeName: 'customTaskItem',
-      }),
-      CustomTaskItem,
       ColumnsExtension, ColumnExtension, MindMap, InlineMath, MathBlock, DocLinkExtension,
       TiptapLink.configure({ linkOnPaste: false, openOnClick: 'whenNotEditable' }),
     ],
@@ -320,7 +317,7 @@ export default function EditorPage() {
                     <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)} className={cn(isMobile && 'hidden')}>
                 <PanelRight className="h-5 w-5" />
                 <span className="sr-only">Open Sidebar</span>
               </Button>
