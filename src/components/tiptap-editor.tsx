@@ -22,13 +22,15 @@ const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEqua
     <div className="flex flex-col flex-grow relative min-h-0">
       {editor && <LayoutBubbleMenu editor={editor} />}
       
-      <Toolbar 
-        editor={editor} 
-        onAiAssistantClick={onAiAssistantClick} 
-        onAddToggleClick={onAddToggleClick}
-        onOpenEquationModal={onOpenEquationModal}
-        isMobile={isMobile}
-      />
+      <div className="sticky top-0 z-20">
+        <Toolbar 
+          editor={editor} 
+          onAiAssistantClick={onAiAssistantClick} 
+          onAddToggleClick={onAddToggleClick}
+          onOpenEquationModal={onOpenEquationModal}
+          isMobile={isMobile}
+        />
+      </div>
 
       <div className="flex-1 w-full h-full overflow-y-auto">
         <EditorContent editor={editor} />

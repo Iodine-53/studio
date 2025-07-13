@@ -89,14 +89,14 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
   ];
 
   const toolbarClass = cn(
-    "flex w-full items-center gap-1 bg-card p-2",
+    "flex w-full items-center bg-card p-2 border-b",
     isMobile 
-      ? "sticky top-0 z-20 border-b overflow-x-auto hide-scrollbar" 
-      : "rounded-t-xl border-b flex-wrap"
+      ? "gap-1 overflow-x-auto hide-scrollbar" 
+      : "gap-2 rounded-t-xl flex-wrap"
   );
   
-  const toggleSize = isMobile ? "icon" : "sm";
-  const buttonSize = isMobile ? "icon" : "sm";
+  const toggleSize = "sm";
+  const buttonSize = "sm";
 
   return (
     <TooltipProvider>
