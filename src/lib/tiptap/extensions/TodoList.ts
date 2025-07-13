@@ -29,7 +29,7 @@ export const TodoListExtension = Node.create({
         },
       },
       tasks: {
-        default: [],
+        default: [{ id: 1, text: 'Your first task', completed: false }],
         parseHTML: element => {
           const tasks = element.getAttribute('data-tasks')
           return tasks ? JSON.parse(tasks) : []
