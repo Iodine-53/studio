@@ -3,7 +3,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'toolbox-ai-db';
 const STORE_NAME = 'documents';
-const DB_VERSION = 2; // Version bump for schema change
+const DB_VERSION = 2; // IMPORTANT: Version bump for schema change
 
 // Define the structure of a Tiptap node for type safety
 export type TiptapNode = {
@@ -30,7 +30,7 @@ interface ToolboxAiDb extends DBSchema {
   [STORE_NAME]: {
     key: number;
     value: Document;
-    indexes: { 'updatedAt': Date; 'status': string }; // New index for status
+    indexes: { 'updatedAt': Date; 'status': string };
   };
 }
 
@@ -45,18 +45,28 @@ const initDB = () => {
   
   dbPromise = openDB<ToolboxAiDb>(DB_NAME, DB_VERSION, {
     upgrade(db, oldVersion, newVersion, tx) {
-      if (oldVersion < 1) {
-        // This runs if the database is being created for the first time
-        const store = db.createObjectStore(STORE_NAME, {
-          keyPath: 'id',
-          autoIncrement: true,
-        });
-        store.createIndex('updatedAt', 'updatedAt');
-      }
-      if (oldVersion < 2) {
-        // This runs if the user has version 1 and needs to upgrade to version 2
-        const store = tx.objectStore(STORE_NAME);
-        store.createIndex('status', 'status');
+      console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
+      
+      // This switch block handles migrations gracefully.
+      // It falls through, so a user on version 0 would get all upgrades.
+      switch (oldVersion) {
+        case 0: {
+          // A user has no database, so create it from scratch.
+          const store = db.createObjectStore(STORE_NAME, {
+            keyPath: 'id',
+            autoIncrement: true,
+          });
+          store.createIndex('updatedAt', 'updatedAt');
+          store.createIndex('status', 'status');
+        }
+        // falls through
+        case 1: {
+          // A user has version 1, and needs the 'status' index.
+          const store = tx.objectStore(STORE_NAME);
+          if (!store.indexNames.contains('status')) {
+            store.createIndex('status', 'status');
+          }
+        }
       }
     },
   });
@@ -87,9 +97,14 @@ export const saveDocument = async (doc: Partial<Document>): Promise<number> => {
   return db.add(STORE_NAME, newDoc);
 };
 
-export const getAllDocuments = async (status: 'active' | 'archived' | 'trashed' = 'active'): Promise<Document[]> => {
+export const getAllDocuments = async (status?: 'active' | 'archived' | 'trashed'): Promise<Document[]> => {
   const db = await initDB();
-  const docs = await db.getAllFromIndex(STORE_NAME, 'status', status);
+  let docs;
+  if (status) {
+    docs = await db.getAllFromIndex(STORE_NAME, 'status', status);
+  } else {
+    docs = await db.getAll(STORE_NAME);
+  }
   // Sort by updatedAt descending manually after fetching
   return docs.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 };

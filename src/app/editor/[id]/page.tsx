@@ -202,18 +202,22 @@ export default function EditorPage() {
     }
 
     const fetchDocument = async () => {
-      setIsLoading(true);
-      const loadedDoc = await getDocument(docId);
-
-      if (loadedDoc) {
-        setDoc(loadedDoc);
-        setCurrentContent(loadedDoc.content);
-      } else {
-        console.error("Document not found");
-        router.push("/");
+      try {
+        setIsLoading(true);
+        const loadedDoc = await getDocument(docId);
+        if (loadedDoc) {
+          setDoc(loadedDoc);
+          setCurrentContent(loadedDoc.content);
+        } else {
+          console.error("Document not found");
+          router.push("/documents"); // Redirect to a safe page
+        }
+      } catch (error) {
+        console.error("Failed to load document:", error);
+        router.push("/documents");
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
     
     if (docId) {

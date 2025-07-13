@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -58,7 +58,7 @@ export default function DocumentsPage() {
   const { results: filteredDocuments, search } = useDocumentSearch(documents);
 
 
-  const fetchDocuments = async (status: DocStatus) => {
+  const fetchDocuments = useCallback(async (status: DocStatus) => {
     setIsLoading(true);
     setSearchTerm(""); // Reset search on tab change
     try {
@@ -70,12 +70,12 @@ export default function DocumentsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   // Fetch documents when the component mounts and when the active tab changes
   useEffect(() => {
     fetchDocuments(activeTab);
-  }, [activeTab]);
+  }, [activeTab, fetchDocuments]);
   
 
   const handleExport = async () => {
