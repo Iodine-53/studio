@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -11,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 import {
@@ -31,15 +30,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle, Settings, Tag, X } from "lucide-react";
+import { PlusCircle, MoreVertical, FileEdit, Trash2, Search, ArrowLeft, Share2, Upload, Download, Loader2, Archive, ArchiveRestore, History, AlertTriangle, Settings, Tag, X, File, FilePlus2, Users, Target } from "lucide-react";
 import { type Document, getAllDocuments, saveDocument, deleteDocument, deleteTrashedDocs, exportAllData, importData, getAllTags, getDocsByTag } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { saveAs } from 'file-saver';
 import { useDocumentSearch } from "@/hooks/useDocumentSearch";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { type DocumentTemplate, documentTemplates } from "@/lib/templates";
 
 type DocStatus = 'active' | 'archived' | 'trashed';
+
+// Helper to map icon string names to actual components
+const iconMap: { [key: string]: React.FC<any> } = {
+  File: File,
+  FilePlus2: FilePlus2,
+  Users: Users,
+  Target: Target,
+};
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -58,6 +66,8 @@ export default function DocumentsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
+  const [isNewDocDialogOpen, setIsNewDocDialogOpen] = useState(false);
+
 
   const [allTags, setAllTags] = useState<string[]>([]);
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -78,7 +88,6 @@ export default function DocumentsPage() {
       }
       setDocuments(docs);
       
-      // Also fetch all unique tags for the sidebar filter list
       const tags = await getAllTags();
       setAllTags(tags);
 
@@ -90,7 +99,6 @@ export default function DocumentsPage() {
     }
   }, [toast]);
 
-  // Fetch documents when the component mounts and when the active tab or tag filter changes
   useEffect(() => {
     fetchDocuments(activeTab, activeTag);
   }, [activeTab, activeTag, fetchDocuments]);
@@ -137,13 +145,30 @@ export default function DocumentsPage() {
     if(importInputRef.current) importInputRef.current.value = "";
   };
 
+  const handleCreateNew = async (templateId?: string) => {
+    setIsNewDocDialogOpen(false); // Close the dialog immediately
+    
+    let docPayload: Partial<Document> = {
+      title: "Untitled Document",
+      content: { type: 'doc', content: [{ type: 'paragraph' }] },
+      metadata: {},
+      tags: [],
+    };
 
-  const handleCreateNew = async () => {
+    if (templateId) {
+      const template = documentTemplates.find(t => t.id === templateId);
+      if (template) {
+        docPayload = {
+          title: `Untitled ${template.label}`,
+          content: template.content,
+          metadata: template.metadata,
+          tags: [], // Start with empty tags for templates
+        };
+      }
+    }
+
     try {
-      const newDocId = await saveDocument({
-        title: "Untitled Document",
-        content: { type: 'doc', content: [{ type: 'paragraph' }] },
-      });
+      const newDocId = await saveDocument(docPayload);
       router.push(`/editor/${newDocId}`);
     } catch (error) {
       console.error("Failed to create new document:", error);
@@ -294,10 +319,38 @@ export default function DocumentsPage() {
                                 View Graph
                             </Link>
                         </Button>
-                        <Button onClick={handleCreateNew} size="lg" className="shrink-0">
-                            <PlusCircle className="mr-2 h-5 w-5" />
-                            Create New Document
-                        </Button>
+                        <Dialog open={isNewDocDialogOpen} onOpenChange={setIsNewDocDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button size="lg" className="shrink-0">
+                                    <PlusCircle className="mr-2 h-5 w-5" />
+                                    Create New Document
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                <DialogTitle>New Document</DialogTitle>
+                                </DialogHeader>
+                                <div className="py-4 space-y-4">
+                                <p className="text-sm text-muted-foreground">Start from a blank canvas or use a template to get going faster.</p>
+                                <div className="space-y-2">
+                                    <button onClick={() => handleCreateNew()} className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors flex items-center gap-4">
+                                        <div className="p-2 bg-primary/10 rounded-md"><File className="h-5 w-5 text-primary" /></div>
+                                        <div><div className="font-medium">Blank Document</div></div>
+                                    </button>
+                                    <h4 className="text-sm font-semibold text-muted-foreground px-3 pt-2">Templates</h4>
+                                    {documentTemplates.map((template) => {
+                                        const Icon = iconMap[template.icon] || FilePlus2;
+                                        return (
+                                            <button key={template.id} onClick={() => handleCreateNew(template.id)} className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors flex items-center gap-4">
+                                                <div className="p-2 bg-primary/10 rounded-md"><Icon className="h-5 w-5 text-primary" /></div>
+                                                <div><div className="font-medium">{template.label}</div></div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </div>
 
@@ -326,26 +379,28 @@ export default function DocumentsPage() {
                     {/* Main Content Area */}
                     <div className="flex-1">
                         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DocStatus)}>
-                            <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+                            <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <TabsList>
                                     <TabsTrigger value="active" onClick={() => setActiveTag(null)}>Active</TabsTrigger>
                                     <TabsTrigger value="archived" onClick={() => setActiveTag(null)}>Archived</TabsTrigger>
                                     <TabsTrigger value="trashed" onClick={() => setActiveTag(null)}>Trash</TabsTrigger>
                                 </TabsList>
-                                 <div className="flex items-center gap-2 flex-grow sm:flex-grow-0">
+                                 <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
                                     <div className={cn("relative w-full sm:w-64", activeTab === 'trashed' && 'invisible')}>
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                         <Input type="search" placeholder="Search documents..." className="w-full pl-10" value={searchTerm} onChange={handleSearchChange} />
                                     </div>
                                     <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImportFile} />
-                                    <Button onClick={handleImportClick} variant="outline" disabled={isImporting} className="hidden sm:inline-flex">
-                                        {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                                        Import
-                                    </Button>
-                                    <Button onClick={handleExport} variant="outline" disabled={isExporting} className="hidden sm:inline-flex">
-                                        {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                                        Export All
-                                    </Button>
+                                    <div className="flex w-full sm:w-auto gap-2">
+                                        <Button onClick={handleImportClick} variant="outline" disabled={isImporting} className="flex-1 sm:flex-none">
+                                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                            Import
+                                        </Button>
+                                        <Button onClick={handleExport} variant="outline" disabled={isExporting} className="flex-1 sm:flex-none">
+                                            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
+                                            Export All
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                             
