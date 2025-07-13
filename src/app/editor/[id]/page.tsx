@@ -27,7 +27,8 @@ import html from 'highlight.js/lib/languages/xml'; // for HTML
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import { Chart } from '@/lib/tiptap/extensions/Chart';
 import { Drawing } from '@/lib/tiptap/extensions/Drawing';
-import { TodoListExtension } from '@/lib/tiptap/extensions/TodoList';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 import { Embed } from '@/lib/tiptap/extensions/Embed';
 import { Callout } from '@/lib/tiptap/extensions/Callout';
 import { PasteHandler } from '@/lib/tiptap/extensions/PasteHandler';
@@ -47,7 +48,7 @@ import 'katex/dist/katex.min.css';
 import TiptapEditor from "@/components/tiptap-editor";
 import { EditorSidebar } from "@/components/EditorSidebar";
 import { getDocument, saveDocument, type Document, addDocVersion, type DocumentVersion } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History, PanelRight } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History, PanelRight, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -90,7 +91,6 @@ export default function EditorPage() {
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isEditorFocused, setIsEditorFocused] = useState(false);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -146,13 +146,15 @@ export default function EditorPage() {
       SlashCommand.configure({ openToggleModal: () => setIsToggleModalOpen(true), openDocSearchModal: () => setIsDocSearchOpen(true) }),
       TrailingNode, LineHeight, TextStyle, Color, FontFamily, FontSize, CustomImage, InteractiveTable,
       CodeBlockLowlight.configure({ lowlight }),
-      HorizontalRule, Chart, Drawing, TodoListExtension, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
+      HorizontalRule, Chart, Drawing, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
       ColumnsExtension, ColumnExtension, MindMap, InlineMath, MathBlock, DocLinkExtension,
       TiptapLink.configure({ linkOnPaste: false, openOnClick: 'whenNotEditable' }),
+      TaskList,
+      TaskItem,
     ],
     editorProps: {
       attributes: {
-        class: cn('prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow', isMobile ? 'pb-24' : 'pb-8'),
+        class: cn('prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow'),
       },
     },
     onUpdate: ({ editor }) => {
@@ -178,12 +180,6 @@ export default function EditorPage() {
                 lastVersionContent.current = currentText;
             }
         }, SAVE_DEBOUNCE_MS);
-    },
-    onFocus: () => {
-      setIsEditorFocused(true);
-    },
-    onBlur: () => {
-      setIsEditorFocused(false);
     },
   });
 
@@ -285,62 +281,108 @@ export default function EditorPage() {
       </div>
     );
   }
+  
+  const headerContent = isMobile ? (
+    <div className="flex items-center justify-between flex-1">
+        <Button variant="outline" size="icon" className="shrink-0" asChild>
+            <Link href="/documents">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Back to Document Hub</span>
+            </Link>
+        </Button>
+        <div className="flex-1 min-w-0 px-4">
+            {doc && <h1 className="text-lg font-bold truncate">{doc.title}</h1>}
+        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="shrink-0">
+                    <MoreVertical className="h-5 w-5" />
+                    <span className="sr-only">More options</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleOpenPreview}>
+                    <Eye className="mr-2 h-4 w-4" /> Preview
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsHistoryOpen(true)}>
+                    <History className="mr-2 h-4 w-4" /> History
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsSidebarOpen(true)}>
+                    <PanelRight className="mr-2 h-4 w-4" /> Details
+                </DropdownMenuItem>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                       <div className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                          <Download className="mr-2 h-4 w-4" /> Export
+                       </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleDocxExport}><FileText className="mr-2 h-4 w-4" />Export as DOCX</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleJsonExport}><Braces className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleHtmlExport}><FileCode2 className="mr-2 h-4 w-4" />Export as HTML</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    </div>
+  ) : (
+    <>
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+            <Button variant="outline" size="icon" className="shrink-0" asChild>
+                <Link href="/documents">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Back to Document Hub</span>
+                </Link>
+            </Button>
+            <div className="flex-1 min-w-0">
+                {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
+            </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)}>
+            <History className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">History</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleOpenPreview} className="relative">
+            <Eye className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Preview</span>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={isExporting} className="relative w-[135px]">
+                    {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <> <Download className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Export</span> </>}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDocxExport}><FileText className="mr-2 h-4 w-4" />Export as DOCX</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleJsonExport}><Braces className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleHtmlExport}><FileCode2 className="mr-2 h-4 w-4" />Export as HTML</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+            <PanelRight className="h-5 w-5" />
+            <span className="sr-only">Open Sidebar</span>
+          </Button>
+        </div>
+    </>
+  );
 
   return (
     <>
       <div className="flex flex-col min-h-screen bg-primary/5">
-        <header className="sticky top-0 z-30 flex items-center justify-between h-auto px-4 py-2 border-b bg-background md:px-6 md:py-3">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-                <Button variant="outline" size="icon" className="shrink-0" asChild>
-                    <Link href="/documents">
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">Back to Document Hub</span>
-                    </Link>
-                </Button>
-                <div className="flex-1 min-w-0">
-                    {doc && <h1 className="text-xl font-bold font-headline text-primary truncate">{doc.title}</h1>}
-                </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)}>
-                <History className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">History</span>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleOpenPreview} className="relative">
-                <Eye className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Preview</span>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={isExporting} className="relative w-[135px]">
-                        {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <> <Download className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Export</span> </>}
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleDocxExport}><FileText className="mr-2 h-4 w-4" />Export as DOCX</DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleJsonExport}><Braces className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleHtmlExport}><FileCode2 className="mr-2 h-4 w-4" />Export as HTML</DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)} className={cn(isMobile && 'hidden')}>
-                <PanelRight className="h-5 w-5" />
-                <span className="sr-only">Open Sidebar</span>
-              </Button>
-            </div>
+        <header className={cn("sticky top-0 z-30 flex items-center justify-between border-b bg-background", isMobile ? "p-2 h-auto" : "p-4 h-auto")}>
+            {headerContent}
         </header>
         <main className="flex-1 flex flex-col min-h-0">
-            <div className="flex-grow h-full flex flex-col items-center p-4 sm:p-6 md:p-8">
-              <div className="w-full max-w-6xl flex-grow glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col">
-                  <TiptapEditor 
-                    editor={editor}
-                    isEditorFocused={isEditorFocused}
-                    onAiAssistantClick={() => setIsAiAssistantOpen(true)}
-                    onAddToggleClick={() => setIsToggleModalOpen(true)}
-                    onOpenEquationModal={() => setIsEquationModalOpen(true)}
-                  />
-              </div>
-            </div>
+            <TiptapEditor 
+                editor={editor}
+                onAiAssistantClick={() => setIsAiAssistantOpen(true)}
+                onAddToggleClick={() => setIsToggleModalOpen(true)}
+                onOpenEquationModal={() => setIsEquationModalOpen(true)}
+                isMobile={isMobile}
+            />
         </main>
       </div>
       <VersionHistory 

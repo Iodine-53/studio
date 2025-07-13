@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { type Editor } from "@tiptap/react";
@@ -33,6 +34,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import React from 'react';
+import { cn } from "@/lib/utils";
 
 
 type Props = {
@@ -40,9 +42,10 @@ type Props = {
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
+  isMobile: boolean;
 };
 
-const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal }: Props) => {
+const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, isMobile }: Props) => {
 
   if (!editor) {
     return null;
@@ -85,14 +88,24 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
       { name: 'Cursive', value: 'cursive' },
   ];
 
+  const toolbarClass = cn(
+    "flex w-full items-center gap-1 bg-card p-2",
+    isMobile 
+      ? "sticky top-0 z-20 border-b overflow-x-auto hide-scrollbar" 
+      : "rounded-t-xl border-b flex-wrap"
+  );
+  
+  const toggleSize = isMobile ? "icon" : "sm";
+  const buttonSize = isMobile ? "icon" : "sm";
+
   return (
     <TooltipProvider>
-      <div className="sticky top-0 z-20 flex w-full flex-wrap items-center gap-1 rounded-t-xl border-b bg-card p-2">
+      <div className={toolbarClass}>
           {/* Text Formatting Tools */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive("bold")}
                 onPressedChange={() => editor.chain().focus().toggleBold().run()}
                 disabled={!editor.can().toggleBold()}
@@ -107,7 +120,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive("italic")}
                 onPressedChange={() => editor.chain().focus().toggleItalic().run()}
                 disabled={!editor.can().toggleItalic()}
@@ -122,7 +135,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive("strike")}
                 onPressedChange={() => editor.chain().focus().toggleStrike().run()}
                 disabled={!editor.can().toggleStrike()}
@@ -137,7 +150,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive("underline")}
                 onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
                 disabled={!editor.can().toggleUnderline()}
@@ -156,7 +169,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
             <Tooltip>
               <TooltipTrigger asChild>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Font Settings">
+                  <Button variant="ghost" size={buttonSize} className="h-9 w-9" aria-label="Font Settings">
                     <Type className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
@@ -211,7 +224,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
             <Tooltip>
               <TooltipTrigger asChild>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Line height">
+                  <Button variant="ghost" size={buttonSize} className="h-9 w-9" aria-label="Line height">
                     <Baseline className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
@@ -253,7 +266,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 onPressedChange={() => editor.chain().focus().undo().run()}
                 disabled={!editor.can().undo()}
                 aria-label="Undo"
@@ -267,7 +280,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 onPressedChange={() => editor.chain().focus().redo().run()}
                 disabled={!editor.can().redo()}
                 aria-label="Redo"
@@ -282,12 +295,11 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           
           <Tooltip>
             <TooltipTrigger asChild>
-              {/* This button is for mobile - icon only */}
               <Button
                 variant="ghost"
-                size="icon"
+                size={buttonSize}
                 onClick={onAiAssistantClick}
-                className="h-9 w-9 text-accent-foreground md:hidden"
+                className="h-9 w-9 text-accent-foreground"
                 aria-label="AI Assistant"
               >
                 <Wand2 className="h-4 w-4" />
@@ -295,18 +307,6 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
             </TooltipTrigger>
             <TooltipContent><p>AI Assistant</p></TooltipContent>
           </Tooltip>
-          
-          {/* This button is for desktop - icon and text */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onAiAssistantClick}
-            className="h-9 text-accent-foreground hidden md:inline-flex"
-            aria-label="AI Assistant"
-          >
-            <Wand2 className="h-4 w-4 mr-2" />
-            AI Assistant
-          </Button>
 
           <Separator orientation="vertical" className="h-8 mx-1" />
 
@@ -314,7 +314,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive({ textAlign: 'left' })}
                 onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
                 aria-label="Set text align left"
@@ -328,7 +328,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive({ textAlign: 'center' })}
                 onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
                 aria-label="Set text align center"
@@ -342,7 +342,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive({ textAlign: 'right' })}
                 onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
                 aria-label="Set text align right"
@@ -356,7 +356,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive({ textAlign: 'justify' })}
                 onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()}
                 aria-label="Set text align justify"
@@ -372,7 +372,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive("paragraph")}
                 onPressedChange={() => editor.chain().focus().setParagraph().run()}
                 aria-label="Set paragraph"
@@ -386,7 +386,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive("heading", { level: 1 })}
                 onPressedChange={() =>
                   editor.chain().focus().toggleHeading({ level: 1 }).run()
@@ -402,7 +402,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
-                size="sm"
+                size={toggleSize}
                 pressed={editor.isActive("blockquote")}
                 onPressedChange={() =>
                   editor.chain().focus().toggleBlockquote().run()
@@ -421,7 +421,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                size="sm"
+                size={buttonSize}
                 variant="ghost"
                 onClick={onOpenEquationModal}
                 aria-label="Add Equation"
@@ -435,7 +435,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
                 <Button
-                  size="sm"
+                  size={buttonSize}
                   variant="ghost"
                   onClick={onAddToggleClick}
                   aria-label="Add Toggle"
@@ -449,17 +449,26 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
                 <Button
-                  size="sm"
+                  size={buttonSize}
                   variant="ghost"
                   onClick={handleAddBlock}
                   aria-label="Add block"
                 >
                   <Plus className="h-4 w-4" />
-                  Block
+                  {!isMobile && "Block"}
                 </Button>
             </TooltipTrigger>
             <TooltipContent><p>Insert a block (triggers /)</p></TooltipContent>
           </Tooltip>
+           <style jsx>{`
+            .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .hide-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+           `}</style>
       </div>
     </TooltipProvider>
   );
