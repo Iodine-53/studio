@@ -27,7 +27,7 @@ const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEqua
         onOpenEquationModal={onOpenEquationModal}
       />
 
-      <div className="flex-grow overflow-y-auto">
+      <div className="flex-1 w-full h-full overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
     </div>

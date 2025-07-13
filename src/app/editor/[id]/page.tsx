@@ -51,6 +51,7 @@ import { EditorSidebar } from "@/components/EditorSidebar";
 import { getDocument, saveDocument, type Document, addDocVersion, type DocumentVersion } from "@/lib/db";
 import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History, PanelRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
@@ -90,7 +91,7 @@ export default function EditorPage() {
   const [isEquationModalOpen, setIsEquationModalOpen] = useState(false);
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { toast } = useToast();
 
@@ -315,35 +316,23 @@ export default function EditorPage() {
                     <DropdownMenuItem onClick={handleMarkdownExport}><BookOpen className="mr-2 h-4 w-4" />Export as Markdown</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="ghost" size="sm" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-                <PanelRight className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Sidebar</span>
+              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+                <PanelRight className="h-5 w-5" />
+                <span className="sr-only">Open Sidebar</span>
               </Button>
             </div>
         </header>
-        <main className="flex-1 flex overflow-hidden">
-            <div className="flex-1 flex flex-col min-h-0">
-                 <div className="flex-grow h-full flex flex-col items-center p-4 sm:p-6 md:p-8">
-                    <div className="w-full max-w-6xl flex-grow glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col">
-                        <TiptapEditor 
-                          editor={editor} 
-                          onAiAssistantClick={() => setIsAiAssistantOpen(true)}
-                          onAddToggleClick={() => setIsToggleModalOpen(true)}
-                          onOpenEquationModal={() => setIsEquationModalOpen(true)}
-                        />
-                    </div>
-                </div>
+        <main className="flex-1 flex flex-col min-h-0">
+            <div className="flex-grow h-full flex flex-col items-center p-4 sm:p-6 md:p-8">
+              <div className="w-full max-w-6xl flex-grow glassmorphism rounded-2xl shadow-2xl overflow-hidden border flex flex-col">
+                  <TiptapEditor 
+                    editor={editor} 
+                    onAiAssistantClick={() => setIsAiAssistantOpen(true)}
+                    onAddToggleClick={() => setIsToggleModalOpen(true)}
+                    onOpenEquationModal={() => setIsEquationModalOpen(true)}
+                  />
+              </div>
             </div>
-            {isSidebarOpen && doc && (
-                <aside className="hidden md:block w-80 bg-card border-l transition-all duration-300">
-                    <EditorSidebar 
-                        doc={doc}
-                        tags={tags}
-                        onTagsChange={handleTagsChange}
-                        onMetadataUpdate={handleMetadataUpdate}
-                    />
-                </aside>
-            )}
         </main>
       </div>
       <VersionHistory 
@@ -352,6 +341,18 @@ export default function EditorPage() {
         docId={docId}
         editor={editor}
       />
+      {doc && (
+        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <SheetContent className="w-full sm:max-w-sm p-0">
+                <EditorSidebar 
+                    doc={doc}
+                    tags={tags}
+                    onTagsChange={handleTagsChange}
+                    onMetadataUpdate={handleMetadataUpdate}
+                />
+            </SheetContent>
+        </Sheet>
+      )}
       <PrintPreview isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} content={currentContent} />
       <AiAssistantDialog open={isAiAssistantOpen} onOpenChange={setIsAiAssistantOpen} editor={editor} />
       <ToggleTemplateModal isOpen={isToggleModalOpen} onClose={() => setIsToggleModalOpen(false)} onSelect={handleSelectToggle} />
