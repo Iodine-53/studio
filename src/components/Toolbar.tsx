@@ -43,10 +43,10 @@ type Props = {
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
   onOpenSidebar: () => void;
-  isMobile: boolean;
+  isSidebarOpen: boolean;
 };
 
-const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar, isMobile }: Props) => {
+const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar, isSidebarOpen }: Props) => {
 
   if (!editor) {
     return null;
@@ -95,28 +95,24 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
   return (
     <TooltipProvider>
       <div className="flex w-full items-center bg-card p-2 border-b">
-          {isMobile && (
-              <>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size={buttonSize}
-                        onClick={onOpenSidebar}
-                        className="h-9 w-9 shrink-0"
-                        aria-label="Open Menu"
-                    >
-                        <Menu className="h-5 w-5" />
-                    </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Open Menu</p></TooltipContent>
-                </Tooltip>
-                <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
-              </>
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onOpenSidebar}
+                className="h-9 w-9 shrink-0"
+                aria-label="Open Menu"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>Toggle Sidebar</p></TooltipContent>
+          </Tooltip>
+          <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
 
           {/* This div will handle the scrolling of tools */}
-          <div className={cn("flex items-center gap-1", isMobile ? "overflow-x-auto hide-scrollbar" : "flex-wrap gap-2")}>
+          <div className="flex items-center gap-1 overflow-x-auto flex-nowrap hide-scrollbar">
               {/* Text Formatting Tools */}
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -211,8 +207,8 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                         <div>
                             <Label>Font Size</Label>
                             <Select
-                                value={editor.getAttributes('textStyle').fontSize?.replace('px', '') || '16'}
-                                onValueChange={val => editor.chain().focus().setFontSize(`${val}px`).run()}
+                                value={editor.isActive('advancedTodoList') ? editor.getAttributes('advancedTodoList').fontSize?.replace('px', '') : editor.getAttributes('textStyle').fontSize?.replace('px', '') || '16'}
+                                onValueChange={val => editor.isActive('advancedTodoList') ? editor.chain().focus().updateAttributes('advancedTodoList', { fontSize: `${val}px` }).run() : editor.chain().focus().setFontSize(`${val}px`).run()}
                             >
                                 <SelectTrigger><SelectValue placeholder="Select size..." /></SelectTrigger>
                                 <SelectContent>
@@ -227,8 +223,8 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                             <Input
                                 type="color"
                                 className="w-full h-10 p-1 cursor-pointer"
-                                onInput={(event: React.ChangeEvent<HTMLInputElement>) => editor.chain().focus().setColor(event.target.value).run()}
-                                value={editor.getAttributes('textStyle').color || '#000000'}
+                                onInput={(event: React.ChangeEvent<HTMLInputElement>) => editor.isActive('advancedTodoList') ? editor.chain().focus().updateAttributes('advancedTodoList', { color: event.target.value }).run() : editor.chain().focus().setColor(event.target.value).run()}
+                                value={editor.isActive('advancedTodoList') ? editor.getAttributes('advancedTodoList').color : editor.getAttributes('textStyle').color || '#000000'}
                             />
                         </div>
                         <Button variant="outline" size="sm" className="w-full" onClick={() => editor.chain().focus().unsetFontFamily().unsetFontSize().unsetColor().run()}>Reset Formatting</Button>
@@ -471,7 +467,6 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                       aria-label="Add block"
                     >
                       <Plus className="h-4 w-4" />
-                      {!isMobile && "Block"}
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent><p>Insert a block (triggers /)</p></TooltipContent>

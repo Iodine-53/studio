@@ -1,10 +1,10 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, CSSProperties } from 'react';
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import { getTasksByBlockId, addTask, updateTask, deleteTask, type Task } from '@/lib/db';
-import { Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -52,7 +52,7 @@ const TaskItemView: React.FC<{ task: Task; allTasks: Task[]; level: number; }> =
                     checked={task.completed}
                     className="flex-shrink-0"
                 />
-                <label htmlFor={`task-${task.id}`} className={`flex-1 text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.text}</label>
+                <label htmlFor={`task-${task.id}`} className={cn("flex-1", task.completed ? 'line-through text-muted-foreground' : '')}>{task.text}</label>
             </div>
             {children.length > 0 && (
                 <div className="mt-1">
@@ -93,7 +93,7 @@ const TaskItemEdit: React.FC<{
                     onCheckedChange={(checked) => onUpdate(task.id!, { completed: !!checked })}
                     className="flex-shrink-0"
                 />
-                <label htmlFor={`task-${task.id}`} className={`flex-1 text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.text}</label>
+                <label htmlFor={`task-${task.id}`} className={cn("flex-1", task.completed ? 'line-through text-muted-foreground' : '')}>{task.text}</label>
                 <Button variant="ghost" size="icon" onClick={() => onDelete(task.id!)} className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive">
                     <Trash2 size={14} />
                 </Button>
@@ -118,7 +118,7 @@ const TaskItemEdit: React.FC<{
 
 
 const AdvancedTodoListComponent: React.FC<NodeViewProps> = ({ node, selected }) => {
-    const { blockId, textAlign, layout } = node.attrs;
+    const { blockId, textAlign, layout, fontSize, color, backgroundColor } = node.attrs;
     const { tasks, loading } = useLiveTasks(blockId);
     const [newTask, setNewTask] = useState('');
     const isEditing = selected;
@@ -149,6 +149,12 @@ const AdvancedTodoListComponent: React.FC<NodeViewProps> = ({ node, selected }) 
     };
     
     const topLevelTasks = useMemo(() => tasks.filter(task => task.parentId === null), [tasks]);
+    
+    const componentStyle: CSSProperties = {
+        fontSize: fontSize || undefined,
+        color: color || undefined,
+        backgroundColor: backgroundColor || undefined,
+    };
 
     return (
         <NodeViewWrapper
@@ -156,7 +162,13 @@ const AdvancedTodoListComponent: React.FC<NodeViewProps> = ({ node, selected }) 
           data-align={textAlign}
           style={{ width: `${width}%` }}
         >
-            <Card className={cn("w-full transition-shadow", isEditing ? 'ring-2 ring-primary ring-offset-2 border' : 'border-0 shadow-none bg-transparent')}>
+            <Card 
+                className={cn(
+                    "w-full transition-shadow text-base",
+                    isEditing ? 'ring-2 ring-primary ring-offset-2' : ''
+                )}
+                style={componentStyle}
+            >
                 <CardHeader>
                     <CardTitle>To-Do List</CardTitle>
                 </CardHeader>

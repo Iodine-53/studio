@@ -8,10 +8,10 @@ import { TagInput } from './TagInput';
 import { MetadataEditor } from './MetadataEditor';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
-import { SheetHeader, SheetTitle } from './ui/sheet';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ArrowLeft, BookOpen, Braces, Download, Eye, FileCode2, FileText, History } from 'lucide-react';
+import { ArrowLeft, BookOpen, Braces, Download, Eye, FileCode2, FileText, History, PanelLeftClose } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type EditorSidebarProps = {
   doc: Document;
@@ -24,6 +24,7 @@ type EditorSidebarProps = {
   onExportJsonClick: () => void;
   onExportHtmlClick: () => void;
   onExportMarkdownClick: () => void;
+  onToggleSidebar: () => void;
 };
 
 export const EditorSidebar: FC<EditorSidebarProps> = ({ 
@@ -37,11 +38,12 @@ export const EditorSidebar: FC<EditorSidebarProps> = ({
     onExportJsonClick,
     onExportHtmlClick,
     onExportMarkdownClick,
+    onToggleSidebar,
 }) => {
   return (
-    <div className="h-full flex flex-col bg-card">
+    <div className="h-full flex flex-col bg-card border-r">
         <div className="p-4 border-b">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-4">
                 <Button variant="outline" size="icon" className="shrink-0" asChild>
                     <Link href="/documents">
                     <ArrowLeft className="h-4 w-4" />
@@ -49,6 +51,17 @@ export const EditorSidebar: FC<EditorSidebarProps> = ({
                     </Link>
                 </Button>
                 <h2 className="text-lg font-semibold leading-none tracking-tight truncate font-headline">{doc.title}</h2>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="shrink-0" onClick={onToggleSidebar}>
+                                <PanelLeftClose className="h-4 w-4" />
+                                <span className="sr-only">Collapse Sidebar</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Collapse Sidebar</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </div>
         </div>
         <div className="p-2 border-b flex justify-around">

@@ -303,6 +303,7 @@ export default function EditorPage() {
                           onExportJsonClick={handleJsonExport}
                           onExportHtmlClick={handleHtmlExport}
                           onExportMarkdownClick={handleMarkdownExport}
+                          onToggleSidebar={() => setIsSidebarOpen(false)}
                       />
                   )}
               </div>
@@ -339,6 +340,7 @@ export default function EditorPage() {
                     onExportJsonClick={handleJsonExport}
                     onExportHtmlClick={handleHtmlExport}
                     onExportMarkdownClick={handleMarkdownExport}
+                    onToggleSidebar={() => setIsSidebarOpen(false)}
                 />
             </SheetContent>
         </Sheet>

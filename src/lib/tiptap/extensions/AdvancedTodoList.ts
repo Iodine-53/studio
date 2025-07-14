@@ -27,13 +27,8 @@ export const AdvancedTodoListExtension = Node.create({
       },
       textAlign: {
         default: 'left',
-        parseHTML: element => element.getAttribute('data-text-align'),
-        renderHTML: attributes => {
-          if (attributes.textAlign) {
-            return { 'data-text-align': attributes.textAlign };
-          }
-          return {};
-        },
+        parseHTML: element => element.getAttribute('data-text-align') || 'left',
+        renderHTML: attributes => ({ 'data-text-align': attributes.textAlign }),
       },
       layout: {
         default: { width: 100 },
@@ -49,7 +44,44 @@ export const AdvancedTodoListExtension = Node.create({
           'data-layout': JSON.stringify(attributes.layout),
         }),
       },
+      // New attributes for styling
+      fontSize: {
+        default: null,
+        parseHTML: element => element.style.fontSize,
+        renderHTML: attributes => attributes.fontSize ? { style: `font-size: ${attributes.fontSize}` } : {},
+      },
+      color: {
+        default: null,
+        parseHTML: element => element.style.color,
+        renderHTML: attributes => attributes.color ? { style: `color: ${attributes.color}` } : {},
+      },
+      backgroundColor: {
+        default: null,
+        parseHTML: element => element.style.backgroundColor,
+        renderHTML: attributes => attributes.backgroundColor ? { style: `background-color: ${attributes.backgroundColor}` } : {},
+      },
     };
+  },
+  
+  // Make the node selectable with textStyle attributes
+  addGlobalAttributes() {
+    return [
+      {
+        types: [this.name],
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: element => element.style.fontSize,
+            renderHTML: attributes => attributes.fontSize ? { style: `font-size: ${attributes.fontSize}` } : {},
+          },
+          color: {
+            default: null,
+            parseHTML: element => element.style.color,
+            renderHTML: attributes => attributes.color ? { style: `color: ${attributes.color}` } : {},
+          },
+        },
+      },
+    ];
   },
 
   parseHTML() {
