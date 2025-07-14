@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ReactSketchCanvas, type ReactSketchCanvasRef } from 'react-sketch-canvas';
 import functionPlot from 'function-plot';
-import { type Task } from '@/lib/db';
+import { AdvancedTodoListPrint } from "./nodes/AdvancedTodoListPrint";
+
 
 type TiptapMark = {
     type: 'bold' | 'italic' | 'underline' | 'strike' | 'link' | 'textStyle';
@@ -474,22 +475,12 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
     
     case 'advancedTodoList': {
-        const { blockId, fontSize, color, backgroundColor } = node.attrs;
-        // In print preview, we can't easily fetch from IndexedDB.
-        // We'll render a placeholder. The DOCX export handles the actual data.
-        const componentStyle: CSSProperties = {
-            fontSize: fontSize || undefined,
-            color: color || undefined,
-            backgroundColor: backgroundColor || undefined,
-        };
-        return (
-            <div style={wrapperStyle}>
-                <div className="my-4 p-4 border rounded-lg" style={componentStyle}>
-                    <h4 className="font-bold text-lg">To-Do List</h4>
-                    <p className="text-sm text-muted-foreground">[To-do list content is available in the editor and DOCX export.]</p>
-                </div>
-            </div>
-        )
+      const { blockId } = node.attrs;
+      return (
+        <div style={wrapperStyle} className="my-4">
+            <AdvancedTodoListPrint blockId={blockId} />
+        </div>
+      );
     }
 
 
