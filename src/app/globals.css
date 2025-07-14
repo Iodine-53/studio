@@ -82,6 +82,27 @@
     th {
       @apply font-bold bg-gray-100 dark:bg-gray-800;
     }
+
+    /* Task List specific styles */
+    ul[data-type="taskList"] {
+      @apply list-none p-0;
+    }
+
+    li[data-type="taskItem"] {
+      @apply flex items-start gap-2 my-2;
+    }
+
+    li[data-type="taskItem"] > label {
+      @apply flex-shrink-0 pt-1;
+    }
+
+    li[data-type="taskItem"] > div {
+      @apply flex-grow;
+    }
+    
+    li[data-type="taskItem"][data-checked="true"] > div {
+      @apply line-through text-muted-foreground;
+    }
   }
   
   /* Make the editor canvas full-width */
