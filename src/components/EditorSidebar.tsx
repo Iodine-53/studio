@@ -39,8 +39,8 @@ export const EditorSidebar: FC<EditorSidebarProps> = ({
     onExportMarkdownClick,
 }) => {
   return (
-    <div className="h-full flex flex-col">
-        <SheetHeader className="p-4 border-b">
+    <div className="h-full flex flex-col bg-card">
+        <div className="p-4 border-b">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" className="shrink-0" asChild>
                     <Link href="/documents">
@@ -48,9 +48,9 @@ export const EditorSidebar: FC<EditorSidebarProps> = ({
                     <span className="sr-only">Back to Document Hub</span>
                     </Link>
                 </Button>
-                <SheetTitle className="truncate font-headline">{doc.title}</SheetTitle>
+                <h2 className="text-lg font-semibold leading-none tracking-tight truncate font-headline">{doc.title}</h2>
             </div>
-        </SheetHeader>
+        </div>
         <div className="p-2 border-b flex justify-around">
              <Button variant="ghost" size="sm" onClick={onHistoryClick}>
                 <History className="h-4 w-4 mr-2" /> History
