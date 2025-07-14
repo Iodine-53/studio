@@ -24,6 +24,7 @@ import {
   Rows,
   Sigma,
   Menu,
+  ArrowLeft,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
