@@ -156,7 +156,7 @@ const AdvancedTodoListComponent: React.FC<NodeViewProps> = ({ node, selected }) 
           data-align={textAlign}
           style={{ width: `${width}%` }}
         >
-            <Card className={cn("w-full transition-shadow", isEditing && 'ring-2 ring-primary ring-offset-2')}>
+            <Card className={cn("w-full transition-shadow", isEditing ? 'ring-2 ring-primary ring-offset-2 border' : 'border-0 shadow-none bg-transparent')}>
                 <CardHeader>
                     <CardTitle>To-Do List</CardTitle>
                 </CardHeader>
