@@ -43,10 +43,10 @@ type Props = {
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
-  onOpenSidebar: () => void;
+  isMobile: boolean;
 };
 
-const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar }: Props) => {
+const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, isMobile }: Props) => {
 
   if (!editor) {
     return null;
@@ -98,16 +98,18 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                onClick={onOpenSidebar}
                 className="h-9 w-9 shrink-0"
-                aria-label="Toggle Menu"
+                aria-label="Back to Documents"
+                asChild
               >
-                <Menu className="h-5 w-5" />
+                <a href="/documents">
+                    <ArrowLeft className="h-4 w-4" />
+                </a>
               </Button>
             </TooltipTrigger>
-            <TooltipContent><p>Toggle Sidebar</p></TooltipContent>
+            <TooltipContent><p>Back to Documents</p></TooltipContent>
           </Tooltip>
           <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
 

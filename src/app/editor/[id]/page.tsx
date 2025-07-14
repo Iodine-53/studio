@@ -89,7 +89,6 @@ export default function EditorPage() {
   const [isEquationModalOpen, setIsEquationModalOpen] = useState(false);
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [isEditorFocused, setIsEditorFocused] = useState(false);
@@ -291,21 +290,19 @@ export default function EditorPage() {
       <div className="flex flex-col min-h-screen bg-primary/5">
         <main className="flex-1 flex min-h-0">
           {doc && !isMobile && (
-              <div className={cn("transition-all duration-300", isSidebarOpen ? "w-80" : "w-0")}>
-                  {isSidebarOpen && (
-                      <EditorSidebar 
-                          doc={doc}
-                          tags={tags}
-                          onTagsChange={handleTagsChange}
-                          onMetadataUpdate={handleMetadataUpdate}
-                          onHistoryClick={() => setIsHistoryOpen(true)}
-                          onPreviewClick={handleOpenPreview}
-                          onExportDocxClick={handleDocxExport}
-                          onExportJsonClick={handleJsonExport}
-                          onExportHtmlClick={handleHtmlExport}
-                          onExportMarkdownClick={handleMarkdownExport}
-                      />
-                  )}
+              <div className="w-80">
+                  <EditorSidebar 
+                      doc={doc}
+                      tags={tags}
+                      onTagsChange={handleTagsChange}
+                      onMetadataUpdate={handleMetadataUpdate}
+                      onHistoryClick={() => setIsHistoryOpen(true)}
+                      onPreviewClick={handleOpenPreview}
+                      onExportDocxClick={handleDocxExport}
+                      onExportJsonClick={handleJsonExport}
+                      onExportHtmlClick={handleHtmlExport}
+                      onExportMarkdownClick={handleMarkdownExport}
+                  />
               </div>
           )}
           <div className="flex-1 flex flex-col min-h-0">
@@ -314,7 +311,6 @@ export default function EditorPage() {
                   onAiAssistantClick={() => setIsAiAssistantOpen(true)}
                   onAddToggleClick={() => setIsToggleModalOpen(true)}
                   onOpenEquationModal={() => setIsEquationModalOpen(true)}
-                  onOpenSidebar={() => setIsSidebarOpen(prev => !prev)}
                   isMobile={isMobile}
               />
           </div>
@@ -326,27 +322,6 @@ export default function EditorPage() {
         docId={docId}
         editor={editor}
       />
-      {doc && isMobile && (
-        <Sheet open={isSidebarOpen && isMobile} onOpenChange={setIsSidebarOpen}>
-            <SheetContent className="w-full sm:max-w-sm p-0">
-                <SheetHeader className="p-4 border-b">
-                  <SheetTitle>Editor Menu</SheetTitle>
-                </SheetHeader>
-                <EditorSidebar 
-                    doc={doc}
-                    tags={tags}
-                    onTagsChange={handleTagsChange}
-                    onMetadataUpdate={handleMetadataUpdate}
-                    onHistoryClick={() => { setIsSidebarOpen(false); setIsHistoryOpen(true); }}
-                    onPreviewClick={() => { setIsSidebarOpen(false); handleOpenPreview(); }}
-                    onExportDocxClick={handleDocxExport}
-                    onExportJsonClick={handleJsonExport}
-                    onExportHtmlClick={handleHtmlExport}
-                    onExportMarkdownClick={handleMarkdownExport}
-                />
-            </SheetContent>
-        </Sheet>
-      )}
       <PrintPreview isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} content={currentContent} />
       <AiAssistantDialog open={isAiAssistantOpen} onOpenChange={setIsAiAssistantOpen} editor={editor} />
       <ToggleTemplateModal isOpen={isToggleModalOpen} onClose={() => setIsToggleModalOpen(false)} onSelect={handleSelectToggle} />
