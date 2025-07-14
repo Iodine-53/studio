@@ -6,9 +6,6 @@ import { type Editor, EditorContent } from '@tiptap/react'
 import Toolbar from './Toolbar'
 import { LayoutBubbleMenu } from './LayoutBubbleMenu';
 import 'highlight.js/styles/atom-one-dark.css'
-import { motion, AnimatePresence } from "framer-motion";
-import { useMediaQuery } from '@/hooks/use-media-query';
-
 
 type Props = {
   editor: Editor | null;
@@ -16,12 +13,11 @@ type Props = {
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
   onOpenSidebar: () => void;
-  isSidebarOpen: boolean;
+  isMobile: boolean;
 };
 
 
-const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar, isSidebarOpen }: Props) => {
-  const isMobile = useMediaQuery('(max-width: 768px)');
+const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar, isMobile }: Props) => {
   
   return (
     <div className="flex flex-col flex-grow relative min-h-0 bg-background">
@@ -34,7 +30,6 @@ const TiptapEditor = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEqua
             onAddToggleClick={onAddToggleClick}
             onOpenEquationModal={onOpenEquationModal}
             onOpenSidebar={onOpenSidebar}
-            isSidebarOpen={isSidebarOpen}
           />
       </div>
 

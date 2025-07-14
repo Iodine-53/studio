@@ -304,7 +304,6 @@ export default function EditorPage() {
                           onExportJsonClick={handleJsonExport}
                           onExportHtmlClick={handleHtmlExport}
                           onExportMarkdownClick={handleMarkdownExport}
-                          onToggleSidebar={() => setIsSidebarOpen(false)}
                       />
                   )}
               </div>
@@ -316,7 +315,7 @@ export default function EditorPage() {
                   onAddToggleClick={() => setIsToggleModalOpen(true)}
                   onOpenEquationModal={() => setIsEquationModalOpen(true)}
                   onOpenSidebar={() => setIsSidebarOpen(prev => !prev)}
-                  isSidebarOpen={isSidebarOpen}
+                  isMobile={isMobile}
               />
           </div>
         </main>
@@ -330,6 +329,9 @@ export default function EditorPage() {
       {doc && isMobile && (
         <Sheet open={isSidebarOpen && isMobile} onOpenChange={setIsSidebarOpen}>
             <SheetContent className="w-full sm:max-w-sm p-0">
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle>Editor Menu</SheetTitle>
+                </SheetHeader>
                 <EditorSidebar 
                     doc={doc}
                     tags={tags}
@@ -341,7 +343,6 @@ export default function EditorPage() {
                     onExportJsonClick={handleJsonExport}
                     onExportHtmlClick={handleHtmlExport}
                     onExportMarkdownClick={handleMarkdownExport}
-                    onToggleSidebar={() => setIsSidebarOpen(false)}
                 />
             </SheetContent>
         </Sheet>

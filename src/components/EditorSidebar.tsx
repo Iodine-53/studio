@@ -23,7 +23,6 @@ type EditorSidebarProps = {
   onExportJsonClick: () => void;
   onExportHtmlClick: () => void;
   onExportMarkdownClick: () => void;
-  onToggleSidebar: () => void;
 };
 
 export const EditorSidebar: FC<EditorSidebarProps> = ({ 

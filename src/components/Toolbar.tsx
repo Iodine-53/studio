@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { type Editor } from "@tiptap/react";
@@ -43,10 +44,9 @@ type Props = {
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
   onOpenSidebar: () => void;
-  isSidebarOpen: boolean;
 };
 
-const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar, isSidebarOpen }: Props) => {
+const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, onOpenSidebar }: Props) => {
 
   if (!editor) {
     return null;
