@@ -8,41 +8,29 @@ import { useState, useEffect } from 'react';
  * @returns `true` if the media query matches, otherwise `false`.
  */
 export const useMediaQuery = (query: string): boolean => {
-  // Get the initial value on the client-side
-  const [matches, setMatches] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return window.matchMedia(query).matches;
-    }
-    return false;
-  });
+  // Initialize state to `false` to ensure server and client initial render match.
+  // This prevents hydration errors.
+  const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    const mediaQueryList = window.matchMedia(query);
-
-    const listener = (event: MediaQueryListEvent) => {
-      setMatches(event.matches);
-    };
-
-    // Safari < 14 does not support addEventListener, so we use the deprecated addListener as a fallback.
-    if (mediaQueryList.addEventListener) {
-        mediaQueryList.addEventListener('change', listener);
-    } else {
-        mediaQueryList.addListener(listener);
+    // This effect runs only on the client, after the initial render.
+    const media = window.matchMedia(query);
+    
+    // Update state with the initial match.
+    if (media.matches !== matches) {
+      setMatches(media.matches);
     }
 
-    // Initial check in case the value changed between render and effect
-    if (mediaQueryList.matches !== matches) {
-      setMatches(mediaQueryList.matches);
-    }
-
-    return () => {
-      if (mediaQueryList.removeEventListener) {
-          mediaQueryList.removeEventListener('change', listener);
-      } else {
-          mediaQueryList.removeListener(listener);
-      }
+    const listener = () => {
+      setMatches(media.matches);
     };
-  }, [query, matches]);
+
+    // Use the modern addEventListener method
+    media.addEventListener('change', listener);
+    
+    // Cleanup function to remove the listener
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
 
   return matches;
 };
