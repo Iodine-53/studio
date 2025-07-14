@@ -56,7 +56,6 @@ export const EditorSidebar: FC<EditorSidebarProps> = ({
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="shrink-0" onClick={onToggleSidebar}>
                                 <PanelLeftClose className="h-4 w-4" />
-                                <span className="sr-only">Collapse Sidebar</span>
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent><p>Collapse Sidebar</p></TooltipContent>
