@@ -102,7 +102,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                 size="icon"
                 onClick={onOpenSidebar}
                 className="h-9 w-9 shrink-0"
-                aria-label="Open Menu"
+                aria-label="Toggle Menu"
               >
                 <Menu className="h-5 w-5" />
               </Button>

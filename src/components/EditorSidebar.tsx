@@ -10,8 +10,7 @@ import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ArrowLeft, BookOpen, Braces, Download, Eye, FileCode2, FileText, History, PanelLeftClose } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ArrowLeft, BookOpen, Braces, Download, Eye, FileCode2, FileText, History } from 'lucide-react';
 
 type EditorSidebarProps = {
   doc: Document;
@@ -38,7 +37,6 @@ export const EditorSidebar: FC<EditorSidebarProps> = ({
     onExportJsonClick,
     onExportHtmlClick,
     onExportMarkdownClick,
-    onToggleSidebar,
 }) => {
   return (
     <div className="h-full flex flex-col bg-card border-r">
@@ -51,16 +49,6 @@ export const EditorSidebar: FC<EditorSidebarProps> = ({
                     </Link>
                 </Button>
                 <h2 className="text-lg font-semibold leading-none tracking-tight truncate font-headline">{doc.title}</h2>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="shrink-0" onClick={onToggleSidebar}>
-                                <PanelLeftClose className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Collapse Sidebar</p></TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
             </div>
         </div>
         <div className="p-2 border-b flex justify-around">
