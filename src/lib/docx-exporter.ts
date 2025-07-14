@@ -34,6 +34,7 @@ import {
 } from 'chart.js';
 import html2canvas from 'html2canvas';
 import functionPlot from 'function-plot';
+import { getTasksByBlockId, type Task } from '@/lib/db';
 
 
 // Register all the components you use in your charts
@@ -547,6 +548,70 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
                 children: [new TextRun(`${checkbox} `), ...textRuns],
             });
         }))).flat();
+    
+    case 'advancedTodoList': {
+        const { blockId } = node.attrs;
+        const tasks = await getTasksByBlockId(blockId);
+        const taskMap = new Map(tasks.map(t => [String(t.id), t]));
+        const childrenMap = new Map<string, Task[]>();
+
+        tasks.forEach(task => {
+            if (task.parentId) {
+                if (!childrenMap.has(task.parentId)) {
+                    childrenMap.set(task.parentId, []);
+                }
+                childrenMap.get(task.parentId)!.push(task);
+            }
+        });
+        
+        const createListItems = (taskIds: (number | undefined)[], level: number): Paragraph[] => {
+            const paragraphs: Paragraph[] = [];
+            taskIds.forEach(taskId => {
+                if (!taskId) return;
+                const task = taskMap.get(String(taskId));
+                if (!task) return;
+
+                const checkbox = task.completed ? '☑' : '☐';
+                paragraphs.push(new Paragraph({
+                    children: [
+                        new TextRun(`${checkbox} `),
+                        new TextRun({ text: task.text, strike: task.completed }),
+                    ],
+                    indent: { left: (level + 1) * 400 },
+                    spacing: { after: 80 }
+                }));
+
+                const children = childrenMap.get(String(task.id)) || [];
+                if (children.length > 0) {
+                    paragraphs.push(...createListItems(children.map(c => c.id), level + 1));
+                }
+            });
+            return paragraphs;
+        };
+
+        const topLevelTasks = tasks.filter(t => t.parentId === null);
+
+        const listElements = [
+            new Paragraph({
+                children: [new TextRun({ text: "To-Do List", bold: true })],
+                heading: HeadingLevel.HEADING_3,
+                spacing: { after: 200 }
+            }),
+            ...createListItems(topLevelTasks.map(t => t.id), 0)
+        ];
+
+        return [new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [new TableRow({
+                children: [new TableCell({
+                    children: listElements,
+                    shading: { fill: 'F5F5F5', type: ShadingType.CLEAR },
+                    borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, },
+                    margins: { top: 200, bottom: 200, left: 200, right: 200 }
+                })]
+            })]
+        })];
+    }
 
     case 'callout': {
         const calloutContent = (await Promise.all((node.content || []).map(convertNodeToDocx))).flat();
@@ -577,41 +642,6 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
             })]
         })];
     }
-    
-    case 'todoList': {
-        const todoElements: Paragraph[] = [];
-        todoElements.push(new Paragraph({
-           children: [new TextRun({ text: node.attrs?.title, bold: true })],
-           heading: HeadingLevel.HEADING_3,
-           spacing: { after: 100 }
-        }));
-        for (const task of (node.attrs?.tasks || [])) {
-           const checkbox = task.completed ? '☑' : '☐';
-           todoElements.push(new Paragraph({
-               children: [
-                   new TextRun({ text: `${checkbox} ` }),
-                   new TextRun({ text: task.text, strike: task.completed }),
-               ]
-           }));
-        }
-       // Wrap in a styled table cell
-       return [new Table({
-           width: { size: 100, type: WidthType.PERCENTAGE },
-           rows: [new TableRow({
-               children: [new TableCell({
-                   children: todoElements,
-                   shading: { fill: 'F5F5F5', type: ShadingType.CLEAR },
-                   borders: {
-                     top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-                     bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-                     left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-                     right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-                   },
-                   margins: { top: 200, bottom: 200, left: 200, right: 200 }
-               })]
-           })]
-       })];
-     }
 
     case 'embed': {
       const { src } = node.attrs;

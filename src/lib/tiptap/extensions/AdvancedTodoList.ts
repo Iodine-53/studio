@@ -35,6 +35,20 @@ export const AdvancedTodoListExtension = Node.create({
           return {};
         },
       },
+      layout: {
+        default: { width: 100 },
+        parseHTML: (element) => {
+          const layoutAttr = element.getAttribute('data-layout');
+          try {
+            return layoutAttr ? JSON.parse(layoutAttr) : { width: 100 };
+          } catch {
+            return { width: 100 };
+          }
+        },
+        renderHTML: (attributes) => ({
+          'data-layout': JSON.stringify(attributes.layout),
+        }),
+      },
     };
   },
 

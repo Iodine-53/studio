@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ReactSketchCanvas, type ReactSketchCanvasRef } from 'react-sketch-canvas';
 import functionPlot from 'function-plot';
+import { type Task } from '@/lib/db';
 
 type TiptapMark = {
     type: 'bold' | 'italic' | 'underline' | 'strike' | 'link' | 'textStyle';
@@ -161,10 +162,10 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       // to prevent an invalid HTML structure like <p><div>...</div></p>, which causes hydration errors.
       const hasBlockChild = (node.content || []).some(childNode =>
         [
-          'image', 'chartBlock', 'drawing', 'todoList', 'callout',
+          'image', 'chartBlock', 'drawing', 'callout',
           'horizontalRule', 'interactiveTable', 'embed', 'progressBarBlock',
           'table', 'bulletList', 'orderedList', 'taskList', 'codeBlock', 'blockquote',
-          'toggle', 'columns', 'mindMap', 'functionPlot', 'mathBlock'
+          'toggle', 'columns', 'mindMap', 'functionPlot', 'mathBlock', 'advancedTodoList'
         ].includes(childNode.type)
       );
 
@@ -305,26 +306,6 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
       } catch(e) {
         return <div className="my-4 p-4 border rounded-lg text-center text-destructive">[Invalid Chart Data]</div>
       }
-    }
-
-    case 'todoList': {
-        return (
-            <div style={wrapperStyle}>
-                <div className="my-4 p-4 border rounded-lg not-prose">
-                    <h4 className="font-bold text-xl mb-2">{node.attrs?.title}</h4>
-                    <ul className="space-y-2 list-none pl-0">
-                        {(node.attrs?.tasks || []).map((task: any) => (
-                            <li key={task.id} className="flex items-center gap-2">
-                                {task.completed ? <CheckSquare className="h-5 w-5 text-primary flex-shrink-0"/> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0"/>}
-                                <span className={cn(task.completed && 'line-through text-muted-foreground')}>
-                                    {task.text}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-        );
     }
     
     case 'interactiveTable': {
@@ -490,6 +471,19 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
             </div>
           </div>
       );
+    }
+    
+    case 'advancedTodoList': {
+        // Since we can't run the DB logic here, we'll just render a placeholder.
+        // The real implementation for DOCX export will need to handle this.
+        return (
+            <div style={wrapperStyle}>
+                <div className="my-4 p-4 border rounded-lg not-prose bg-muted/30">
+                    <h4 className="font-bold text-lg">To-Do List</h4>
+                    <p className="text-sm text-muted-foreground">[To-do list content will be exported.]</p>
+                </div>
+            </div>
+        )
     }
 
 
