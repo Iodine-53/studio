@@ -4,7 +4,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 const DB_NAME = 'toolbox-ai-db';
 const DOC_STORE_NAME = 'documents';
 const VERSION_STORE_NAME = 'document_versions';
-const DB_VERSION = 5; // Reverted version as task table is removed
+const DB_VERSION = 5;
 
 // Define the structure of a Tiptap node for type safety
 export type TiptapNode = {

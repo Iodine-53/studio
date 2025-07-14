@@ -34,16 +34,6 @@ import {
 } from 'chart.js';
 import html2canvas from 'html2canvas';
 import functionPlot from 'function-plot';
-import { getTasksByBlockId, type Task } from '@/lib/db';
-
-
-// Register all the components you use in your charts
-Chart.register(
-  LineController, BarController, PieController,
-  CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement,
-  Tooltip, Legend, Title
-);
-
 
 // A generic type for a Tiptap node. Adjust as needed.
 export type TiptapNode = {
@@ -550,67 +540,26 @@ async function convertNodeToDocx(node: TiptapNode): Promise<Array<Paragraph | Ta
         }))).flat();
     
     case 'advancedTodoList': {
-        const { blockId } = node.attrs;
-        const tasks = await getTasksByBlockId(blockId);
-        const taskMap = new Map(tasks.map(t => [String(t.id), t]));
-        const childrenMap = new Map<string, Task[]>();
+        const taskItems = await Promise.all((node.content || []).map(async (taskNode) => {
+            if (taskNode.type !== 'advancedTask') return [];
 
-        tasks.forEach(task => {
-            if (task.parentId) {
-                if (!childrenMap.has(task.parentId)) {
-                    childrenMap.set(task.parentId, []);
-                }
-                childrenMap.get(task.parentId)!.push(task);
-            }
-        });
-        
-        const createListItems = (taskIds: (number | undefined)[], level: number): Paragraph[] => {
-            const paragraphs: Paragraph[] = [];
-            taskIds.forEach(taskId => {
-                if (!taskId) return;
-                const task = taskMap.get(String(taskId));
-                if (!task) return;
-
-                const checkbox = task.completed ? '☑' : '☐';
-                paragraphs.push(new Paragraph({
-                    children: [
-                        new TextRun(`${checkbox} `),
-                        new TextRun({ text: task.text, strike: task.completed }),
-                    ],
-                    indent: { left: (level + 1) * 400 },
-                    spacing: { after: 80 }
-                }));
-
-                const children = childrenMap.get(String(task.id)) || [];
-                if (children.length > 0) {
-                    paragraphs.push(...createListItems(children.map(c => c.id), level + 1));
-                }
+            const isCompleted = taskNode.attrs?.isCompleted;
+            const checkbox = isCompleted ? '☑' : '☐';
+            const textRuns = createTextRuns(taskNode).map(run => {
+                run.options.strike = isCompleted;
+                return run;
             });
-            return paragraphs;
-        };
+            
+            return new Paragraph({
+                children: [new TextRun({ text: `${checkbox} ` }), ...textRuns],
+                spacing: { after: 80 }
+            });
+        }));
 
-        const topLevelTasks = tasks.filter(t => t.parentId === null);
-
-        const listElements = [
-            new Paragraph({
-                children: [new TextRun({ text: "To-Do List", bold: true })],
-                heading: HeadingLevel.HEADING_3,
-                spacing: { after: 200 }
-            }),
-            ...createListItems(topLevelTasks.map(t => t.id), 0)
+        return [
+            new Paragraph({ text: "To-Do List", heading: HeadingLevel.HEADING_3, spacing: { after: 200 } }),
+            ...taskItems.flat() as Paragraph[]
         ];
-
-        return [new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [new TableRow({
-                children: [new TableCell({
-                    children: listElements,
-                    shading: { fill: 'F5F5F5', type: ShadingType.CLEAR },
-                    borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, },
-                    margins: { top: 200, bottom: 200, left: 200, right: 200 }
-                })]
-            })]
-        })];
     }
 
     case 'callout': {
