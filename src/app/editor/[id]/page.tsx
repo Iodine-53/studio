@@ -43,7 +43,7 @@ import { InlineMath, MathBlock } from '@/lib/tiptap/extensions/Math';
 import { DocLinkExtension } from '@/lib/tiptap/extensions/DocLink';
 import { Link as TiptapLink } from '@tiptap/extension-link';
 import 'katex/dist/katex.min.css';
-import { AdvancedTodoListExtension } from '@/lib/tiptap/extensions/AdvancedTodoList';
+import { AdvancedTodoListExtension, AdvancedTaskExtension } from '@/lib/tiptap/extensions/AdvancedTask';
 
 
 import TiptapEditor from "@/components/tiptap-editor";
@@ -154,6 +154,7 @@ export default function EditorPage() {
         nested: true,
       }),
       AdvancedTodoListExtension,
+      AdvancedTaskExtension,
     ],
     editorProps: {
       attributes: {

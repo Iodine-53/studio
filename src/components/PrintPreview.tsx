@@ -7,8 +7,6 @@ import { cn } from "@/lib/utils";
 import { Bar, BarChart, Area, AreaChart, Line, LineChart, Pie, PieChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ReactSketchCanvas, type ReactSketchCanvasRef } from 'react-sketch-canvas';
 import functionPlot from 'function-plot';
-import { AdvancedTodoListPrint } from "./nodes/AdvancedTodoListPrint";
-
 
 type TiptapMark = {
     type: 'bold' | 'italic' | 'underline' | 'strike' | 'link' | 'textStyle';
@@ -194,7 +192,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'bulletList':
         return <ul className="list-disc pl-6">{children}</ul>;
     case 'orderedList':
-        return <ol className="list-decimal pl-6">{children}</ol>;
+        return <ol className="list-decimal pl-6">{children}</ul>;
     case 'listItem':
         return <li style={hasStyle ? style : undefined}>{children}</li>;
     case 'codeBlock':
@@ -208,7 +206,7 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     case 'table':
         return <table className="w-full my-4 border-collapse prose"><tbody>{children}</tbody></table>;
     case 'tableRow':
-        return <tr>{children}</tr>;
+        return tr>{children}</tr>;
     case 'tableHeader':
         return <th className="border p-2 font-bold text-left bg-muted">{children}</th>;
     case 'tableCell':
@@ -475,12 +473,32 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
     
     case 'advancedTodoList': {
-      const { blockId } = node.attrs;
       return (
         <div style={wrapperStyle} className="my-4">
-            <AdvancedTodoListPrint blockId={blockId} />
+           <div className="my-4 p-4">
+             <h4 className="font-bold text-lg mb-4">To-Do List</h4>
+             <div className="space-y-3">
+               {children}
+             </div>
+           </div>
         </div>
       );
+    }
+
+    case 'advancedTask': {
+        const isTaskCompleted = node.attrs?.isCompleted;
+        return (
+            <div className="flex items-start gap-2 py-1">
+                {isTaskCompleted ? (
+                    <CheckSquare className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                ) : (
+                    <Square className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                )}
+                <span className={cn("flex-1", isTaskCompleted && 'line-through text-gray-500')}>
+                    {children}
+                </span>
+            </div>
+        );
     }
 
 

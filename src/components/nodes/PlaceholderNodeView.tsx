@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -16,7 +17,7 @@ export const PlaceholderNodeView = ({ editor, getPos, node }: NodeViewProps) => 
       
       // The content for the advanced task
       const taskContent = {
-        type: node.attrs.type, // 'advancedTask'
+        type: 'advancedTask',
         content: [{ type: 'text', text: 'New Task' }], // Start with some default text
       };
       

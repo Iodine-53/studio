@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -29,7 +30,7 @@ const categoryConfig = {
   project: { label: 'Project', icon: <FolderKanban className="h-4 w-4" /> },
 };
 
-export const AdvancedTaskNodeView = ({ node, updateAttributes }: NodeViewProps) => {
+export const AdvancedTaskNodeView = ({ node, updateAttributes, editor }: NodeViewProps) => {
   const { dueDate, category, priority, isCompleted } = node.attrs;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -43,32 +44,54 @@ export const AdvancedTaskNodeView = ({ node, updateAttributes }: NodeViewProps) 
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <NodeViewWrapper
             className={cn(
-            'flex items-center gap-2 my-2 rounded-lg border p-2',
-            isCompleted ? 'bg-muted/50' : 'bg-card'
+            'flex items-start gap-2 group -mx-2 px-2 py-1 rounded-md',
+             editor.isEditable && 'hover:bg-muted'
             )}
         >
-            <div className="flex items-center">
+            <div className="flex-shrink-0 pt-1">
                 <Checkbox
                     checked={isCompleted}
                     onCheckedChange={(checked) => updateAttributes({ isCompleted: !!checked })}
                 />
             </div>
 
-            <div className="flex-grow">
+            <div className="flex-grow min-w-0">
                  <NodeViewContent
                     className={cn(
                         'min-w-0', 
                         isCompleted ? 'text-muted-foreground line-through' : ''
                     )}
                 />
+                 <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {dueDate && (
+                        <div className="flex items-center text-xs text-muted-foreground gap-1">
+                            <CalendarIcon className="h-3 w-3" />
+                            <span>{format(new Date(dueDate), 'MMM d')}</span>
+                        </div>
+                    )}
+                    {category && (
+                        <div className="flex items-center text-xs text-muted-foreground gap-1">
+                            {categoryConfig[category as keyof typeof categoryConfig].icon}
+                            <span className="capitalize">{categoryConfig[category as keyof typeof categoryConfig].label}</span>
+                        </div>
+                    )}
+                     {priority && (
+                        <div className="flex items-center text-xs text-muted-foreground gap-1">
+                            {priorityConfig[priority as keyof typeof priorityConfig].icon}
+                            <span className="capitalize">{priorityConfig[priority as keyof typeof priorityConfig].label}</span>
+                        </div>
+                    )}
+                 </div>
             </div>
             
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="flex-shrink-0 h-8 w-8">
-                    <Settings2 className="h-4 w-4" />
-                    <span className="sr-only">Edit Task Details</span>
-                </Button>
-            </DialogTrigger>
+            {editor.isEditable && (
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="flex-shrink-0 h-8 w-8 opacity-0 group-hover:opacity-100">
+                        <Settings2 className="h-4 w-4" />
+                        <span className="sr-only">Edit Task Details</span>
+                    </Button>
+                </DialogTrigger>
+            )}
         </NodeViewWrapper>
 
       <DialogContent>
