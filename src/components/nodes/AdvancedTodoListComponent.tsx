@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo, useCallback, CSSProperties } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, CSSProperties } from 'react';
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import { getTasksByBlockId, addTask, updateTask, deleteTask, type Task } from '@/lib/db';
 import { Plus, Trash2 } from 'lucide-react';
@@ -153,7 +153,7 @@ const AdvancedTodoListComponent: React.FC<NodeViewProps> = ({ node, selected }) 
     const componentStyle: CSSProperties = {
         fontSize: fontSize || undefined,
         color: color || undefined,
-        backgroundColor: backgroundColor || undefined,
+        backgroundColor: backgroundColor || 'hsl(var(--card))',
     };
 
     return (
@@ -164,8 +164,8 @@ const AdvancedTodoListComponent: React.FC<NodeViewProps> = ({ node, selected }) 
         >
             <Card 
                 className={cn(
-                    "w-full transition-shadow text-base",
-                    isEditing ? 'ring-2 ring-primary ring-offset-2' : ''
+                    "w-full transition-shadow",
+                    isEditing ? 'ring-2 ring-primary ring-offset-2' : 'border-none shadow-none'
                 )}
                 style={componentStyle}
             >
