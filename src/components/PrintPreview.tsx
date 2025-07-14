@@ -474,13 +474,19 @@ const NodeRenderer: FC<{ node: TiptapNode }> = ({ node }) => {
     }
     
     case 'advancedTodoList': {
-        // Since we can't run the DB logic here, we'll just render a placeholder.
-        // The real implementation for DOCX export will need to handle this.
+        const { blockId, fontSize, color, backgroundColor } = node.attrs;
+        // In print preview, we can't easily fetch from IndexedDB.
+        // We'll render a placeholder. The DOCX export handles the actual data.
+        const componentStyle: CSSProperties = {
+            fontSize: fontSize || undefined,
+            color: color || undefined,
+            backgroundColor: backgroundColor || undefined,
+        };
         return (
             <div style={wrapperStyle}>
-                <div className="my-4 p-4 border rounded-lg not-prose bg-muted/30">
+                <div className="my-4 p-4 border rounded-lg" style={componentStyle}>
                     <h4 className="font-bold text-lg">To-Do List</h4>
-                    <p className="text-sm text-muted-foreground">[To-do list content will be exported.]</p>
+                    <p className="text-sm text-muted-foreground">[To-do list content is available in the editor and DOCX export.]</p>
                 </div>
             </div>
         )

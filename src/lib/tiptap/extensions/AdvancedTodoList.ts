@@ -44,26 +44,33 @@ export const AdvancedTodoListExtension = Node.create({
           'data-layout': JSON.stringify(attributes.layout),
         }),
       },
-      // New attributes for styling
       fontSize: {
         default: null,
+        renderHTML: attributes => {
+          if (!attributes.fontSize) return {};
+          return { style: `font-size: ${attributes.fontSize}` };
+        },
         parseHTML: element => element.style.fontSize,
-        renderHTML: attributes => attributes.fontSize ? { style: `font-size: ${attributes.fontSize}` } : {},
       },
       color: {
         default: null,
+        renderHTML: attributes => {
+          if (!attributes.color) return {};
+          return { style: `color: ${attributes.color}` };
+        },
         parseHTML: element => element.style.color,
-        renderHTML: attributes => attributes.color ? { style: `color: ${attributes.color}` } : {},
       },
       backgroundColor: {
         default: null,
+        renderHTML: attributes => {
+          if (!attributes.backgroundColor) return {};
+          return { style: `background-color: ${attributes.backgroundColor}` };
+        },
         parseHTML: element => element.style.backgroundColor,
-        renderHTML: attributes => attributes.backgroundColor ? { style: `background-color: ${attributes.backgroundColor}` } : {},
       },
     };
   },
   
-  // Make the node selectable with textStyle attributes
   addGlobalAttributes() {
     return [
       {
@@ -71,13 +78,19 @@ export const AdvancedTodoListExtension = Node.create({
         attributes: {
           fontSize: {
             default: null,
+            renderHTML: attributes => {
+              if (!attributes.fontSize) return {};
+              return { style: `font-size: ${attributes.fontSize}` };
+            },
             parseHTML: element => element.style.fontSize,
-            renderHTML: attributes => attributes.fontSize ? { style: `font-size: ${attributes.fontSize}` } : {},
           },
           color: {
             default: null,
+            renderHTML: attributes => {
+              if (!attributes.color) return {};
+              return { style: `color: ${attributes.color}` };
+            },
             parseHTML: element => element.style.color,
-            renderHTML: attributes => attributes.color ? { style: `color: ${attributes.color}` } : {},
           },
         },
       },

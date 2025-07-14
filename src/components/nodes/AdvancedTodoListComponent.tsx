@@ -41,7 +41,12 @@ const dispatchTaskUpdateEvent = (blockId: string) => {
     window.dispatchEvent(new CustomEvent(`tasks-updated-${blockId}`));
 };
 
-const TaskItemView: React.FC<{ task: Task; allTasks: Task[]; level: number; }> = ({ task, allTasks, level }) => {
+const TaskItemView: React.FC<{ 
+    task: Task; 
+    allTasks: Task[]; 
+    level: number; 
+    onUpdate: (id: number, updates: Partial<Task>) => void;
+}> = ({ task, allTasks, level, onUpdate }) => {
     const children = useMemo(() => allTasks.filter(t => t.parentId === String(task.id)), [allTasks, task.id]);
     
     return (
@@ -51,12 +56,13 @@ const TaskItemView: React.FC<{ task: Task; allTasks: Task[]; level: number; }> =
                     id={`task-${task.id}`}
                     checked={task.completed}
                     className="flex-shrink-0"
+                    onCheckedChange={(checked) => onUpdate(task.id!, { completed: !!checked })}
                 />
                 <label htmlFor={`task-${task.id}`} className={cn("flex-1", task.completed ? 'line-through text-muted-foreground' : '')}>{task.text}</label>
             </div>
             {children.length > 0 && (
                 <div className="mt-1">
-                    {children.map(child => <TaskItemView key={child.id} task={child} allTasks={allTasks} level={level + 1} />)}
+                    {children.map(child => <TaskItemView key={child.id} task={child} allTasks={allTasks} level={level + 1} onUpdate={onUpdate} />)}
                 </div>
             )}
         </div>
@@ -153,7 +159,7 @@ const AdvancedTodoListComponent: React.FC<NodeViewProps> = ({ node, selected }) 
     const componentStyle: CSSProperties = {
         fontSize: fontSize || undefined,
         color: color || undefined,
-        backgroundColor: backgroundColor || 'hsl(var(--card))',
+        backgroundColor: isEditing ? 'hsl(var(--card))' : backgroundColor || 'transparent',
     };
 
     return (
@@ -207,6 +213,7 @@ const AdvancedTodoListComponent: React.FC<NodeViewProps> = ({ node, selected }) 
                                         task={task}
                                         allTasks={tasks}
                                         level={0}
+                                        onUpdate={handleUpdateTask}
                                     />
                                 )
                             )}
