@@ -327,8 +327,8 @@ export default function DocumentsPage() {
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">My Documents</h2>
                         <p className="text-lg text-muted-foreground mt-2">Create, edit, and manage all of your work.</p>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <Button variant="outline" size="lg" asChild>
+                    <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap">
+                        <Button variant="outline" className="flex-1 sm:flex-none" asChild>
                             <Link href="/graph">
                                 <Share2 className="mr-2 h-5 w-5" />
                                 View Graph
@@ -336,7 +336,7 @@ export default function DocumentsPage() {
                         </Button>
                         <Dialog open={isNewDocDialogOpen} onOpenChange={setIsNewDocDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button size="lg" className="shrink-0">
+                                <Button className="shrink-0 flex-1 sm:flex-none">
                                     <PlusCircle className="mr-2 h-5 w-5" />
                                     Create New Document
                                 </Button>
@@ -412,13 +412,13 @@ export default function DocumentsPage() {
                     <div className="flex-1">
                         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DocStatus)}>
                             <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
-                                <TabsList>
-                                    <TabsTrigger value="active" onClick={() => setActiveTag(null)}>Active</TabsTrigger>
-                                    <TabsTrigger value="archived" onClick={() => setActiveTag(null)}>Archived</TabsTrigger>
-                                    <TabsTrigger value="trashed" onClick={() => setActiveTag(null)}>Trash</TabsTrigger>
+                                <TabsList className="w-full md:w-auto">
+                                    <TabsTrigger value="active" onClick={() => setActiveTag(null)} className="flex-1">Active</TabsTrigger>
+                                    <TabsTrigger value="archived" onClick={() => setActiveTag(null)} className="flex-1">Archived</TabsTrigger>
+                                    <TabsTrigger value="trashed" onClick={() => setActiveTag(null)} className="flex-1">Trash</TabsTrigger>
                                 </TabsList>
                                  <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-                                    <div className={cn("relative w-full sm:w-64", activeTab === 'trashed' && 'invisible')}>
+                                    <div className={cn("relative w-full sm:w-auto flex-grow", activeTab === 'trashed' && 'invisible')}>
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                         <Input type="search" placeholder="Search documents..." className="w-full pl-10" value={searchTerm} onChange={handleSearchChange} />
                                     </div>
