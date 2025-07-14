@@ -322,12 +322,12 @@ export default function DocumentsPage() {
         </header>
         <main className="flex-1 p-4 sm:p-6 md:p-8">
             <div className="container mx-auto">
-                <div className="mb-8 flex flex-col md:flex-row items-start justify-between gap-6">
-                    <div>
+                <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex-grow">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">My Documents</h2>
                         <p className="text-lg text-muted-foreground mt-2">Create, edit, and manage all of your work.</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <Button variant="outline" size="lg" asChild>
                             <Link href="/graph">
                                 <Share2 className="mr-2 h-5 w-5" />
@@ -411,7 +411,7 @@ export default function DocumentsPage() {
                     {/* Main Content Area */}
                     <div className="flex-1">
                         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DocStatus)}>
-                            <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
                                 <TabsList>
                                     <TabsTrigger value="active" onClick={() => setActiveTag(null)}>Active</TabsTrigger>
                                     <TabsTrigger value="archived" onClick={() => setActiveTag(null)}>Archived</TabsTrigger>
