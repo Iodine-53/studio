@@ -2,14 +2,12 @@
 
 import React, { useState } from "react";
 import { BlockMath } from "react-katex";
-import "katex/dist/katex.min.css";
-import { Sigma, Sparkles, Info, Plus } from "lucide-react";
+import { Sigma, Info, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,15 +15,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-/**
- * EquationModal
- * A professional workspace for creating complex LaTeX equations with templates and live preview.
- */
-export function EquationModal({ isOpen, onClose, onInsert }: {
+import "katex/dist/katex.min.css";
+
+interface EquationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onInsert: (latex: string) => void;
-}) {
+}
+
+export function EquationModal({ isOpen, onClose, onInsert }: EquationModalProps) {
   const [latex, setLatex] = useState("\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}");
 
   const addSymbol = (symbol: string) => {
@@ -41,7 +39,7 @@ export function EquationModal({ isOpen, onClose, onInsert }: {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="max-w-4xl p-0 overflow-hidden border-none shadow-2xl">
         <div className="grid grid-cols-1 md:grid-cols-12">
           {/* Sidebar Editor */}
           <div className="md:col-span-7 p-6 space-y-6 bg-background">
@@ -60,20 +58,20 @@ export function EquationModal({ isOpen, onClose, onInsert }: {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="latex-input" className="text-xs font-bold uppercase text-muted-foreground">
-                  LaTeX Editor
+                  LaTeX Input
                 </Label>
                 <Textarea
                   id="latex-input"
                   value={latex}
                   onChange={(e) => setLatex(e.target.value)}
                   autoFocus
-                  className="h-48 resize-none font-mono text-base border-2 focus-visible:ring-primary/20 leading-relaxed"
+                  className="h-48 resize-none font-mono text-base border-2 focus-visible:ring-primary/20"
                   placeholder="e.g. \sum_{i=1}^{n} i^2"
                 />
               </div>
 
               <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="w-full justify-start h-auto bg-transparent border-b p-0 rounded-none mb-4 overflow-x-auto overflow-y-hidden scrollbar-none">
+                <TabsList className="w-full justify-start h-auto bg-transparent border-b p-0 rounded-none mb-4">
                   <TabsTrigger value="basic" className="rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent data-[state=active]:border-primary px-4 pb-2">Basic</TabsTrigger>
                   <TabsTrigger value="operators" className="rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent data-[state=active]:border-primary px-4 pb-2">Operators</TabsTrigger>
                   <TabsTrigger value="greek" className="rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent data-[state=active]:border-primary px-4 pb-2">Greek</TabsTrigger>
@@ -103,14 +101,14 @@ export function EquationModal({ isOpen, onClose, onInsert }: {
                 
                 <TabsContent value="greek" className="mt-0">
                   <div className="grid grid-cols-4 gap-2">
-                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\alpha")} className="text-xs">α</Button>
-                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\beta")} className="text-xs">β</Button>
-                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\pi")} className="text-xs">π</Button>
-                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\Delta")} className="text-xs">Δ</Button>
-                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\sigma")} className="text-xs">σ</Button>
-                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\omega")} className="text-xs">ω</Button>
-                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\theta")} className="text-xs">θ</Button>
-                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\lambda")} className="text-xs">λ</Button>
+                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\alpha")} className="text-xs">&alpha;</Button>
+                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\beta")} className="text-xs">&beta;</Button>
+                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\pi")} className="text-xs">&pi;</Button>
+                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\Delta")} className="text-xs">&Delta;</Button>
+                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\sigma")} className="text-xs">&sigma;</Button>
+                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\omega")} className="text-xs">&omega;</Button>
+                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\theta")} className="text-xs">&theta;</Button>
+                    <Button variant="outline" size="sm" onClick={() => addSymbol("\\lambda")} className="text-xs">&lambda;</Button>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -120,7 +118,7 @@ export function EquationModal({ isOpen, onClose, onInsert }: {
           {/* Preview Panel */}
           <div className="md:col-span-5 p-6 bg-muted/30 border-l border-border/50 flex flex-col">
             <Label className="text-xs font-bold uppercase text-muted-foreground mb-4">
-              Live Preview
+              High Fidelity Preview
             </Label>
             <div className="flex-1 min-h-[250px] flex items-center justify-center rounded-2xl bg-background shadow-inner border p-8 overflow-auto">
               <div className="max-w-full scale-150 origin-center transition-all duration-300">
@@ -132,7 +130,7 @@ export function EquationModal({ isOpen, onClose, onInsert }: {
               <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-xl border border-primary/10">
                 <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-[11px] text-muted-foreground leading-snug">
-                  Use <code className="bg-primary/10 px-1 rounded">\text{...}</code> for words and <code className="bg-primary/10 px-1 rounded">\quad</code> for spacing.
+                  Pro Tip: Use <code>\\text{...}</code> for labels and <code>\\quad</code> for wide spacing.
                 </p>
               </div>
               
@@ -142,7 +140,7 @@ export function EquationModal({ isOpen, onClose, onInsert }: {
                 </Button>
                 <Button onClick={handleInsert} className="flex-1 gap-2 shadow-lg shadow-primary/20">
                   <Plus className="h-4 w-4" />
-                  Insert
+                  Insert Equation
                 </Button>
               </div>
             </div>

@@ -4,7 +4,7 @@ import MathComponent from '@/components/nodes/MathComponent';
 
 /**
  * Math Pro Extension
- * Provides support for Inline Math ($E=mc^2$) and Math Blocks ($$ ... $$)
+ * Robust support for Inline Math ($E=mc^2$) and aligned Math Blocks ($$ ... $$)
  */
 
 export const InlineMath = Node.create({
@@ -59,16 +59,23 @@ export const MathBlock = Node.create({
       textAlign: {
         default: 'center',
         parseHTML: (element) => element.getAttribute('data-text-align') || 'center',
-        renderHTML: (attributes) => ({
-          'data-text-align': attributes.textAlign,
-          style: `text-align: ${attributes.textAlign}`,
-        }),
+        renderHTML: (attributes) => {
+          return {
+            'data-text-align': attributes.textAlign,
+            style: `text-align: ${attributes.textAlign}`,
+          };
+        },
       },
     };
   },
 
   parseHTML() {
-    return [{ tag: 'div[data-type="math-block"]' }];
+    return [{ 
+      tag: 'div[data-type="math-block"]',
+      getAttrs: (element) => ({
+        textAlign: (element as HTMLElement).getAttribute('data-text-align') || 'center',
+      }),
+    }];
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -81,7 +88,7 @@ export const MathBlock = Node.create({
 
   addCommands() {
     return {
-      insertMathBlock: (attributes) => ({ commands }) => {
+      insertMathBlock: (attributes: any) => ({ commands }: any) => {
         return commands.insertContent({
           type: this.name,
           attrs: {
