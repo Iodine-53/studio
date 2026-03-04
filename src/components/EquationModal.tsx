@@ -17,13 +17,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface Props {
+interface EquationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onInsert: (latex: string) => void;
 }
 
-export const EquationModal = ({ isOpen, onClose, onInsert }: Props) => {
+export const EquationModal = ({
+  isOpen,
+  onClose,
+  onInsert,
+}: EquationModalProps) => {
   const [latex, setLatex] = useState("\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}");
 
   const addSymbol = (symbol: string) => {
@@ -130,7 +134,7 @@ export const EquationModal = ({ isOpen, onClose, onInsert }: Props) => {
             <div className="mt-4 flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
               <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Use <code className="bg-primary/10 text-primary px-1 rounded">\text{...}</code> for plain text and <code className="bg-primary/10 text-primary px-1 rounded">\quad</code> for spacing.
+                Use standard LaTeX syntax. Note: brackets {"{ }"} are special in JS strings, so use double backslashes for commands.
               </p>
             </div>
           </div>
