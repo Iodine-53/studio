@@ -3,6 +3,7 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import MathComponent from '@/components/nodes/MathComponent';
 
 // 1. The Inline Math Node
+// Usage: Type $ formula $ to trigger
 export const InlineMath = Node.create({
   name: 'inlineMath',
   group: 'inline',
@@ -10,12 +11,19 @@ export const InlineMath = Node.create({
   atom: true,
 
   addAttributes() {
-    return { content: { default: '' } };
+    return {
+      content: {
+        default: '',
+      },
+    };
   },
 
-  parseHTML() { return [{ tag: 'span[data-type="inline-math"]' }] },
+  parseHTML() {
+    return [{ tag: 'span[data-type="inline-math"]' }];
+  },
+
   renderHTML({ HTMLAttributes }) {
-    return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'inline-math' })]
+    return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'inline-math' })];
   },
 
   addNodeView() {
@@ -34,8 +42,8 @@ export const InlineMath = Node.create({
   },
 });
 
-
 // 2. The Block Math Node
+// Usage: Type $$ followed by a space to trigger
 export const MathBlock = Node.create({
   name: 'mathBlock',
   group: 'block',
@@ -44,11 +52,13 @@ export const MathBlock = Node.create({
 
   addAttributes() {
     return {
-      content: { default: '' },
+      content: {
+        default: '',
+      },
       textAlign: {
         default: 'center',
-        parseHTML: element => element.style.textAlign || element.getAttribute('data-text-align') || 'center',
-        renderHTML: attributes => ({
+        parseHTML: (element) => element.style.textAlign || element.getAttribute('data-text-align') || 'center',
+        renderHTML: (attributes) => ({
           style: `text-align: ${attributes.textAlign}`,
           'data-text-align': attributes.textAlign,
         }),
@@ -56,9 +66,12 @@ export const MathBlock = Node.create({
     };
   },
 
-  parseHTML() { return [{ tag: 'div[data-type="math-block"]' }] },
+  parseHTML() {
+    return [{ tag: 'div[data-type="math-block"]' }];
+  },
+
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'math-block' })]
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'math-block' })];
   },
 
   addNodeView() {
@@ -68,15 +81,15 @@ export const MathBlock = Node.create({
   addCommands() {
     return {
       insertMathBlock: (attributes) => ({ commands }) => {
-        return commands.insertContent({ 
-          type: this.name, 
-          attrs: { 
-            content: attributes?.content || '', 
-            textAlign: attributes?.textAlign || 'center' 
-          } 
+        return commands.insertContent({
+          type: this.name,
+          attrs: {
+            content: attributes?.content || '',
+            textAlign: attributes?.textAlign || 'center',
+          },
         });
       },
-    }
+    };
   },
 
   addInputRules() {
