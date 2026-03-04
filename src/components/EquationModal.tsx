@@ -1,71 +1,38 @@
 "use client";
 
-import React, { useState } from 'react';
-import { BlockMath } from 'react-katex';
-import 'katex/dist/katex.min.css';
-import { Sigma, Sparkles, Info } from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter, 
-  DialogDescription 
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState } from "react";
+import { BlockMath } from "react-katex";
+import "katex/dist/katex.min.css";
+import { Sigma, Sparkles, Info } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface EquationModalProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   onInsert: (latex: string) => void;
 }
 
-const SYMBOL_GROUPS = [
-  {
-    name: 'Basic',
-    symbols: [
-      { label: 'Fraction', latex: '\\frac{a}{b}' },
-      { label: 'Exponent', latex: 'x^{n}' },
-      { label: 'Subscript', latex: 'x_{i}' },
-      { label: 'Sqrt', latex: '\\sqrt{x}' },
-      { label: 'Nth Sqrt', latex: '\\sqrt[n]{x}' },
-    ]
-  },
-  {
-    name: 'Operators',
-    symbols: [
-      { label: 'Sum', latex: '\\sum_{i=1}^{n}' },
-      { label: 'Integral', latex: '\\int_{a}^{b}' },
-      { label: 'Product', latex: '\\prod' },
-      { label: 'Limit', latex: '\\lim_{x \\to \\infty}' },
-    ]
-  },
-  {
-    name: 'Greek',
-    symbols: [
-      { label: 'Alpha', latex: '\\alpha' },
-      { label: 'Beta', latex: '\\beta' },
-      { label: 'Pi', latex: '\\pi' },
-      { label: 'Delta', latex: '\\Delta' },
-      { label: 'Sigma', latex: '\\sigma' },
-      { label: 'Omega', latex: '\\omega' },
-    ]
-  }
-];
+export const EquationModal = ({ isOpen, onClose, onInsert }: Props) => {
+  const [latex, setLatex] = useState("\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}");
 
-export function EquationModal({ isOpen, onClose, onInsert }: EquationModalProps) {
-  const [latex, setLatex] = useState('\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}');
+  const addSymbol = (symbol: string) => {
+    setLatex((prev) => prev + symbol);
+  };
 
   const handleInsert = () => {
     onInsert(latex);
     onClose();
-  };
-
-  const addSymbol = (symbol: string) => {
-    setLatex(prev => prev + symbol);
   };
 
   return (
@@ -97,35 +64,57 @@ export function EquationModal({ isOpen, onClose, onInsert }: EquationModalProps)
               />
             </div>
 
-            <Tabs defaultValue="Basic" className="w-full">
+            <Tabs defaultValue="basic" className="w-full">
               <TabsList className="w-full justify-start h-9 bg-transparent border-b rounded-none p-0 gap-4">
-                {SYMBOL_GROUPS.map((group) => (
-                  <TabsTrigger 
-                    key={group.name} 
-                    value={group.name}
-                    className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-2 h-9 text-xs"
-                  >
-                    {group.name}
-                  </TabsTrigger>
-                ))}
+                <TabsTrigger 
+                  value="basic" 
+                  className="rounded-none px-0 pb-2 h-9 text-xs data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  Basic
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="operators" 
+                  className="rounded-none px-0 pb-2 h-9 text-xs data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  Operators
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="greek" 
+                  className="rounded-none px-0 pb-2 h-9 text-xs data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  Greek
+                </TabsTrigger>
               </TabsList>
-              {SYMBOL_GROUPS.map((group) => (
-                <TabsContent key={group.name} value={group.name} className="mt-2">
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {group.symbols.map((symbol) => (
-                      <Button 
-                        key={symbol.label} 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-[10px] h-8 px-1"
-                        onClick={() => addSymbol(symbol.latex)}
-                      >
-                        {symbol.label}
-                      </Button>
-                    ))}
-                  </div>
-                </TabsContent>
-              ))}
+              
+              <TabsContent value="basic" className="mt-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\frac{a}{b}")}>Fraction</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("x^{n}")}>Exponent</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("x_{i}")}>Subscript</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\sqrt{x}")}>Sqrt</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\sqrt[n]{x}")}>Nth Sqrt</Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="operators" className="mt-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\sum_{i=1}^{n}")}>Sum</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\int_{a}^{b}")}>Integral</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\prod")}>Product</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\lim_{x \\to \\infty}")}>Limit</Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="greek" className="mt-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\alpha")}>Alpha</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\beta")}>Beta</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\pi")}>Pi</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\Delta")}>Delta</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\sigma")}>Sigma</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] h-8 px-1" onClick={() => addSymbol("\\omega")}>Omega</Button>
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
 
@@ -135,7 +124,7 @@ export function EquationModal({ isOpen, onClose, onInsert }: EquationModalProps)
             </Label>
             <div className="flex-1 min-h-[200px] flex items-center justify-center rounded-xl border-2 border-dashed bg-muted/30 p-6 overflow-auto shadow-inner">
               <div className="max-w-full scale-125 origin-center transition-all duration-300">
-                <BlockMath math={latex || '\\text{Enter an equation...}'} />
+                <BlockMath math={latex || "\\text{Enter an equation...}"} />
               </div>
             </div>
             <div className="mt-4 flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
@@ -164,4 +153,4 @@ export function EquationModal({ isOpen, onClose, onInsert }: EquationModalProps)
       </DialogContent>
     </Dialog>
   );
-}
+};
