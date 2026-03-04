@@ -39,7 +39,7 @@ import { AdvancedTodoListExtension, AdvancedTaskExtension } from '@/lib/tiptap/e
 
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document, addDocVersion, type DocumentVersion } from "@/lib/db";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PrintPreview } from "@/components/PrintPreview";
@@ -198,6 +198,13 @@ export default function EditorPage() {
     }
   }, [editor, doc]);
 
+  // Handle read-only mode on mobile
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) {
+      editor.setEditable(!isMobile);
+    }
+  }, [editor, isMobile]);
+
   const handleTagsChange = async (newTags: string[]) => {
     setTags(newTags);
     if (doc) {
@@ -261,6 +268,12 @@ export default function EditorPage() {
   return (
     <>
       <div className="flex flex-col min-h-screen bg-primary/5">
+        {isMobile && (
+          <div className="bg-amber-50 border-b border-amber-200 p-2 text-amber-800 text-xs sm:text-sm flex items-center justify-center gap-2">
+            <Info className="h-4 w-4 shrink-0" />
+            <p>View Only. Use a PC or Mac to edit this document.</p>
+          </div>
+        )}
         <main className="flex-1 flex min-h-0">
           {!isMobile && isSidebarOpen && doc && (
             <div className="w-80 shrink-0 border-r bg-card hidden md:block">
@@ -296,7 +309,7 @@ export default function EditorPage() {
       {isMobile && doc && (
         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
           <SheetContent side="left" className="p-0 w-80">
-            <SheetHeader className="sr-only">
+            <SheetHeader className="p-4 border-b">
               <SheetTitle>Editor Menu</SheetTitle>
             </SheetHeader>
             <EditorSidebar 

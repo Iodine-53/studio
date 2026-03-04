@@ -3,14 +3,13 @@
 
 import { type FC } from 'react';
 import { type Document } from '@/lib/db';
-import Link from 'next/link';
 import { TagInput } from './TagInput';
 import { MetadataEditor } from './MetadataEditor';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ArrowLeft, BookOpen, Braces, Download, Eye, FileCode2, FileText, History } from 'lucide-react';
+import { BookOpen, Braces, Download, Eye, FileCode2, FileText, History } from 'lucide-react';
 
 type EditorSidebarProps = {
   doc: Document;
@@ -40,15 +39,7 @@ export const EditorSidebar: FC<EditorSidebarProps> = ({
   return (
     <div className="h-full flex flex-col bg-card border-r">
         <div className="p-4 border-b">
-            <div className="flex items-center justify-between gap-4">
-                <Button variant="outline" size="icon" className="shrink-0" asChild>
-                    <Link href="/documents">
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">Back to Document Hub</span>
-                    </Link>
-                </Button>
-                <h2 className="text-lg font-semibold leading-none tracking-tight truncate font-headline">{doc.title}</h2>
-            </div>
+            <h2 className="text-lg font-semibold leading-none tracking-tight truncate font-headline">{doc.title}</h2>
         </div>
         <div className="p-2 border-b flex justify-around">
              <Button variant="ghost" size="sm" onClick={onHistoryClick}>
