@@ -492,6 +492,22 @@ const Toolbar = ({
                   </TooltipTrigger>
                   <TooltipContent><p>Insert a block (triggers /)</p></TooltipContent>
                 </Tooltip>
+
+                <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => setIsInfoOpen(true)}
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Editor Guide</p></TooltipContent>
+                </Tooltip>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center">
@@ -503,20 +519,6 @@ const Toolbar = ({
           )}
 
           <div className="shrink-0 flex items-center gap-1 ml-auto">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                  onClick={() => setIsInfoOpen(true)}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Editor Guide</p></TooltipContent>
-            </Tooltip>
-
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
