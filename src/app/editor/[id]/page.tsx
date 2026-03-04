@@ -114,7 +114,7 @@ export default function EditorPage() {
         heading: { levels: [1, 2, 3] },
       }),
       Underline,
-      TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap', 'advancedTodoList'] }),
+      TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap', 'advancedTodoList', 'mathBlock'] }),
       SlashCommand.configure({ openToggleModal: () => setIsToggleModalOpen(true), openDocSearchModal: () => setIsDocSearchOpen(true) }),
       TrailingNode, LineHeight, TextStyle, Color, FontFamily, FontSize, CustomImage, InteractiveTable,
       HorizontalRule, Chart, Drawing, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,

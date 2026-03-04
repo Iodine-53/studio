@@ -40,9 +40,17 @@ export const MathBlock = Node.create({
   name: 'mathBlock',
   group: 'block',
   atom: true,
+  draggable: true,
 
   addAttributes() {
-    return { content: { default: '' } };
+    return {
+      content: { default: '' },
+      textAlign: {
+        default: 'center',
+        parseHTML: element => element.getAttribute('data-text-align'),
+        renderHTML: attributes => ({ 'data-text-align': attributes.textAlign }),
+      },
+    };
   },
 
   parseHTML() { return [{ tag: 'div[data-type="math-block"]' }] },
@@ -57,7 +65,7 @@ export const MathBlock = Node.create({
   addCommands() {
     return {
       insertMathBlock: () => ({ commands }) => {
-        return commands.insertContent({ type: this.name, attrs: { content: '' } });
+        return commands.insertContent({ type: this.name, attrs: { content: '', textAlign: 'center' } });
       },
     }
   },
