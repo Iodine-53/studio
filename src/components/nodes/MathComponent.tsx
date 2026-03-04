@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 /**
  * Math Pro Component
  * Handles rendering and advanced in-place editing for equations.
- * Strictly respects alignment from the TipTap node attributes.
+ * Respects alignment from the TipTap node attributes.
  */
 const MathComponent = ({ node, updateAttributes, selected }: NodeViewProps) => {
   const [isEditing, setIsEditing] = useState(false);
