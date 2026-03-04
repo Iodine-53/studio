@@ -1,4 +1,3 @@
-
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { DrawingNodeView } from '@/components/nodes/DrawingNodeView'
@@ -25,13 +24,13 @@ export const Drawing = Node.create({
         }
       },
       layout: {
-        default: { width: 100 },
+        default: { width: 40 },
         parseHTML: (element) => {
           const layoutAttr = element.getAttribute('data-layout');
           try {
-            return layoutAttr ? JSON.parse(layoutAttr) : { width: 100 };
+            return layoutAttr ? JSON.parse(layoutAttr) : { width: 40 };
           } catch {
-            return { width: 100 };
+            return { width: 40 };
           }
         },
         renderHTML: (attributes) => ({

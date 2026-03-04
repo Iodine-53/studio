@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -18,12 +16,6 @@ import FontFamily from '@tiptap/extension-font-family';
 import { FontSize } from '@/lib/tiptap/extensions/FontSize';
 import { CustomImage } from '@/lib/tiptap/extensions/Image';
 import { InteractiveTable } from '@/lib/tiptap/extensions/InteractiveTable';
-import { lowlight } from 'lowlight/lib/core';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import css from 'highlight.js/lib/languages/css';
-import js from 'highlight.js/lib/languages/javascript';
-import ts from 'highlight.js/lib/languages/typescript';
-import html from 'highlight.js/lib/languages/xml'; // for HTML
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import { Chart } from '@/lib/tiptap/extensions/Chart';
 import { Drawing } from '@/lib/tiptap/extensions/Drawing';
@@ -47,7 +39,6 @@ import { AdvancedTodoListExtension, AdvancedTaskExtension } from '@/lib/tiptap/e
 
 
 import TiptapEditor from "@/components/tiptap-editor";
-import { EditorSidebar } from "@/components/EditorSidebar";
 import { getDocument, saveDocument, type Document, addDocVersion, type DocumentVersion } from "@/lib/db";
 import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History, PanelRight, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -66,11 +57,6 @@ import { VersionHistory } from "@/components/VersionHistory";
 import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from '@/hooks/use-media-query';
-
-lowlight.registerLanguage('html', html);
-lowlight.registerLanguage('css', css);
-lowlight.registerLanguage('js', js);
-lowlight.registerLanguage('ts', ts);
 
 const SAVE_DEBOUNCE_MS = 1000;
 const VERSION_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -120,20 +106,6 @@ export default function EditorPage() {
     }
   };
 
-  const handleTagsChange = useCallback((newTags: string[]) => {
-      setTags(newTags);
-      if (doc?.id) {
-          saveDocument({ id: doc.id, tags: newTags });
-      }
-  }, [doc?.id]);
-
-  const handleMetadataUpdate = useCallback((newMetadata: Record<string, string>) => {
-    if (doc?.id) {
-      saveDocument({ id: doc.id, metadata: newMetadata });
-    }
-  }, [doc?.id]);
-
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -144,7 +116,6 @@ export default function EditorPage() {
       TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap', 'advancedTodoList'] }),
       SlashCommand.configure({ openToggleModal: () => setIsToggleModalOpen(true), openDocSearchModal: () => setIsDocSearchOpen(true) }),
       TrailingNode, LineHeight, TextStyle, Color, FontFamily, FontSize, CustomImage, InteractiveTable,
-      CodeBlockLowlight.configure({ lowlight }),
       HorizontalRule, Chart, Drawing, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
       ColumnsExtension, ColumnExtension, MindMap, InlineMath, MathBlock, DocLinkExtension,
       TiptapLink.configure({ linkOnPaste: false, openOnClick: 'whenNotEditable' }),
@@ -271,7 +242,7 @@ export default function EditorPage() {
       if (!editor) return;
       const html = editor.getHTML();
       const turndownService = new TurndownService();
-      const markdown = turndownService.turndown(html);
+      const markdown = turndownService.turn(html);
       const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
       saveAs(blob, `${doc?.title || 'Document'}.md`);
   };
@@ -289,22 +260,6 @@ export default function EditorPage() {
     <>
       <div className="flex flex-col min-h-screen bg-primary/5">
         <main className="flex-1 flex min-h-0">
-          {doc && !isMobile && (
-              <div className="w-80">
-                  <EditorSidebar 
-                      doc={doc}
-                      tags={tags}
-                      onTagsChange={handleTagsChange}
-                      onMetadataUpdate={handleMetadataUpdate}
-                      onHistoryClick={() => setIsHistoryOpen(true)}
-                      onPreviewClick={handleOpenPreview}
-                      onExportDocxClick={handleDocxExport}
-                      onExportJsonClick={handleJsonExport}
-                      onExportHtmlClick={handleHtmlExport}
-                      onExportMarkdownClick={handleMarkdownExport}
-                  />
-              </div>
-          )}
           <div className="flex-1 flex flex-col min-h-0">
               <TiptapEditor 
                   editor={editor}

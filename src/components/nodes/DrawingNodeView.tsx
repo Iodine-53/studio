@@ -15,7 +15,7 @@ export const DrawingNodeView = ({ node, updateAttributes, selected }: NodeViewPr
     const canvasRef = useRef<ReactSketchCanvasRef>(null);
     const { paths, textAlign, layout } = node.attrs;
     const isEditing = selected;
-    const width = layout?.width || 100;
+    const width = layout?.width || 40;
 
     const [strokeColor, setStrokeColor] = useState('#000000');
     const [strokeWidth, setStrokeWidth] = useState(4);

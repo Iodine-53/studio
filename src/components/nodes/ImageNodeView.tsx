@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useState, useCallback } from 'react';
@@ -12,7 +11,7 @@ import { Input } from '@/components/ui/input';
 
 export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProps) => {
   const { src, caption, textAlign, layout } = node.attrs;
-  const width = layout?.width || 100;
+  const width = layout?.width || 40;
 
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
@@ -29,7 +28,6 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
         updateAttributes({ src: webpDataUrl });
       } catch (error) {
         console.error('Image processing failed:', error);
-        // Optionally, show a toast notification for the error
       } finally {
         setIsLoading(false);
       }
@@ -88,7 +86,6 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
             </div>
           )}
 
-          {/* Caption Logic */}
           {(src && (selected || caption)) && (
             <figcaption className="px-2 pt-1.5 pb-2 border-t bg-card">
               {selected ? (
@@ -97,7 +94,7 @@ export const ImageNodeView = ({ node, updateAttributes, selected }: NodeViewProp
                   placeholder="Add caption..."
                   value={caption || ''}
                   onChange={e => updateAttributes({ caption: e.target.value })}
-                  onClick={e => e.stopPropagation()} // Prevent editor from losing focus
+                  onClick={e => e.stopPropagation()}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground text-center px-2 py-1">{caption}</p>
