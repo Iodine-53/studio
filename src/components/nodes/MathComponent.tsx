@@ -55,7 +55,7 @@ const MathComponent = ({ node, updateAttributes, selected }: MathViewProps) => {
   };
 
   const wrapperClasses = cn(
-    "transition-all duration-200 rounded-md",
+    "transition-all duration-200 rounded-md group/math",
     isBlock ? "my-6 w-full" : "inline-block px-1",
     selected && !isEditing && "ring-2 ring-primary ring-offset-2 bg-primary/5",
     !isEditing && "cursor-pointer hover:bg-muted/50"
@@ -79,7 +79,7 @@ const MathComponent = ({ node, updateAttributes, selected }: MathViewProps) => {
             }}
             onBlur={handleSave}
             onKeyDown={onTextareaKeyDown}
-            placeholder={isBlock ? "Enter LaTeX (e.g. \\sum_{i=1}^n i = \\frac{n(n+1)}{2})" : "LaTeX..."}
+            placeholder={isBlock ? "Enter LaTeX (e.g. E=mc^2 or \\text{velocity} = \\frac{d}{t})" : "LaTeX..."}
             className={cn(
               "w-full p-3 font-mono text-sm border rounded-md shadow-inner bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none overflow-hidden",
               isBlock ? "text-center" : "inline-block min-w-[100px]"
@@ -99,7 +99,12 @@ const MathComponent = ({ node, updateAttributes, selected }: MathViewProps) => {
       className={wrapperClasses}
       style={containerStyle}
     >
-      <div className={cn("py-2 px-4", !isBlock && "inline-block py-0.5 px-1")}>
+      <div className={cn(
+        "py-2 px-4", 
+        !isBlock && "inline-block py-0.5 px-1",
+        // Force KaTeX display blocks to follow the parent alignment and remove default margins
+        isBlock && "w-full [&_.katex-display]:m-0 [&_.katex-display]:text-inherit [&_.katex-display>.katex]:text-inherit"
+      )}>
         {isBlock ? (
           <BlockMath math={latex || 'E = mc^2'} />
         ) : (
