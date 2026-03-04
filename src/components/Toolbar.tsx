@@ -24,6 +24,8 @@ import {
   PanelLeft,
   Eye,
   Settings,
+  Info,
+  ChevronRight,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -35,7 +37,14 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import React, { useState } from 'react';
 import { cn } from "@/lib/utils";
 
 
@@ -58,6 +67,7 @@ const Toolbar = ({
   isSidebarOpen,
   onToggleSidebar
 }: Props) => {
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   if (!editor) {
     return null;
@@ -498,6 +508,20 @@ const Toolbar = ({
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="h-9 w-9 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  onClick={() => setIsInfoOpen(true)}
+                >
+                  <Info className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Editor Guide</p></TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="h-9 w-9"
                   onClick={onOpenSettingsClick}
                 >
@@ -518,6 +542,76 @@ const Toolbar = ({
             }
            `}</style>
       </div>
+
+      <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Info className="h-6 w-6 text-blue-600" />
+              </div>
+              Editor Guide & Commands
+            </DialogTitle>
+            <DialogDescription>
+              Learn how to supercharge your documents using slash commands.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div className="bg-muted p-4 rounded-lg border border-blue-100">
+              <h4 className="font-bold flex items-center gap-2 mb-2 text-blue-700">
+                <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs">/</span> The Slash Command
+              </h4>
+              <p className="text-sm leading-relaxed">
+                Type <kbd className="px-1.5 py-0.5 rounded border bg-background font-mono font-bold">/</kbd> on any new line to open the block menu. 
+                Search for a block by name (e.g., "chart") and press Enter to insert it instantly.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div>
+                  <h5 className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-3">Content Blocks</h5>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> Paragraph & Headings</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> Bullet & Numbered Lists</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> <b>Advanced To-do List</b></li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> <b>Toggle List</b> (Accordion)</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> Blockquotes & Dividers</li>
+                  </ul>
+                </div>
+                <div>
+                  <h5 className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-3">Interactive Tools</h5>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> <b>Chart</b> (Bar, Line, Area, Mixed)</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> <b>Data Table</b> (Interactive CSV)</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> <b>Mind Map</b> (Visual Nodes)</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> <b>Progress Bars</b> (KPI Tracking)</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h5 className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-3">Media & Advanced</h5>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> Image (Upload or AI Generate)</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> Video Embed (YouTube/Vimeo)</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> <b>Calculator</b> & Function Plot</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> <b>2 Columns</b> Layout</li>
+                    <li className="flex items-center gap-2"><ChevronRight className="h-3 w-3 text-blue-500"/> Callout & <b>Internal Link</b></li>
+                  </ul>
+                </div>
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                  <p className="text-xs text-blue-800 dark:text-blue-300 font-medium italic leading-relaxed">
+                    Tip: Type <kbd className="px-1 py-0.5 rounded border bg-white dark:bg-blue-950 font-mono">[[</kbd> to quickly search and link other documents in your workspace.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 };
