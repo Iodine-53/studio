@@ -20,7 +20,6 @@ import {
   Wand2,
   Quote,
   Rows,
-  Sigma,
   ArrowLeft,
   PanelLeft,
   Eye,
@@ -44,7 +43,6 @@ type Props = {
   editor: Editor | null;
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
-  onOpenEquationModal: () => void;
   onOpenSettingsClick: () => void;
   isMobile: boolean;
   isSidebarOpen: boolean;
@@ -55,7 +53,6 @@ const Toolbar = ({
   editor, 
   onAiAssistantClick, 
   onAddToggleClick, 
-  onOpenEquationModal, 
   onOpenSettingsClick,
   isMobile,
   isSidebarOpen,
@@ -457,20 +454,6 @@ const Toolbar = ({
                 </Tooltip>
                 
                 <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size={buttonSize}
-                      variant="ghost"
-                      onClick={onOpenEquationModal}
-                      aria-label="Add Equation"
-                    >
-                      <Sigma className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Add Equation</p></TooltipContent>
-                </Tooltip>
                 
                 <Tooltip>
                   <TooltipTrigger asChild>

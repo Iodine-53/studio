@@ -30,16 +30,13 @@ import { ToggleExtension } from '@/lib/tiptap/extensions/Toggle';
 import { ColumnsExtension } from "@/lib/tiptap/extensions/Columns";
 import { ColumnExtension } from "@/lib/tiptap/extensions/Column";
 import { MindMap } from "@/lib/tiptap/extensions/MindMap";
-import { InlineMath, MathBlock } from '@/lib/tiptap/extensions/Math';
 import { DocLinkExtension } from '@/lib/tiptap/extensions/DocLink';
 import { Link as TiptapLink } from '@tiptap/extension-link';
-import 'katex/dist/katex.min.css';
 import { AdvancedTodoListExtension, AdvancedTaskExtension } from '@/lib/tiptap/extensions/AdvancedTask';
 
 import TiptapEditor from "@/components/tiptap-editor";
-import { getDocument, saveDocument, type Document, addDocVersion, type DocumentVersion } from "@/lib/db";
+import { getDocument, saveDocument, type Document, addDocVersion } from "@/lib/db";
 import { Loader2, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
@@ -48,7 +45,6 @@ import { exportToHtml } from '@/lib/html-exporter';
 import TurndownService from 'turndown';
 import { AiAssistantDialog } from "@/components/AiAssistantDialog";
 import { ToggleTemplateModal } from "@/components/modals/ToggleTemplateModal";
-import { EquationModal } from "@/components/EquationModal";
 import { DocSearchModal } from '@/components/DocSearchModal';
 import { useToast } from "@/hooks/use-toast";
 import { VersionHistory } from "@/components/VersionHistory";
@@ -72,7 +68,6 @@ export default function EditorPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
-  const [isEquationModalOpen, setIsEquationModalOpen] = useState(false);
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -93,10 +88,6 @@ export default function EditorPage() {
     editor?.chain().focus().setToggle({ type: templateId }).run();
     setIsToggleModalOpen(false);
   };
-  
-  const handleInsertEquation = (latex: string) => {
-    editor?.chain().focus().insertMathBlock({ content: latex }).run();
-  };
 
   const handleSelectDocLink = (linkedDoc: { id: number; title: string }) => {
     if (editor) {
@@ -114,11 +105,11 @@ export default function EditorPage() {
         heading: { levels: [1, 2, 3] },
       }),
       Underline,
-      TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap', 'advancedTodoList', 'mathBlock'] }),
+      TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap', 'advancedTodoList'] }),
       SlashCommand.configure({ openToggleModal: () => setIsToggleModalOpen(true), openDocSearchModal: () => setIsDocSearchOpen(true) }),
       TrailingNode, LineHeight, TextStyle, Color, FontFamily, FontSize, CustomImage, InteractiveTable,
       HorizontalRule, Chart, Drawing, Embed, Callout, PasteHandler, ProgressBarBlock, FunctionPlot, Calculator, ToggleExtension,
-      ColumnsExtension, ColumnExtension, MindMap, InlineMath, MathBlock, DocLinkExtension,
+      ColumnsExtension, ColumnExtension, MindMap, DocLinkExtension,
       TiptapLink.configure({ linkOnPaste: false, openOnClick: 'whenNotEditable' }),
       TaskList,
       TaskItem.configure({
@@ -298,7 +289,6 @@ export default function EditorPage() {
                   editor={editor}
                   onAiAssistantClick={() => setIsAiAssistantOpen(true)}
                   onAddToggleClick={() => setIsToggleModalOpen(true)}
-                  onOpenEquationModal={() => setIsEquationModalOpen(true)}
                   onOpenSettingsClick={() => setIsSettingsOpen(true)}
                   isMobile={isMobile}
                   isSidebarOpen={isSidebarOpen}
@@ -339,7 +329,6 @@ export default function EditorPage() {
       <PrintPreview isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} content={currentContent} />
       <AiAssistantDialog open={isAiAssistantOpen} onOpenChange={setIsAiAssistantOpen} editor={editor} />
       <ToggleTemplateModal isOpen={isToggleModalOpen} onClose={() => setIsToggleModalOpen(false)} onSelect={handleSelectToggle} />
-      <EquationModal isOpen={isEquationModalOpen} onClose={() => setIsEquationModalOpen(false)} onInsert={handleInsertEquation} />
       <DocSearchModal isOpen={isDocSearchOpen} onClose={() => setIsDocSearchOpen(false)} onSelect={handleSelectDocLink} currentDocId={docId} />
       <ApiKeyDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </>

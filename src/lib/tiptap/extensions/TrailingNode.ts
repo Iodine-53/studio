@@ -1,4 +1,3 @@
-
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 
@@ -20,7 +19,6 @@ const trailingNodeTypes: string[] = [
     'toggle',
     'columns',
     'mindMap',
-    'mathBlock',
     'functionPlot',
     'calculator'
 ];

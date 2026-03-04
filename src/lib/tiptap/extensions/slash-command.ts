@@ -1,7 +1,7 @@
 import type { Editor, Range } from "@tiptap/core";
 import { Extension, textInputRule } from "@tiptap/core";
 import {
-  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, Minus, AlertTriangle, AreaChart, PenSquare, ListChecks, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, Columns, BrainCircuit, Sigma, Link2
+  Heading1, Heading2, Heading3, Pilcrow, Image, Table, List, ListOrdered, Minus, AlertTriangle, AreaChart, PenSquare, ListChecks, Film, SlidersHorizontal, Quote, FunctionSquare, Calculator as CalculatorIcon, Rows, Columns, BrainCircuit, Link2
 } from "lucide-react";
 import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
@@ -37,7 +37,6 @@ const getCommandItems = (openToggleModal: () => void, openDocSearchModal: () => 
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   
   // Custom Node Blocks
-  { title: "Math Block", icon: Sigma, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMathBlock().run(); } },
   { title: "Advanced To-do List", icon: ListChecks, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertAdvancedTodoList().run(); } },
   { title: "Link to Document", icon: Link2, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).run(); openDocSearchModal(); } },
   { title: "Mind Map", icon: BrainCircuit, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMindMap().run(); } },
