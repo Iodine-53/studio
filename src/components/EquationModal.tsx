@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { BlockMath } from "react-katex";
 import { Sigma, Plus } from "lucide-react";
 import {
@@ -22,14 +22,10 @@ interface EquationModalProps {
   onInsert: (latex: string) => void;
 }
 
-export const EquationModal: React.FC<EquationModalProps> = ({
-  isOpen,
-  onClose,
-  onInsert,
-}) => {
-  const [latex, setLatex] = useState("\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}");
+export function EquationModal({ isOpen, onClose, onInsert }: EquationModalProps) {
+  const [latex, setLatex] = React.useState("\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}");
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen) {
       setLatex("\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}");
     }
@@ -130,4 +126,4 @@ export const EquationModal: React.FC<EquationModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}
