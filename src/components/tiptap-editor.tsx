@@ -1,4 +1,3 @@
-
 'use client'
 
 import { type Editor, EditorContent } from '@tiptap/react'
@@ -11,6 +10,7 @@ type Props = {
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
+  onOpenSettingsClick: () => void;
   isMobile: boolean;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -22,6 +22,7 @@ const TiptapEditor = ({
   onAiAssistantClick, 
   onAddToggleClick, 
   onOpenEquationModal, 
+  onOpenSettingsClick,
   isMobile,
   isSidebarOpen,
   onToggleSidebar
@@ -37,6 +38,7 @@ const TiptapEditor = ({
             onAiAssistantClick={onAiAssistantClick} 
             onAddToggleClick={onAddToggleClick}
             onOpenEquationModal={onOpenEquationModal}
+            onOpenSettingsClick={onOpenSettingsClick}
             isMobile={isMobile}
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={onToggleSidebar}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, ChangeEvent, useMemo } from 'react';
@@ -6,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
-import { ArrowLeft, Download, Image as ImageIcon, Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Image as ImageIcon, Loader2, PlusCircle, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ApiKeyDialog } from '@/components/ApiKeyDialog';
 
 type OutputFormat = 'image/webp' | 'image/jpeg' | 'image/png';
 
@@ -45,6 +45,7 @@ export default function ImageConverterPage() {
   const [isBatchConverting, setIsBatchConverting] = useState(false);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('image/png');
   const [quality, setQuality] = useState(80);
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -242,12 +243,17 @@ export default function ImageConverterPage() {
                     <p className="text-muted-foreground text-sm">Convert and compress images right in your browser.</p>
                 </div>
             </div>
-            <Button variant="outline" asChild>
-                <Link href="/">
-                    <ArrowLeft className="mr-2" />
-                    Back to Home
-                </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setIsApiDialogOpen(true)} aria-label="Settings">
+                    <Settings className="h-5 w-5"/>
+                </Button>
+                <Button variant="outline" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2" />
+                        Back to Home
+                    </Link>
+                </Button>
+            </div>
         </div>
       </header>
 
@@ -386,6 +392,7 @@ export default function ImageConverterPage() {
           </CardContent>
         </Card>
       </main>
+      <ApiKeyDialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen} />
     </div>
   );
 }

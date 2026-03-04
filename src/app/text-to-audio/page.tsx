@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Voicemail, Loader2, Download, Wand2 } from 'lucide-react';
+import { ArrowLeft, Voicemail, Loader2, Download, Wand2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +15,7 @@ import { useUserApiKey } from '@/hooks/use-user-api-key';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Buffer } from 'buffer';
+import { ApiKeyDialog } from '@/components/ApiKeyDialog';
 
 // Polyfill Buffer for client-side usage
 if (typeof window !== 'undefined') {
@@ -106,6 +106,7 @@ export default function TextToAudioPage() {
   const [selectedVoice, setSelectedVoice] = useState('Algenib');
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
   const { toast } = useToast();
   const { getApiKey } = useUserApiKey('gemini');
 
@@ -136,7 +137,7 @@ export default function TextToAudioPage() {
     try {
       const apiKey = getApiKey() || undefined;
       if (!apiKey) {
-        throw new Error("A Gemini API key is required. Please set it in the settings.");
+        throw new Error("Missing Gemini API Key. Please click the Settings icon (gear) in the header to enter your key.");
       }
       
       const sentences = splitIntoSentences(inputText);
@@ -203,7 +204,7 @@ export default function TextToAudioPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-primary/5">
-      <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
+      <header className="sticky top-0 z-10 flex items-center justify-between h-16 px-4 border-b bg-background md:px-6">
         <nav className="flex items-center gap-4 text-lg font-medium md:gap-2 md:text-sm">
           <Button variant="outline" size="icon" className="shrink-0" asChild>
             <Link href="/">
@@ -213,6 +214,9 @@ export default function TextToAudioPage() {
           </Button>
           <h1 className="text-xl font-bold font-headline text-primary">Text to Audio</h1>
         </nav>
+        <Button variant="ghost" size="icon" onClick={() => setIsApiDialogOpen(true)} aria-label="Settings">
+            <Settings className="h-5 w-5"/>
+        </Button>
       </header>
       <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-8">
         <Card className="w-full max-w-2xl shadow-xl">
@@ -295,6 +299,7 @@ export default function TextToAudioPage() {
           </CardContent>
         </Card>
       </main>
+      <ApiKeyDialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen} />
     </div>
   );
 }

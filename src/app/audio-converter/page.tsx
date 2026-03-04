@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
-import { ArrowLeft, Download, Music, UploadCloud, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Music, UploadCloud, Loader2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { saveAs } from 'file-saver';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ApiKeyDialog } from '@/components/ApiKeyDialog';
 
 const supportedFormats = {
   'audio/mpeg': { label: 'MP3', extension: '.mp3' },
@@ -174,6 +174,7 @@ export default function AudioConverterPage() {
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('audio/mpeg');
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
 
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
@@ -296,7 +297,7 @@ export default function AudioConverterPage() {
     <>
         <Script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js" strategy="lazyOnload" />
         <div className="flex flex-col min-h-screen bg-primary/5">
-            <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
+            <header className="sticky top-0 z-10 flex items-center justify-between h-16 px-4 border-b bg-background md:px-6">
                 <nav className="flex items-center gap-4 text-lg font-medium md:gap-2 md:text-sm">
                     <Button variant="outline" size="icon" className="shrink-0" asChild>
                         <Link href="/">
@@ -306,6 +307,9 @@ export default function AudioConverterPage() {
                     </Button>
                     <h1 className="text-xl font-bold font-headline text-primary">Audio Converter</h1>
                 </nav>
+                <Button variant="ghost" size="icon" onClick={() => setIsApiDialogOpen(true)} aria-label="Settings">
+                    <Settings className="h-5 w-5"/>
+                </Button>
             </header>
             <main className="flex-1 p-4 sm:p-6 md:p-8 flex items-center justify-center">
                 <Card className="w-full max-w-2xl shadow-xl">
@@ -375,6 +379,7 @@ export default function AudioConverterPage() {
                 </Card>
             </main>
         </div>
+        <ApiKeyDialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen} />
     </>
   );
 }

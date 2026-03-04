@@ -1,4 +1,3 @@
-
 "use client";
 
 import { type Editor } from "@tiptap/react";
@@ -25,6 +24,7 @@ import {
   ArrowLeft,
   PanelLeft,
   Eye,
+  Settings,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -45,6 +45,7 @@ type Props = {
   onAiAssistantClick: () => void;
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
+  onOpenSettingsClick: () => void;
   isMobile: boolean;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -55,6 +56,7 @@ const Toolbar = ({
   onAiAssistantClick, 
   onAddToggleClick, 
   onOpenEquationModal, 
+  onOpenSettingsClick,
   isMobile,
   isSidebarOpen,
   onToggleSidebar
@@ -506,6 +508,23 @@ const Toolbar = ({
               </Badge>
             </div>
           )}
+
+          <div className="shrink-0 flex items-center gap-1 ml-auto">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={onOpenSettingsClick}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Settings</p></TooltipContent>
+            </Tooltip>
+          </div>
+
            <style jsx>{`
             .hide-scrollbar::-webkit-scrollbar {
                 display: none;

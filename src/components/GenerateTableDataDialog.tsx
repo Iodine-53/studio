@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -35,6 +34,9 @@ export function GenerateTableDataDialog({ open, onOpenChange, onGenerate }: Prop
     setIsLoading(true);
     try {
       const apiKey = getApiKey() || undefined;
+      if (!apiKey) {
+        throw new Error("Missing Gemini API Key. Please click the Settings icon (gear) in the header to enter your key.");
+      }
       const result = await generateTableData({ prompt, apiKey });
       onGenerate(result);
       onOpenChange(false);

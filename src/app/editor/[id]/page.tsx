@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -57,6 +56,7 @@ import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { EditorSidebar } from "@/components/EditorSidebar";
+import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 
 const SAVE_DEBOUNCE_MS = 1000;
 const VERSION_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -76,6 +76,7 @@ export default function EditorPage() {
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -298,6 +299,7 @@ export default function EditorPage() {
                   onAiAssistantClick={() => setIsAiAssistantOpen(true)}
                   onAddToggleClick={() => setIsToggleModalOpen(true)}
                   onOpenEquationModal={() => setIsEquationModalOpen(true)}
+                  onOpenSettingsClick={() => setIsSettingsOpen(true)}
                   isMobile={isMobile}
                   isSidebarOpen={isSidebarOpen}
                   onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -339,6 +341,7 @@ export default function EditorPage() {
       <ToggleTemplateModal isOpen={isToggleModalOpen} onClose={() => setIsToggleModalOpen(false)} onSelect={handleSelectToggle} />
       <EquationModal isOpen={isEquationModalOpen} onClose={() => setIsEquationModalOpen(false)} onInsert={handleInsertEquation} />
       <DocSearchModal isOpen={isDocSearchOpen} onClose={() => setIsDocSearchOpen(false)} onSelect={handleSelectDocLink} currentDocId={docId} />
+      <ApiKeyDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </>
   );
 }

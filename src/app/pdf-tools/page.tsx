@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, UploadCloud, Merge, Scissors, Droplets, Loader2, FileText, Download } from 'lucide-react';
+import { ArrowLeft, UploadCloud, Merge, Scissors, Droplets, Loader2, FileText, Download, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { cn } from '@/lib/utils';
+import { ApiKeyDialog } from '@/components/ApiKeyDialog';
 
 // Helper function to parse page ranges like "1, 3-5, 8"
 const parsePageRanges = (rangeStr: string, totalPages: number): number[] => {
@@ -47,6 +47,7 @@ const parsePageRanges = (rangeStr: string, totalPages: number): number[] => {
 export default function PdfToolsPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
   
   // State for Merge tool
   const [filesToMerge, setFilesToMerge] = useState<File[]>([]);
@@ -246,7 +247,7 @@ export default function PdfToolsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-primary/5">
-      <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background md:px-6">
+      <header className="sticky top-0 z-10 flex items-center justify-between h-16 px-4 border-b bg-background md:px-6">
         <nav className="flex items-center gap-4 text-lg font-medium md:gap-2 md:text-sm">
           <Button variant="outline" size="icon" className="shrink-0" asChild>
             <Link href="/">
@@ -256,6 +257,9 @@ export default function PdfToolsPage() {
           </Button>
           <h1 className="text-xl font-bold font-headline text-primary">PDF Toolkit</h1>
         </nav>
+        <Button variant="ghost" size="icon" onClick={() => setIsApiDialogOpen(true)} aria-label="Settings">
+            <Settings className="h-5 w-5"/>
+        </Button>
       </header>
       <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-8">
         <Tabs defaultValue="merge" className="w-full max-w-3xl">
@@ -337,6 +341,7 @@ export default function PdfToolsPage() {
           </TabsContent>
         </Tabs>
       </main>
+      <ApiKeyDialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen} />
     </div>
   );
 }

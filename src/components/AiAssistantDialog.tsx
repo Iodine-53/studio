@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -141,7 +140,7 @@ const WriteTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange
         try {
             const apiKey = getApiKey() || undefined;
             if (!apiKey) {
-              throw new Error("A Gemini API key is required. Please set it in the settings.");
+              throw new Error("Missing Gemini API Key. Please click the Settings icon (gear) in the header to enter your key.");
             }
             const result = await generateText({ prompt, apiKey });
 
@@ -204,7 +203,7 @@ const ListTab = ({ editor, onOpenChange }: Pick<Props, 'editor' | 'onOpenChange'
         try {
             const apiKey = getApiKey() || undefined;
             if (!apiKey) {
-              throw new Error("A Gemini API key is required. Please set it in the settings.");
+              throw new Error("Missing Gemini API Key. Please click the Settings icon (gear) in the header to enter your key.");
             }
             const result = await generateDocument({ prompt, apiKey });
             
@@ -349,7 +348,7 @@ const BrainstormTab = ({ editor, onOpenChange }: { editor: Editor | null, onOpen
         
         try {
             const apiKey = getApiKey();
-            if (!apiKey) throw new Error("A Gemini API key is required. Please set it in the settings.");
+            if (!apiKey) throw new Error("Missing Gemini API Key. Please click the Settings icon (gear) in the header to enter your key.");
             
             let response;
             if (fileContext) {
@@ -498,5 +497,3 @@ export function AiAssistantDialog({ editor, open, onOpenChange }: Props) {
     </Dialog>
   );
 }
-
-    

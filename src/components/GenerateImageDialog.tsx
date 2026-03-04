@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -36,6 +35,9 @@ export function GenerateImageDialog({ open, onOpenChange, onGenerate }: Props) {
     try {
       const fullPrompt = `An image of ${prompt}`;
       const apiKey = getApiKey() || undefined;
+      if (!apiKey) {
+        throw new Error("Missing Gemini API Key. Please click the Settings icon (gear) in the header to enter your key.");
+      }
       const result = await generateImage({ prompt: fullPrompt, apiKey });
       onGenerate(result);
       onOpenChange(false);
