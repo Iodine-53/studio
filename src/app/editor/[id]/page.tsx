@@ -275,9 +275,9 @@ export default function EditorPage() {
             <p>View Only. Use a PC or Mac to edit this document.</p>
           </div>
         )}
-        <main className="flex-1 flex min-h-0">
+        <main className="flex-1 flex min-h-0 relative">
           {!isMobile && isSidebarOpen && doc && (
-            <div className="w-80 shrink-0 border-r bg-card hidden md:block">
+            <div className="w-80 shrink-0 border-r bg-card hidden md:block sticky top-0 h-screen">
               <EditorSidebar 
                 doc={doc}
                 tags={tags}
