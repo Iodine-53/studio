@@ -2,8 +2,11 @@ import { Node, textInputRule, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import MathComponent from '@/components/nodes/MathComponent';
 
-// 1. The Inline Math Node
-// Usage: Type $ formula $ to trigger
+/**
+ * Math Pro Extension
+ * Provides support for Inline Math ($E=mc^2$) and Math Blocks ($$ ... $$)
+ */
+
 export const InlineMath = Node.create({
   name: 'inlineMath',
   group: 'inline',
@@ -42,8 +45,6 @@ export const InlineMath = Node.create({
   },
 });
 
-// 2. The Block Math Node
-// Usage: Type $$ followed by a space to trigger
 export const MathBlock = Node.create({
   name: 'mathBlock',
   group: 'block',
@@ -57,10 +58,10 @@ export const MathBlock = Node.create({
       },
       textAlign: {
         default: 'center',
-        parseHTML: (element) => element.style.textAlign || element.getAttribute('data-text-align') || 'center',
+        parseHTML: (element) => element.getAttribute('data-text-align') || 'center',
         renderHTML: (attributes) => ({
-          style: `text-align: ${attributes.textAlign}`,
           'data-text-align': attributes.textAlign,
+          style: `text-align: ${attributes.textAlign}`,
         }),
       },
     };
@@ -89,7 +90,7 @@ export const MathBlock = Node.create({
           },
         });
       },
-    };
+    } as any;
   },
 
   addInputRules() {

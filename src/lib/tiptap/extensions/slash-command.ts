@@ -37,9 +37,9 @@ const getCommandItems = (openToggleModal: () => void, openDocSearchModal: () => 
   { title: "Divider", icon: Minus, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).setHorizontalRule().run(); } },
   
   // Custom Node Blocks
+  { title: "Math Block", icon: Sigma, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMathBlock().run(); } },
   { title: "Advanced To-do List", icon: ListChecks, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertAdvancedTodoList().run(); } },
   { title: "Link to Document", icon: Link2, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).run(); openDocSearchModal(); } },
-  { title: "Math Block", icon: Sigma, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMathBlock().run(); } },
   { title: "Mind Map", icon: BrainCircuit, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertMindMap().run(); } },
   { title: "2 Columns", icon: Columns, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).insertColumns().run(); } },
   { title: "Toggle List", icon: Rows, command: ({ editor, range }) => { editor.chain().focus().deleteRange(range).run(); openToggleModal(); } },
