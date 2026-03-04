@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { type Editor } from "@tiptap/react";
@@ -23,8 +22,8 @@ import {
   Quote,
   Rows,
   Sigma,
-  Menu,
   ArrowLeft,
+  PanelLeft,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -45,22 +44,30 @@ type Props = {
   onAddToggleClick: () => void;
   onOpenEquationModal: () => void;
   isMobile: boolean;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
 };
 
-const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationModal, isMobile }: Props) => {
+const Toolbar = ({ 
+  editor, 
+  onAiAssistantClick, 
+  onAddToggleClick, 
+  onOpenEquationModal, 
+  isMobile,
+  isSidebarOpen,
+  onToggleSidebar
+}: Props) => {
 
   if (!editor) {
     return null;
   }
 
   const handleAddBlock = () => {
-    // Insert a new paragraph, then insert the slash, then focus.
-    // This is more reliable than using .enter()
     const { from, to } = editor.state.selection;
     editor
       .chain()
       .insertContentAt(to, { type: 'paragraph' })
-      .focus(to + 1) // focus inside the new paragraph
+      .focus(to + 1)
       .insertContent('/')
       .run();
   }
@@ -75,7 +82,6 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
             }
         }
     }
-    // A reasonable default if no specific line height is set on the active node.
     return 1.2; 
   };
   
@@ -96,27 +102,41 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
   return (
     <TooltipProvider>
       <div className="flex w-full items-center bg-card p-2 border-b">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                aria-label="Back to Documents"
-                asChild
-              >
-                <a href="/documents">
-                    <ArrowLeft className="h-4 w-4" />
-                </a>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Back to Documents</p></TooltipContent>
-          </Tooltip>
+          <div className="flex items-center gap-1 shrink-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  asChild
+                >
+                  <a href="/documents">
+                      <ArrowLeft className="h-4 w-4" />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Back to Documents</p></TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isSidebarOpen ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={onToggleSidebar}
+                >
+                  <PanelLeft className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>{isSidebarOpen ? 'Hide' : 'Show'} Menu</p></TooltipContent>
+            </Tooltip>
+          </div>
+
           <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
 
-          {/* This div will handle the scrolling of tools */}
-          <div className="flex items-center gap-1 overflow-x-auto flex-nowrap hide-scrollbar">
-              {/* Text Formatting Tools */}
+          <div className="flex items-center gap-1 overflow-x-auto flex-nowrap hide-scrollbar flex-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Toggle
@@ -177,9 +197,8 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                 <TooltipContent><p>Underline</p></TooltipContent>
               </Tooltip>
               
-              <Separator orientation="vertical" className="h-8 mx-1" />
+              <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
               
-              {/* Font and Text Style Popovers */}
               <Popover>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -276,7 +295,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                 </PopoverContent>
               </Popover>
               
-              <Separator orientation="vertical" className="h-8 mx-1" />
+              <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -306,7 +325,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                 <TooltipContent><p>Redo</p></TooltipContent>
               </Tooltip>
 
-              <Separator orientation="vertical" className="h-8 mx-1" />
+              <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
               
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -323,9 +342,8 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                 <TooltipContent><p>AI Assistant</p></TooltipContent>
               </Tooltip>
 
-              <Separator orientation="vertical" className="h-8 mx-1" />
+              <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
 
-              {/* Alignment and Block Tools */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Toggle
@@ -382,7 +400,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                 <TooltipContent><p>Justify</p></TooltipContent>
               </Tooltip>
 
-              <Separator orientation="vertical" className="h-8 mx-1" />
+              <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
               
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -431,7 +449,7 @@ const Toolbar = ({ editor, onAiAssistantClick, onAddToggleClick, onOpenEquationM
                 <TooltipContent><p>Blockquote</p></TooltipContent>
               </Tooltip>
               
-              <Separator orientation="vertical" className="h-8 mx-1" />
+              <Separator orientation="vertical" className="h-8 mx-1 shrink-0" />
 
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -1,9 +1,9 @@
+
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { useEditor, type Editor } from '@tiptap/react';
+import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
@@ -37,12 +37,11 @@ import { Link as TiptapLink } from '@tiptap/extension-link';
 import 'katex/dist/katex.min.css';
 import { AdvancedTodoListExtension, AdvancedTaskExtension } from '@/lib/tiptap/extensions/AdvancedTask';
 
-
 import TiptapEditor from "@/components/tiptap-editor";
 import { getDocument, saveDocument, type Document, addDocVersion, type DocumentVersion } from "@/lib/db";
-import { ArrowLeft, Loader2, Eye, FileText, Download, Braces, FileCode2, BookOpen, History, PanelRight, MoreVertical } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PrintPreview } from "@/components/PrintPreview";
 import { saveAs } from 'file-saver';
 import { exportToDocx } from '@/lib/docx-exporter';
@@ -57,6 +56,7 @@ import { VersionHistory } from "@/components/VersionHistory";
 import { tiptapJsonToText } from '@/lib/tiptap/tiptap-helpers';
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { EditorSidebar } from "@/components/EditorSidebar";
 
 const SAVE_DEBOUNCE_MS = 1000;
 const VERSION_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -75,9 +75,9 @@ export default function EditorPage() {
   const [isEquationModalOpen, setIsEquationModalOpen] = useState(false);
   const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const [isEditorFocused, setIsEditorFocused] = useState(false);
 
   const { toast } = useToast();
 
@@ -110,7 +110,7 @@ export default function EditorPage() {
     extensions: [
       StarterKit.configure({
         codeBlock: false, horizontalRule: false, image: false, table: false, tableRow: false, tableHeader: false, tableCell: false, link: false,
-        heading: { levels: [1, 2, 3] }, // Limit headings
+        heading: { levels: [1, 2, 3] },
       }),
       Underline,
       TextAlign.configure({ types: ['heading', 'paragraph', 'image', 'chartBlock', 'drawing', 'callout', 'interactiveTable', 'embed', 'progressBarBlock', 'functionPlot', 'mindMap', 'advancedTodoList'] }),
@@ -131,12 +131,6 @@ export default function EditorPage() {
         class: cn('prose dark:prose-invert max-w-none prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-6 focus:outline-none w-full flex-grow'),
       },
     },
-    onFocus: () => {
-      setIsEditorFocused(true);
-    },
-    onBlur: () => {
-      setIsEditorFocused(false);
-    },
     onUpdate: ({ editor }) => {
         const json = editor.getJSON();
         setCurrentContent(json);
@@ -146,7 +140,6 @@ export default function EditorPage() {
         
         debounceTimeout.current = setTimeout(async () => {
             await saveDocument({ ...doc, content: json });
-            console.log("Document auto-saved!");
             
             const currentText = tiptapJsonToText(json);
             const now = Date.now();
@@ -155,7 +148,6 @@ export default function EditorPage() {
             
             if (timeDiff > VERSION_INTERVAL_MS || charDiff > VERSION_CHAR_THRESHOLD) {
                 await addDocVersion({ docId: doc.id!, content: json, title: doc.title });
-                console.log(`New version created for doc ${doc.id}`);
                 lastVersionTime.current = now;
                 lastVersionContent.current = currentText;
             }
@@ -180,11 +172,9 @@ export default function EditorPage() {
           lastVersionContent.current = tiptapJsonToText(loadedDoc.content);
           lastVersionTime.current = new Date(loadedDoc.updatedAt).getTime();
         } else {
-          console.error("Document not found");
           router.push("/documents");
         }
       } catch (error) {
-        console.error("Failed to load document:", error);
         router.push("/documents");
       } finally {
         setIsLoading(false);
@@ -208,8 +198,20 @@ export default function EditorPage() {
     }
   }, [editor, doc]);
 
-  const handleOpenPreview = () => setIsPreviewOpen(true);
-  
+  const handleTagsChange = async (newTags: string[]) => {
+    setTags(newTags);
+    if (doc) {
+      await saveDocument({ ...doc, tags: newTags });
+    }
+  };
+
+  const handleMetadataUpdate = async (newMetadata: Record<string, string>) => {
+    if (doc) {
+      await saveDocument({ ...doc, metadata: newMetadata });
+      setDoc({ ...doc, metadata: newMetadata });
+    }
+  };
+
   const handleDocxExport = async () => {
     if (!currentContent) return;
     try {
@@ -260,6 +262,23 @@ export default function EditorPage() {
     <>
       <div className="flex flex-col min-h-screen bg-primary/5">
         <main className="flex-1 flex min-h-0">
+          {!isMobile && isSidebarOpen && doc && (
+            <div className="w-80 shrink-0 border-r bg-card hidden md:block">
+              <EditorSidebar 
+                doc={doc}
+                tags={tags}
+                onTagsChange={handleTagsChange}
+                onMetadataUpdate={handleMetadataUpdate}
+                onHistoryClick={() => setIsHistoryOpen(true)}
+                onPreviewClick={() => setIsPreviewOpen(true)}
+                onExportDocxClick={handleDocxExport}
+                onExportJsonClick={handleJsonExport}
+                onExportHtmlClick={handleHtmlExport}
+                onExportMarkdownClick={handleMarkdownExport}
+              />
+            </div>
+          )}
+
           <div className="flex-1 flex flex-col min-h-0">
               <TiptapEditor 
                   editor={editor}
@@ -267,10 +286,35 @@ export default function EditorPage() {
                   onAddToggleClick={() => setIsToggleModalOpen(true)}
                   onOpenEquationModal={() => setIsEquationModalOpen(true)}
                   isMobile={isMobile}
+                  isSidebarOpen={isSidebarOpen}
+                  onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
               />
           </div>
         </main>
       </div>
+
+      {isMobile && doc && (
+        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+          <SheetContent side="left" className="p-0 w-80">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Editor Menu</SheetTitle>
+            </SheetHeader>
+            <EditorSidebar 
+              doc={doc}
+              tags={tags}
+              onTagsChange={handleTagsChange}
+              onMetadataUpdate={handleMetadataUpdate}
+              onHistoryClick={() => setIsHistoryOpen(true)}
+              onPreviewClick={() => setIsPreviewOpen(true)}
+              onExportDocxClick={handleDocxExport}
+              onExportJsonClick={handleJsonExport}
+              onExportHtmlClick={handleHtmlExport}
+              onExportMarkdownClick={handleMarkdownExport}
+            />
+          </SheetContent>
+        </Sheet>
+      )}
+
       <VersionHistory 
         isOpen={isHistoryOpen} 
         onClose={() => setIsHistoryOpen(false)} 

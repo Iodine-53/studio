@@ -11,7 +11,7 @@ const trailingNodeTypes: string[] = [
     'image', 
     'chartBlock', 
     'drawing', 
-    'todoList', 
+    'advancedTodoList', 
     'callout', 
     'horizontalRule', 
     'interactiveTable',
@@ -21,6 +21,8 @@ const trailingNodeTypes: string[] = [
     'columns',
     'mindMap',
     'mathBlock',
+    'functionPlot',
+    'calculator'
 ];
 
 export const TrailingNode = Extension.create({
